@@ -2,6 +2,30 @@ import os
 import numpy as np
 import pandas as pd
 
+def load_vix(train_ratio=0.8):
+    """
+    Download VIX daily close prices from Yahoo Finance and compute log-VIX.
+    Treats log-VIX as the target (analogous to log-RV for S&P 500).
+    Returns (y_train, y_test, X_train, X_test) in the same format as load_sp500().
+    X_exog is None since VIX is univariate.
+    """
+    try:
+        import yfinance as yf
+    except ImportError:
+        raise ImportError("yfinance not installed. Run: pip install yfinance")
+
+    df = yf.download("^VIX", start="2000-01-01", end="2024-12-31",
+                     progress=False, auto_adjust=True)
+    close = df["Close"].dropna().values.flatten()
+    log_vix = np.log(close).reshape(-1, 1)
+
+    n = len(log_vix)
+    n_train = int(n * train_ratio)
+
+    y_train = log_vix[:n_train]
+    y_test  = log_vix[n_train:]
+    return y_train, y_test, None, None   # no exogenous variables
+
 def load_narma10(n_train=800, n_test=200, warmup=1000, seed=42):
     """
     Generate the classic NARMA10 dataset.
@@ -68,36 +92,41 @@ def load_mackey_glass(n_train=800, n_test=200, warmup=1000, tau=17, seed=42):
     """
     Generate the classic Mackey-Glass time series dataset.
     dx/dt = beta * x(t-tau) / (1 + x(t-tau)^n) - gamma * x(t)
+
+    Uses TAU-step-ahead prediction (default tau=17), which is the standard
+    QRC/ESN benchmark task. 1-step-ahead is trivially solved by linear models
+    due to the series' smoothness (lag-1 autocorr ~0.99), so tau-step-ahead
+    is required to fairly test temporal memory capacity.
+
+    Returns (X_train, y_train, X_test, y_test) where
+      y[i] = x[i + tau]  -- the target is tau steps into the future.
     """
     np.random.seed(seed)
-    
-    beta = 0.2
+
+    beta  = 0.2
     gamma = 0.1
-    n = 10
-    dt = 1.0 # Standard discrete delta
-    
-    total_len = warmup + n_train + n_test + tau + 1
+    n     = 10
+    dt    = 1.0
+
+    # Need extra `tau` points at the end so that y[i+tau] exists for all i
+    total_len = warmup + tau + n_train + n_test + tau
     time_series = np.zeros(total_len)
-    
+
     # Initial conditions
     time_series[:tau] = 1.2 + 0.1 * (np.random.rand(tau) - 0.5)
-    
+
     for t in range(tau, total_len - 1):
         x_tau = time_series[t - tau]
-        # Runge-Kutta 4th Order estimation (or Euler for simple discrete stepping)
-        # We will use simple Euler integration for speed matching NARMA standard
         delta = (beta * x_tau / (1.0 + x_tau**n)) - (gamma * time_series[t])
-        time_series[t+1] = time_series[t] + delta * dt
-        
-    y_final = time_series[warmup+tau:]
-    # For prediction, X(t) represents the sequence to predict y(t+1)
-    
-    # Let's standardize it: input X is previous step, output y is next step
-    # For MG, we often want to predict multiple steps, but we'll stick to 1-step ahead
-    # X_train is standard univariate.
+        time_series[t + 1] = time_series[t] + delta * dt
+
+    # Discard warmup; y_final has length n_train + n_test + tau
+    y_final = time_series[warmup + tau:]
+
+    # X[i] = y_final[i],  target[i] = y_final[i + tau]
     X_train = y_final[:n_train].reshape(-1, 1)
-    y_train = y_final[1:n_train+1].reshape(-1, 1)
-    X_test = y_final[n_train:-1].reshape(-1, 1)
-    y_test = y_final[n_train+1:].reshape(-1, 1)
-    
+    y_train = y_final[tau : n_train + tau].reshape(-1, 1)
+    X_test  = y_final[n_train : n_train + n_test].reshape(-1, 1)
+    y_test  = y_final[n_train + tau : n_train + n_test + tau].reshape(-1, 1)
+
     return X_train, y_train, X_test, y_test

@@ -1,112 +1,166 @@
 <div align="center">
   <h1>Team Qedi 🐈‍⬛</h1>
-  <p><strong>EPFL Quantum Hackathon 2026 • Quandela Challenge</strong></p>
-  <h3>Hybrid Photonic Temporal QRC (HPT-QRC) — Swaption Volatility Surface Forecaster</h3>
+  <p><strong>EPFL Quantum Hackathon 2026 • Quandela Challenge → Academic Paper Extension</strong></p>
+  <h3>Hybrid Photonic Temporal QRC (HPT-QRC)<br/>Time-Series Forecasting Benchmark Suite</h3>
   <p><i>Teaching photons to predict the market so we can finally sleep.</i></p>
 </div>
 
 <br />
 
-## 📖 1. The Challenge
+## 📖 1. What This Repository Is
 
-A **swaption volatility surface** is a 2D grid indexed by tenor and maturity. Providing 224 high-dimensional features per day, the challenge demands two primary tasks:
-1. **Predictive Forecasting** — Forecasting the complex non-linear surface shifts for the next $H$ days smoothly.
-2. **Data Imputation Reconstruction** — Real markets suffer from outages, resulting in `NaN` entries across the option grid. The model must analytically infer missing surface areas by relying on deeply correlated temporal topologies.
+This repository contains **two related but distinct bodies of work:**
 
-**The Quantum Solution:** We compress the manifold via PCA and process the temporal dynamics using a entirely newly adapted **Hybrid Photonic Temporal Quantum Reservoir Computer (HPT-QRC)** architecture. Inspired by *Li et al. (2024)*, we took their qubit-based framework and adapted it to a purely Photonic Quantum Reservoir powered by **[MerLin by Quandela](https://merlinquantum.ai/)**.
+| Phase | Description |
+|:---|:---|
+| **Phase 1 — Hackathon** | Original winning submission for the EPFL Quantum Hackathon 2026 (Quandela Challenge). Forecasts swaption volatility surfaces using HPT-QRC. |
+| **Phase 2 — Academic Paper** | Extended benchmarking framework for submission to a peer-reviewed venue. Tests HPT-QRC across three rigorous datasets with full statistical validation. |
 
-You can check out our interactive showcase website here: **[https://qedi-qpfl.vercel.app](https://qedi-qpfl.vercel.app)**, featuring all challenge details and interactive visualization of our solution.
-
----
-
-## ⚙️ 2. Hybrid Photonic Temporal QRC Architecture
-
-Instead of a standard QRC, our best solution is the state-of-the-art **HPT-QRC pipeline** (implemented as our main architecture in `temporal_qrc.py`):
-
-1. **Preprocessing**: Raw 224D Market Surface $\rightarrow$ `StandardScaler` + `PCA (5D)` $\rightarrow$ Rolling 5-Day Window (1×25)
-2. **Dedicated Memory Modes**: Instead of mapping data to all spatial modes simultaneously, our temporal array uses **5 input modes** (phase encoded) and **3 dedicated memory modes** (unencoded loop). The memory modes continuously accumulate historical state contexts across 5 time steps through serial phase mixing.
-3. **Virtual Nodes**: We sample the evolving physical system at multiple structural post-processing depths (Depths 1, 2, 3). These **Virtual Nodes** emulate capturing chronological measurement sub-intervals, massively expanding our temporal feature dimensionality without adding physical photon bounds.
-4. **Ensemble LexGrouping Compression**: Instead of measuring impossibly vast raw Fock states, we group the probability vectors via **LexGrouping** across 3 random seeds × 3 virtual depths (= 9 Circuits). 
-5. **Direct Target Ridge Forecaster**: By augmenting 90 Quantum Features with the 25 Classic Features, extracting the most prominent Non-linear Mutual Information quantum channels, an $L2$ regularized Ridge Regression projection ($\alpha=10.0$) predicts the consecutive future states.
+**You are currently on Phase 2.** All new benchmarking code lives in `narma_experiment/`.
 
 ---
 
-## 🚀 3. CLI Reference & Setup
+## ⚙️ 2. Architecture (HPT-QRC)
 
-Requires `torch`, `pcvl`, and standard ML arrays (`numpy`, `pandas`, `scikit-learn`).
+The core model uses **fixed, untrained photonic quantum circuits** as nonlinear feature extractors. Only a Ridge regression readout is trained — no gradient descent, no barren plateaus.
+
+**Current best config (v2):**
+- `photon_list = [2, 3, 4]` — heterogeneous photon ensemble (covers quadratic, cubic, and quartic Fock correlations)
+- `window = 10` — 10-step temporal context window
+- `n_reservoirs = 3` — 3 reservoir families × 3 virtual depth levels = 9 total quantum layers
+- `ridge_alpha = 1e-4` — Ridge regression readout
+
+**Pipeline:**
+```
+Time Series Input → Sliding Window (size=10)
+    → Phase Encoding into fixed photonic circuit
+    → Multi-photon Fock state feature extraction (heterogeneous: 2+3+4 photons)
+    → [Quantum Fock features] + [HAR classical context]
+    → Ridge Regression (single closed-form solution, no epochs)
+    → Forecast
+```
+
+---
+
+## 🚀 3. Setup & Running
 
 ```bash
-# First create the environment and install dependencies
-conda create -n quandela python=3.10
+conda create -n quandela python=3.11
 conda activate quandela
 pip install -r requirements.txt
+pip install yfinance   # for VIX dataset
 ```
 
-### Main Solution & Naive Baseline
-Our best model, the **Hybrid Photonic Temporal QRC**, along with a naive algorithm (repeat last known day) used as a baseline, is localized in `temporal_qrc.py`. Run this to reproduce our winning results:
+### Run Full Benchmark Suite
 ```bash
-python temporal_qrc.py
-```
+cd narma_experiment/
 
-### Benchmarking Models
-We built multiple robust models to benchmark against our champion HPT-QRC architecture:
-* `final_model.py`: Runs our standard **Photonic Linear QRC** without dedicated memory modes.
-* `train_final.py`: Runs classical and hybrid benchmarks, including **Classical LSTM**, **Classical Random Forest**, **QSVR**, and **Hybrid QNN**.
+# Main results — 5 seeds, mean ± std (publication-ready)
+python multi_seed_benchmark.py
 
-```bash
-# Evaluate the base Photonic Linear QRC
-python final_model.py
+# Memory Capacity analysis (Jaeger 2001)
+python memory_capacity.py
 
-# Evaluate classical/hybrid benchmarking models 
-python train_final.py
+# Ablation study (photons, reservoirs, window, ensemble type)
+python ablation_study.py
+
+# Computational efficiency table
+python efficiency_benchmark.py
+
+# Single-seed run + DM test tables + overlay plots
+python train_narma.py
 ```
 
 ---
 
-## 📈 4. Final Benchmark Results
+## 📈 4. Current Results (v2: window=10, photon_list=[2,3,4], 5 seeds)
 
-By executing the novel Hybrid Photonic Temporal QRC pipeline, we successfully beat our underlying standard QRC framework and left classical baselines absolutely obsolete.
+### NARMA10 — Nonlinear Synthetic Task
+| Model | MSE (mean ± std) | QLIKE (mean ± std) |
+|:---|:---|:---|
+| HAR | 0.006199 ± 0.001067 | 4.19 ± 0.53 |
+| HARX | 0.003816 ± 0.000473 | 2.41 ± 0.24 |
+| Classical-Ridge (ablation) | 0.006870 ± 0.000923 | 4.60 ± 0.39 |
+| HPT-QRC | 0.005752 ± 0.000928 | 3.82 ± 0.43 |
+| **HPT-QRC-X** | **0.000398 ± 0.000082** ← **BEST** | **0.352 ± 0.138** ← **BEST** |
 
-| Model | RMSE Error |
-| :--- | :---: |
-| **QSVR** | `0.0233` | 
-| **Hybrid QNN** | `0.0083` | 
-| **LSTM** | `0.0073` | 
-| **Photonic Linear QRC** | `0.0065` | 
-| **Hybrid Photonic Linear QRC** | `0.0028` | 
-| **🥇 Hybrid Photonic Temporal QRC (HPT-QRC)** | **`0.0021`** | 
+> HPT-QRC-X beats HARX by **9.6× on MSE** and **6.8× on QLIKE**.
 
-*Maintains incredibly reliable sub-10% projection accuracy out to a 6-Day cascading prediction envelope.*
+### Mackey-Glass — 17-Step-Ahead (Memory Task)
+| Model | MSE (mean ± std) | QLIKE (mean ± std) |
+|:---|:---|:---|
+| AR(3) | 7e-6 ± 0 | 0.0011 |
+| HARX | 9.2e-5 ± 5e-6 | 0.0146 |
+| Classical-Ridge (ablation) | 1.6e-3 ± 7.5e-5 | 0.273 |
+| **HPT-QRC-X** | **1e-6 ± 0** ← **BEST** | **0.0001 ± 0** ← **BEST** |
+
+### S&P 500 Realized Volatility (window=5 optimal)
+| Model | MSE (mean ± std) | QLIKE (mean ± std) |
+|:---|:---|:---|
+| HARX | **0.009863 ± 0** ← **BEST** | **0.833 ± 0** |
+| Classical-Ridge (ablation) | 0.010950 ± 0 | 0.925 |
+| HPT-QRC | 0.011022 ± 0.000067 | 0.925 ± 0.006 |
+
+### VIX — Generalizability Test (6,288 samples)
+| Model | MSE | QLIKE |
+|:---|:---|:---|
+| AR(3) | 0.006039 | 3.987 |
+| HAR | 0.006040 | 4.006 |
+| **HPT-QRC** | **0.005977** ← **BEST** | **3.965** ← **BEST** |
+
+### Memory Capacity (Jaeger 2001)
+| Model | MC Score |
+|:---|:---|
+| **HPT-QRC** | **4.00** |
+| Classical ESN (100 units) | 0.08 |
+
+> Photonic reservoir provides **50× better temporal memory** than classical ESN.
+
+### Training Efficiency
+| Model | Training Time | Epochs |
+|:---|:---|:---|
+| LSTM | 685 ms | 100 (gradient descent) |
+| **HPT-QRC** | **914 ms** | **1 (closed-form, no gradients)** |
 
 ---
 
-## 👥 Meet Team Qedi
+## 📁 5. Project Structure
 
-Proudly built during the 24-hour **EPFL Quantum Hackathon 2026**.
+```
+EPFL_ANTI/
+├── README.md                        ← this file
+├── walkthrough.md                   ← full research walkthrough & results log
+├── requirements.txt                 ← dependencies
+│
+├── narma_experiment/                ← Academic benchmark suite (Phase 2)
+│   ├── multi_qrc.py                 ← HPT-QRC model (photon_list, get_features, etc.)
+│   ├── classical_baselines.py       ← AR, HAR, HARX, LSTM, RC, ClassicalContextRidge
+│   ├── data_loader.py               ← NARMA10, Mackey-Glass, S&P 500, VIX loaders
+│   ├── esn_baseline.py              ← Echo State Network
+│   ├── train_narma.py               ← Single-seed benchmark + DM tests + plots
+│   ├── multi_seed_benchmark.py      ← 5-seed benchmark → mean ± std results
+│   ├── memory_capacity.py           ← Jaeger (2001) MC analysis
+│   ├── ablation_study.py            ← Architecture ablation sweeps
+│   ├── efficiency_benchmark.py      ← Training time measurement
+│   └── results/
+│       ├── CHANGELOG.md             ← Version history of all experiments
+│       ├── v1_window5_homo/         ← Baseline results (window=5, n_photons=3)
+│       ├── v2_window10_hetero/      ← Current best (window=10, photon_list=[2,3,4])
+│       ├── multi_seed_summary.csv   ← Main publication table
+│       ├── mc_curve.png             ← Memory Capacity plot
+│       ├── ablation_combined.png    ← Ablation study plot
+│       └── efficiency_plot.png      ← Speed vs accuracy plot
+│
+└── [original hackathon files]       ← Phase 1 (swaption surface)
+```
 
-* [**Eren Aslan**](https://www.linkedin.com/in/eren-aslan-421b66191/)   
-* [**Hüseyin Umut Işık**](https://www.linkedin.com/in/h%C3%BCseyin-umut-i%C5%9F%C4%B1k-7b3ba4255/)      
-* [**Arda Kara**](https://www.linkedin.com/in/arda-kara0/) 
-* [**Mehmet Alp Özaydın**](https://www.linkedin.com/in/mehmet-alp-%C3%B6zayd%C4%B1n-8455bb246/) 
+---
 
-<br/>
-<div align="center">
-  <table>
-    <tr align="center" valign="middle">
-      <td width="300" style="border: none; background: transparent;">
-        <a href="https://www.metu.edu.tr/tr" target="_blank"><img src="qedi_website/assets/metu_logo.png" alt="METU Logo" width="120"/></a>
-      </td>
-      <td width="300" style="border: none; background: transparent;">
-        <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank"><img src="qedi_website/assets/bilkent_logo.png" alt="Bilkent Logo" width="120"/></a>
-      </td>
-    </tr>
-    <tr align="center" valign="top">
-      <td width="300" style="border: none; background: transparent;">
-        <i>Middle East Technical University</i>
-      </td>
-      <td width="300" style="border: none; background: transparent;">
-        <i>Bilkent University</i>
-      </td>
-    </tr>
-  </table>
-</div>
+## 👥 Team Qedi
+
+Proudly built during the **EPFL Quantum Hackathon 2026**, now being extended into an academic publication.
+
+* [**Eren Aslan**](https://www.linkedin.com/in/eren-aslan-421b66191/)
+* [**Hüseyin Umut Işık**](https://www.linkedin.com/in/h%C3%BCseyin-umut-i%C5%9F%C4%B1k-7b3ba4255/)
+* [**Arda Kara**](https://www.linkedin.com/in/arda-kara0/)
+* [**Mehmet Alp Özaydın**](https://www.linkedin.com/in/mehmet-alp-%C3%B6zayd%C4%B1n-8455bb246/)

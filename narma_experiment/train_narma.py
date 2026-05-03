@@ -6,8 +6,8 @@ import pandas as pd
 import scipy.stats
 from sklearn.metrics import mean_squared_error
 
-from data_loader import load_narma10, load_sp500
-from classical_baselines import ARModel, ARMAXModel, HARModel, HARXModel, LSTMWrapper, RCModel
+from data_loader import load_narma10, load_sp500, load_mackey_glass
+from classical_baselines import ARModel, ARMAXModel, HARModel, HARXModel, LSTMWrapper, RCModel, ClassicalContextRidge
 from multi_qrc import HPT_QRC_Multi
 
 matplotlib.use("Agg")
@@ -95,7 +95,7 @@ def pmcs_score(loss_values):
     """
     return np.mean(loss_values)
 
-def benchmark_dataset(name, y_train, y_test, X_train=None, X_test=None, is_log_space=False):
+def benchmark_dataset(name, y_train, y_test, X_train=None, X_test=None, is_log_space=False, use_har_context=False):
     print("=" * 60)
     print(f"      Running Extended Benchmarks on {name}")
     print("=" * 60)
@@ -143,10 +143,18 @@ def benchmark_dataset(name, y_train, y_test, X_train=None, X_test=None, is_log_s
     p_rc = rc.predict(y_test)
     preds["RC"] = p_rc
     results.append({"Model": "RC", "MSE": mean_squared_error(y_test, p_rc), "QLIKE": qlike(y_test, p_rc)})
-    
-    # 6. HPT-QRC (Quantum Reservoir)
+
+    # 6. Classical Context Ridge (no-quantum ablation)
+    print("-> Training ClassicalContextRidge (no-quantum ablation)...")
+    ccr = ClassicalContextRidge(window=5, ridge_alpha=10.0).fit(y_train)
+    p_ccr = ccr.predict(y_test)
+    preds["Classical-Ridge"] = p_ccr
+    results.append({"Model": "Classical-Ridge", "MSE": mean_squared_error(y_test, p_ccr), "QLIKE": qlike(y_test, p_ccr)})
+
+    # 7. HPT-QRC (Quantum Reservoir)
     print("-> Training HPT-QRC (Quantum Reservoir)...")
-    qrc = HPT_QRC_Multi(in_size=1, window=5).fit(y_train)
+    qrc = HPT_QRC_Multi(in_size=1, window=10, photon_list=[2,3,4],
+                        use_har_context=use_har_context).fit(y_train)
     p_qrc = qrc.predict(y_test)
     preds["HPT-QRC"] = p_qrc
     results.append({"Model": "HPT-QRC", "MSE": mean_squared_error(y_test, p_qrc), "QLIKE": qlike(y_test, p_qrc)})
@@ -190,7 +198,8 @@ def benchmark_dataset(name, y_train, y_test, X_train=None, X_test=None, is_log_s
         # 11. HPT-QRC-X (Exogenous Quantum Reservoir)
         print("-> Training HPT-QRC-X (Exogenous Quantum)...")
         qrc_in_dim = 1 + X_train.shape[1]
-        qrc_x = HPT_QRC_Multi(in_size=qrc_in_dim, window=5).fit(y_train, X_train)
+        qrc_x = HPT_QRC_Multi(in_size=qrc_in_dim, window=10, photon_list=[2,3,4],
+                              use_har_context=use_har_context).fit(y_train, X_train)
         p_qrc_x = qrc_x.predict(y_test, X_test)
         preds["HPT-QRC-X"] = p_qrc_x
         results.append({"Model": "HPT-QRC-X", "MSE": mean_squared_error(y_test, p_qrc_x), "QLIKE": qlike(y_test, p_qrc_x)})
@@ -247,7 +256,7 @@ def main():
     s_y_train, s_y_test, s_X_train, s_X_test = load_sp500()
     # is_log_space=True because the RV column is log-realized volatility (negative values)
     # QLIKE must be computed after exp() to convert back to actual variance space
-    benchmark_dataset("SP500_Realized_Volatility", s_y_train, s_y_test, X_train=s_X_train, X_test=s_X_test, is_log_space=True)
+    benchmark_dataset("SP500_Realized_Volatility", s_y_train, s_y_test, X_train=s_X_train, X_test=s_X_test, is_log_space=True, use_har_context=True)
 
 if __name__ == "__main__":
     main()

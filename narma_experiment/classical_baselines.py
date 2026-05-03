@@ -5,7 +5,60 @@ import torch
 import torch.nn as nn
 from esn_baseline import EchoStateNetwork
 
-# --- Autoregressive & HAR Models ---
+# ---------------------------------------------------------------------------
+# Classical ablation baseline (no quantum features)
+# ---------------------------------------------------------------------------
+
+class ClassicalContextRidge:
+    """
+    Rich classical-only Ridge baseline for ablation study.
+
+    Feature vector per timestep (same as the classical context in HPT-QRC):
+      [window of y (size=window), lag-1, 5-day MA, 22-day MA, momentum Δy]
+
+    This is the 'no-quantum' ablation: same architecture as HPT-QRC but with
+    Fock features replaced by zeros. If HPT-QRC >> ClassicalContextRidge,
+    the quantum features are proven to add value.
+    """
+
+    def __init__(self, window=5, ridge_alpha=10.0):
+        self.window   = window
+        self.ridge    = Ridge(alpha=ridge_alpha)
+
+    # ------------------------------------------------------------------
+    def _build_features(self, y_concat):
+        """
+        Build feature matrix from a 1D array where y_concat = [history | targets].
+        history = last `window` training points (for warm-start at predict time).
+        Returns shape (len(y_concat) - window, n_features).
+        """
+        pad = max(22, self.window)
+        padded = np.concatenate([np.zeros(pad), y_concat])
+        feats = []
+        for t in range(pad, len(padded)):
+            win  = padded[t - self.window : t]
+            lag1 = padded[t - 1]
+            ma5  = np.mean(padded[max(0, t - 5)  : t])
+            ma22 = np.mean(padded[max(0, t - 22) : t])
+            delt = padded[t - 1] - padded[t - 2]
+            feats.append(np.concatenate([win, [lag1, ma5, ma22, delt]]))
+        return np.array(feats)
+
+    # ------------------------------------------------------------------
+    def fit(self, y_train, X_exog=None, discard_steps=100):
+        y_flat = y_train.flatten()
+        feats  = self._build_features(y_flat)   # shape (n_train, n_feat)
+        target = y_flat                          # predict same step (features use only lags)
+
+        self.ridge.fit(feats[discard_steps:], target[discard_steps:])
+        self.last_y = y_flat[-max(22, self.window):]
+        return self
+
+    def predict(self, y_test, X_exog=None):
+        y_concat = np.concatenate([self.last_y, y_test.flatten()])
+        feats    = self._build_features(y_concat)  # shape (n_test, n_feat)
+        return self.ridge.predict(feats[-len(y_test):]).reshape(-1, 1)
+
 
 class ARModel:
     def __init__(self, lags=1):
@@ -162,8 +215,8 @@ class LSTMWrapper:
 # appending X inputs alongside y lags.
 
 class RCModel:
-    def __init__(self, in_size=1, ridge_alpha=1e-4):
-        self.esn = EchoStateNetwork(in_size=in_size, ridge_alpha=ridge_alpha)
+    def __init__(self, in_size=1, ridge_alpha=1e-4, seed=42):
+        self.esn = EchoStateNetwork(in_size=in_size, ridge_alpha=ridge_alpha, seed=seed)
         
     def fit(self, y_train, X_train=None):
         if X_train is not None:
