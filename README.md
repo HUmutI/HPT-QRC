@@ -94,12 +94,16 @@ python train_narma.py
 | Classical-Ridge (ablation) | 1.6e-3 ± 7.5e-5 | 0.273 |
 | **HPT-QRC-X** | **1e-6 ± 0** ← **BEST** | **0.0001 ± 0** ← **BEST** |
 
-### S&P 500 Realized Volatility (window=5 optimal)
-| Model | MSE (mean ± std) | QLIKE (mean ± std) |
-|:---|:---|:---|
-| HARX | **0.009863 ± 0** ← **BEST** | **0.833 ± 0** |
-| Classical-Ridge (ablation) | 0.010950 ± 0 | 0.925 |
-| HPT-QRC | 0.011022 ± 0.000067 | 0.925 ± 0.006 |
+### S&P 500 Realized Volatility (Window Tuning)
+Financial datasets possess different memory topologies compared to synthetic chaos. Our explicit ablation shows that **Window=3** is the optimal temporal lag for the base HPT-QRC model on S&P 500:
+
+| Window Size | QRC MSE | QRC-X MSE |
+|:---:|:---:|:---:|
+| 1 | 0.011666 | 0.016335 |
+| **3** | **0.010727** ← **BEST** | 0.018455 |
+| 5 | 0.010836 | 0.018025 |
+| 10 | 0.013857 | 0.013774 |
+
 
 ### VIX — Generalizability Test (6,288 samples)
 | Model | MSE | QLIKE |

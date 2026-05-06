@@ -1,0 +1,2 @@
+HPT-QRC Condition Number: 2.55e+08
+Classical ESN Condition Number: 1.05e+08

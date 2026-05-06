@@ -1,0 +1,4 @@
+Model,Trainable Parameters,Estimated FLOPs (Millions)
+Classical LSTM (100 Epochs),40800,720000.0
+Classical LSTM (10 Epochs),40800,72000.0
+HPT-QRC (Single Pass),91,48.6
