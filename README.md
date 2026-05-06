@@ -121,10 +121,16 @@ Financial datasets possess different memory topologies compared to synthetic cha
 > Photonic reservoir provides **50× better temporal memory** than classical ESN.
 
 ### Training Efficiency
-| Model | Training Time | Epochs |
-|:---|:---|:---|
-| LSTM | 685 ms | 100 (gradient descent) |
-| **HPT-QRC** | **914 ms** | **1 (closed-form, no gradients)** |
+> ⚠️ **Benchmark conditions:** Measured on NARMA10 (~800 training samples, 1 feature) on a standard CPU. Times will scale with dataset size and photon configuration.
+
+| Model | Training Time | Epochs | Notes |
+|:---|:---|:---|:---|
+| AR(3) | ~0.6 ms | N/A | Closed-form OLS |
+| HAR | ~2.4 ms | N/A | Closed-form OLS |
+| LSTM | ~685 ms | 100 | Gradient descent (BPTT) |
+| **HPT-QRC** | **~914 ms** | **N/A** | **Single closed-form Ridge solve — no gradient descent, no epochs, deterministic result** |
+
+The key advantage of HPT-QRC is not raw speed but **training paradigm**: no iterative optimisation, no hyperparameter sensitivity from learning rates or epochs, and a guaranteed global optimum from the closed-form Ridge solution. The full 5-seed × 3-dataset benchmark completes in under 1 minute on a standard CPU.
 
 ---
 
