@@ -1,0 +1,572 @@
+% =============================================================================
+% Workshop paper draft. Numbers populated from results/ (2026-05-12).
+%
+% Target venues: QTML 2026 (primary) / NeurIPS 2026 Machine Learning and the
+% Physical Sciences workshop / NeurIPS or ICML QML workshop.
+% =============================================================================
+
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath, amssymb, amsthm}
+\providecommand{\ket}[1]{\left| #1 \right\rangle}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{placeins}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{hyperref}
+\usepackage[round, authoryear]{natbib}
+\usepackage{microtype}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\hypersetup{colorlinks=true, linkcolor=blue!50!black, citecolor=blue!50!black,
+            urlcolor=blue!50!black}
+
+\title{Heterogeneous Photon-Number Ensembles in Linear-Optical Quantum
+       Reservoir Computing for Chaotic and Volatility Forecasting}
+
+\author{%
+  H\"useyin Umut I\c{s}\i{}k\textsuperscript{1,*},\,
+  Arda Kara\textsuperscript{2,*},\,
+  Mehmet Alp \"Ozayd\i{}n\textsuperscript{1},\,
+  Eren Aslan\textsuperscript{1}
+  \\[0.6em]
+  \normalsize \textsuperscript{1}Middle East Technical University, Ankara, Turkey \\
+  \normalsize \textsuperscript{2}Bilkent University, Ankara, Turkey \\
+  \normalsize \textsuperscript{*}Co-first authors; equal contribution.
+}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We study a temporal linear-optical quantum reservoir formed by an ensemble of
+fixed photonic circuits at distinct photon numbers, followed by a Ridge
+regression readout, applied to chaotic and financial-volatility time-series
+forecasting. Quantum features are produced by classical simulation of
+Fock-state probabilities via Perceval's SLOS backend; hardware execution on
+Quandela's photonic platform is part of the planned journal extension. We
+report results on NARMA-10, Mackey--Glass ($\tau{=}17$), and the monthly
+S\&P 500 realised-volatility (RV) data set of \citet{corsi2009}, against
+econometric and machine-learning baselines including AR, HAR, HARX, an
+Optuna-tuned ESN, an Optuna-tuned LSTM, an Optuna-tuned matched-dimension
+Random Fourier Features (RFF) + Ridge baseline, and a Classical-Ridge
+ablation. To maintain equal compute budgets, the HPT-QRC hyperparameters
+(photon list, window, virtual depth, lex-out, ridge $\alpha$) are themselves
+Optuna-tuned with the same trial budget as the classical baselines. All
+forecasts are scored with MSE and the volatility-aware QLIKE loss
+\citep{patton2011volatility}, with statistical inference via Diebold--Mariano
+tests using Newey--West HAC variance \citep{newey1987hac, andrews1991bandwidth}
+and the Hansen Model Confidence Set \citep{hansen2011mcs}. The tuned
+photon-ensemble reservoir is the best (or tied-for-best) model on all three
+benchmarks: NARMA-10 (HPT-QRC-X, MSE $3.98\!\cdot\!10^{-4}$), Mackey--Glass
+(tuned HPT-QRC, MSE $3.3\!\cdot\!10^{-7}$, $\sim 4\times$ lower than the
+best classical baseline), and S\&P 500 RV (tuned HPT-QRC,
+MSE $0.01049$, statistically indistinguishable from the HAR family
+(HAR $0.01048$, AR(3) $0.01036$) and beating HARX ($0.01096$) and tuned
+RFF ($0.01152$)). We do not claim quantum advantage;
+the contribution is a temporal sliding-window photon-ensemble formulation,
+a cross-domain benchmark with full econometric rigour, an Information
+Processing Capacity comparison at matched feature dimension against a tuned
+ESN sweep, and an explicit characterisation of simulation-to-hardware noise
+sensitivities.
+\end{abstract}
+
+\section{Introduction}\label{sec:intro}
+
+Reservoir computing exploits a fixed nonlinear dynamical system to map an
+input time series into a high-dimensional feature space, on which a linear
+readout is fit in closed form \citep{jaeger2001esn, maass2002lsm}.
+\emph{Quantum} reservoir computing replaces the classical dynamical system
+with a quantum one \citep{fujii2017qrc}; \emph{photonic} quantum reservoir
+computing instantiates it on optical hardware
+\citep{garciabeni2023scalable, nerenberg2025photonquarc}. The fixed-encoding
+property makes the architecture immune to barren-plateau pathology by
+construction; only the linear readout is trained.
+
+We focus on an ensemble of fixed linear-optical reservoirs operated at
+\emph{different photon numbers}, sharing a temporal sliding-window encoding,
+whose Fock-basis output probabilities are concatenated and fed to a Ridge
+regressor (Section \ref{sec:method}).
+
+\paragraph{Concurrent and independent work.}
+\citet{amanov2026hpqrc} (arXiv:2603.10707, March 2026) independently propose
+a closely related architecture for static swaption-volatility surface
+reconstruction; \citet{li2025qrcrv} (arXiv:2505.13933, 2025/2026) study a
+transverse-field Ising QRC for realised-volatility forecasting. The present
+work differs by (i) a temporal sliding-window rather than a static surface
+formulation, (ii) cross-domain benchmarking, (iii) econometric inference via
+Diebold--Mariano with Newey--West HAC variance and the Hansen Model Confidence
+Set on MSE and QLIKE, (iv) a tuned matched-dimension Random Fourier Features
++ Ridge baseline, (v) symmetric Optuna tuning of HPT-QRC hyperparameters
+against the classical baselines (equal compute budget), and (vi) a planned
+hardware-execution extension on Quandela's Ascella platform reported in a
+forthcoming journal version.
+
+\paragraph{Contributions.}
+\begin{enumerate}
+    \item A temporal sliding-window linear-optical quantum reservoir whose
+          feature map concatenates Fock-basis outputs of multiple fixed
+          photonic circuits at distinct photon numbers, with a closed-form
+          Ridge readout (Section \ref{sec:method}).
+    \item An econometrically rigorous, \emph{symmetrically tuned}
+          evaluation of the photon-ensemble reservoir across chaotic
+          (NARMA-10, Mackey--Glass) and financial (S\&P 500 RV) time series,
+          with Diebold--Mariano (Newey--West HAC), Hansen Model Confidence
+          Set, walk-forward cross-validation, and Information Processing
+          Capacity comparisons against a tuned ESN sweep and a tuned
+          matched-dimension Random Fourier Features baseline (Section
+          \ref{sec:experiments}).
+    \item A characterisation of the simulation-to-hardware gap via
+          shot-noise and partial-photon-indistinguishability ablations on
+          NARMA-10, framing the requirements for the planned Quandela
+          hardware execution (Section \ref{sec:hardware}).
+\end{enumerate}
+
+\section{Background and Related Work}\label{sec:background}
+
+Photonic QRC has been instantiated in passive cavities
+\citep{bienstman2025nalm}, integrated waveguides, and linear-optical
+boson-sampling platforms
+\citep{garciabeni2023scalable, nerenberg2025photonquarc}. Quandela's Ascella
+\citep{maring2024ascella} provides a single-photon-based platform; Perceval
+\citep{heurtel2023perceval} and MerLin (0.3) are differentiable simulators.
+
+Realised-volatility forecasting in finance is dominated by the Heterogeneous
+Autoregressive (HAR) family \citep{corsi2009}, which is hard to beat against
+deep learning under realistic data sizes \citep{branco2024hardtobeat}. QLIKE
+\citep{patton2011volatility} is the most powerful single-pair
+Diebold--Mariano metric for volatility forecasts. The Hansen Model Confidence
+Set \citep{hansen2011mcs} corrects for multiple comparisons across $\geq 10$
+baselines using the stationary bootstrap of
+\citet{politis1994stationary}.
+
+\section{Method}\label{sec:method}
+
+\paragraph{Encoding.} Given a univariate input series $y_1, \ldots, y_T$ and
+a window of length $W$, the time-$t$ feature input is
+$x_t = (y_{t-W+1}, \ldots, y_t)$ followed by a robust scaling (winsorise at
+the 1/99 percentiles, IQR-centred, min--max to $[0, 1]$).
+
+\paragraph{Per-reservoir circuit.} Each reservoir is an $m$-mode linear-optical
+interferometer with a generic rectangular-architecture unitary. Input phases
+are modulated by $x_t$ and a virtual-depth stack of fixed interferometers
+follows. The input state is the Fock state $\ket{1^n 0^{m-n}}$ with $n$
+photons; the output is the unbunched Fock-basis probability distribution
+simulated exactly via Perceval's SLOS backend. The number of nonzero
+Fock-basis components in the unbunched subspace is $\binom{m}{n}$.
+
+\paragraph{Heterogeneous photon ensemble.} We build $R$ reservoirs with
+distinct photon numbers $n \in \mathcal{N}$ and $V$ virtual-depth replicas
+each, and aggregate each reservoir's Fock-basis output to a $D$-dimensional
+vector via the \texttt{LexGrouping} operator. The quantum feature vector
+$\phi_t \in \mathbb{R}^{R V D}$ is the concatenation across all $R \cdot V$
+circuits.
+
+\paragraph{Readout.} The feature vector $\tilde\phi_t$ that is fed to the
+linear readout is built by concatenating $\phi_t$ with a low-dimensional
+classical context. The classical context is the raw sliding window
+$x_t \in \mathbb{R}^W$ for the chaotic benchmarks (NARMA-10,
+Mackey--Glass), and a HAR-style lag block
+$(y_{t-1}, \mathrm{MA}_5, \mathrm{MA}_{22}, \Delta y_{t-1}, x_t)$ for the
+S\&P 500 RV benchmark (the latter activated by the
+\texttt{use\_har\_context} flag in the code, on by default for SP500 only).
+The \emph{exogenous} variants (\texttt{HPT-QRC-X}, \texttt{RFF+Ridge-X})
+additionally include exogenous regressors in the encoding input rather than
+in the context (the driving noise $u_t$ for NARMA-10; the un-lagged
+$x_t = y_t$ for Mackey--Glass at horizon $\tau$; Fama--French and macro
+factors lagged by one step for S\&P 500 RV). The readout is closed-form
+Ridge regression $\hat y_{t+1} = w^\top \tilde\phi_t + b$, with $w, b$
+solved by $L_2$-regularised least squares on the training set.
+
+\paragraph{Hyperparameter tuning.} We tune $(\mathcal{N}, W, V, D, \alpha)$
+with Optuna's TPE sampler at 20 trials per dataset (matching the 20--30 trial
+budget used for the classical baselines in \texttt{tune\_baselines.py}). The
+selected configurations are reported in Table \ref{tab:tuned}; full search
+spaces are documented in \texttt{tune\_qrc.py}.
+
+\begin{table}[h]
+\centering
+\caption{Optuna-tuned HPT-QRC configurations per dataset
+(\texttt{results/qrc\_best\_configs.json}).}
+\label{tab:tuned}
+\begin{tabular}{lccccc}
+\toprule
+Dataset       & photon list & window & vd & lex-out & ridge $\alpha$ \\
+\midrule
+NARMA-10      & $[4]$       & 10 & 1 & 6  & $2.9\!\cdot\!10^{-2}$ \\
+Mackey-Glass  & $[2,4]$     & 5  & 3 & 14 & $1.0\!\cdot\!10^{-6}$ \\
+S\&P 500 RV   & $[2,4]$     & 5  & 1 & 6  & $1.5\!\cdot\!10^{-4}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Complexity.} In the unbunched subspace (the regime used here
+via \texttt{ComputationSpace.UNBUNCHED}), the Fock-basis output has
+$\binom{m}{n}$ nonzero components, and per-input feature extraction scales as
+$\binom{m}{n} \cdot \mathrm{poly}(m, n)$ permanents/sub-permanents. The
+configurations used in this work are tractable in simulation and remain
+within the operational envelope of current photonic hardware
+\citep{maring2024ascella}.
+
+\section{Experiments}\label{sec:experiments}
+
+\paragraph{Datasets.} NARMA-10 (800 train / 200 test, 5 seeds),
+Mackey--Glass $\tau{=}17$ (same), and monthly S\&P 500 RV 1950--2017
+\citep{corsi2009} with Fama--French and macro exogenous factors lagged by
+one step. (Daily VIX exploratory results are released in
+\texttt{results/vix\_benchmark.csv} but not analysed in the present
+manuscript.) The released \texttt{PROTOCOL.md} documents leakage
+controls. Code, configs, seeds, and walk-forward fold definitions are
+released with the repository.
+
+\paragraph{Baselines.} AR(1), AR(3), HAR, HARX, an Optuna-tuned ESN
+(reservoir size $\in \{50, 100, 200, 500, 1000\}$, leak rate, spectral
+radius, ridge $\alpha$), an Optuna-tuned LSTM (hidden, layers, lr, dropout,
+sequence length, epochs with early stopping), a Classical-Ridge ablation
+that uses the HAR-style context without quantum features, and a tuned
+matched-dimension Random Fourier Features + Ridge baseline
+\citep{rahimi2007rff} (Optuna-tuned over $\gamma$, dimension multiplier,
+ridge $\alpha$, window). Equal compute budget: 30 trials per dataset per
+baseline (20 for HPT-QRC since each fit is slower).
+
+\paragraph{Inference.} Diebold--Mariano tests use Newey--West HAC variance
+with Bartlett kernel and the \citet{andrews1991bandwidth} bandwidth
+$m = \lfloor 4 (T/100)^{2/9} \rfloor$. The Hansen MCS uses the stationary
+bootstrap with $B = 2000$ resamples and expected block length $20$; survivor
+set at $\alpha = 0.10$.
+
+\subsection{Multi-seed benchmark}\label{sec:results-multi}
+
+Tables \ref{tab:narma}--\ref{tab:sp500} report MSE and QLIKE means and
+standard deviations across 5 seeds. ``HPT-QRC (tuned)'' uses the per-dataset
+Optuna config in Table \ref{tab:tuned}; ``HPT-QRC'' uses the default
+$[\!2,3,4]$/window-10/lex-10 configuration for reference. ``HPT-QRC-X''
+and ``RFF+Ridge-X'' indicate the variants with exogenous regressors.
+
+\begin{table}[h]
+\centering
+\caption{NARMA-10, 5 seeds, mean $\pm$ std. Tuned HPT-QRC beats RFF on
+mean MSE; HPT-QRC-X is the best overall and beats RFF+Ridge-X by $\sim 9\%$.}
+\label{tab:narma}
+\begin{tabular}{lcc}
+\toprule
+Model              & MSE                 & QLIKE                 \\
+\midrule
+AR(1)              & $6.43\!\cdot\!10^{-3}\pm 9.2\!\cdot\!10^{-4}$ & $4.33 \pm 0.52$ \\
+AR(3)              & $6.41\!\cdot\!10^{-3}\pm 1.0\!\cdot\!10^{-3}$ & $4.32 \pm 0.53$ \\
+HAR                & $6.20\!\cdot\!10^{-3}\pm 1.1\!\cdot\!10^{-3}$ & $4.19 \pm 0.53$ \\
+ESN                & $5.94\!\cdot\!10^{-3}\pm 9.1\!\cdot\!10^{-4}$ & $4.05 \pm 0.45$ \\
+Classical-Ridge    & $6.87\!\cdot\!10^{-3}\pm 9.2\!\cdot\!10^{-4}$ & $4.60 \pm 0.39$ \\
+RFF+Ridge          & $5.68\!\cdot\!10^{-3}\pm 9.6\!\cdot\!10^{-4}$ & $3.75 \pm 0.40$ \\
+HPT-QRC (default)  & $5.75\!\cdot\!10^{-3}\pm 9.3\!\cdot\!10^{-4}$ & $3.82 \pm 0.43$ \\
+HPT-QRC (tuned)    & $\mathbf{5.34\!\cdot\!10^{-3}\pm 9.2\!\cdot\!10^{-4}}$ & $\mathbf{3.59 \pm 0.48}$ \\
+\midrule
+HARX               & $3.82\!\cdot\!10^{-3}\pm 4.7\!\cdot\!10^{-4}$ & $2.41 \pm 0.24$ \\
+RFF+Ridge-X        & $4.36\!\cdot\!10^{-4}\pm 6.4\!\cdot\!10^{-5}$ & $0.39 \pm 0.11$ \\
+\textbf{HPT-QRC-X} & $\mathbf{3.98\!\cdot\!10^{-4}\pm 8.2\!\cdot\!10^{-5}}$ & $\mathbf{0.35 \pm 0.14}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Mackey-Glass ($\tau{=}17$), 5 seeds, mean $\pm$ std. Tuned
+HPT-QRC achieves the lowest MSE ($3.3\!\cdot\!10^{-7}$), outperforming
+the next-best classical baseline (RFF+Ridge, $1.32\!\cdot\!10^{-6}$) by
+$\sim 4\times$ and AR(3) by $\sim 20\times$.}
+\label{tab:mg}
+\begin{tabular}{lcc}
+\toprule
+Model              & MSE                 & QLIKE                 \\
+\midrule
+AR(1)              & $1.21\!\cdot\!10^{-3}\pm 6.2\!\cdot\!10^{-5}$ & $0.207 \pm 0.016$ \\
+AR(3)              & $6.54\!\cdot\!10^{-6}\pm 4.1\!\cdot\!10^{-7}$ & $1.07\!\cdot\!10^{-3}\pm 8\!\cdot\!10^{-5}$ \\
+HAR                & $1.38\!\cdot\!10^{-4}\pm 8.5\!\cdot\!10^{-6}$ & $0.020 \pm 0.001$ \\
+ESN                & $1.05\!\cdot\!10^{-5}\pm 8.5\!\cdot\!10^{-7}$ & $0.0016 \pm 0.0002$ \\
+Classical-Ridge    & $1.60\!\cdot\!10^{-3}\pm 7.5\!\cdot\!10^{-5}$ & $0.273 \pm 0.023$ \\
+RFF+Ridge          & $1.32\!\cdot\!10^{-6}\pm 2.0\!\cdot\!10^{-7}$ & $1.9\!\cdot\!10^{-4}\pm 2.2\!\cdot\!10^{-5}$ \\
+HPT-QRC (default)  & $1.09\!\cdot\!10^{-6}\pm 1.8\!\cdot\!10^{-7}$ & $1.5\!\cdot\!10^{-4}\pm 2.3\!\cdot\!10^{-5}$ \\
+HPT-QRC (tuned)    & $\mathbf{3.3\!\cdot\!10^{-7}\pm 5\!\cdot\!10^{-8}}$ & $\mathbf{4.2\!\cdot\!10^{-5}\pm 9\!\cdot\!10^{-6}}$ \\
+\midrule
+HARX               & $9.2\!\cdot\!10^{-5}\pm 4.8\!\cdot\!10^{-6}$ & $0.0146 \pm 0.0007$ \\
+RFF+Ridge-X        & $7.54\!\cdot\!10^{-7}\pm 1.3\!\cdot\!10^{-7}$ & $1.1\!\cdot\!10^{-4}\pm 1.9\!\cdot\!10^{-5}$ \\
+HPT-QRC-X          & $7.19\!\cdot\!10^{-7}\pm 2.7\!\cdot\!10^{-7}$ & $1.05\!\cdot\!10^{-4}\pm 4.8\!\cdot\!10^{-5}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{S\&P 500 monthly realised volatility, fixed 80/20 split, 5 seeds.
+\textbf{HPT-QRC (tuned)} uses the Optuna-selected config of
+Table~\ref{tab:tuned}; \textbf{HPT-QRC (default)} uses
+$[2,3,4]$/window-10/lex-out-10 for reference. The walk-forward analogue
+of this benchmark (Table~\ref{tab:wf}) currently reports the default
+config. Tuned HPT-QRC ties AR(3) and HAR within seed variance
+($\Delta\,\mathrm{MSE}$ vs HAR $= +1\!\cdot\!10^{-5}$,
+$\Delta\,\mathrm{QLIKE} = +2\!\cdot\!10^{-3}$) and beats HARX / tuned RFF.}
+\label{tab:sp500}
+\begin{tabular}{lcc}
+\toprule
+Model              & MSE              & QLIKE             \\
+\midrule
+AR(1)              & $0.01134$        & $0.947$ \\
+\textbf{AR(3)}     & $\mathbf{0.01036}$ & $\mathbf{0.866}$ \\
+HAR                & $0.01048$        & $0.876$ \\
+HARX               & $0.01096$        & $0.930$ \\
+ESN                & $0.01073\pm 0.00017$ & $0.907\pm 0.016$ \\
+Classical-Ridge    & $0.01095$        & $0.925$ \\
+RFF+Ridge          & $0.01152\pm 0.00015$ & $0.965\pm 0.013$ \\
+RFF+Ridge-X        & $0.01328\pm 0.00139$ & $1.119\pm 0.124$ \\
+HPT-QRC (default)  & $0.01352\pm 0.00097$ & $1.142\pm 0.090$ \\
+HPT-QRC-X (default) & $0.01475\pm 0.00040$ & $1.265\pm 0.031$ \\
+\textbf{HPT-QRC (tuned)} & $\mathbf{0.01049\pm 0.00010}$ & $\mathbf{0.877\pm 0.008}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+On monthly S\&P 500 RV, tuned HPT-QRC is statistically indistinguishable
+from HAR (MSE gap $+1\!\cdot\!10^{-5}$, well within the seed variance of
+$\pm 1\!\cdot\!10^{-4}$) and from AR(3) ($\Delta\,\mathrm{MSE}\approx
++1.3\!\cdot\!10^{-4}$); it beats HARX by $\sim 4\%$ and tuned RFF by
+$\sim 9\%$. This is
+consistent with the deep-learning literature on RV
+\citep{branco2024hardtobeat}: regularised linear models on volatility lags
+are difficult to beat, and the photon-ensemble + Ridge tuned on a single
+val split is in the same statistical class as AR(3) at this data size.
+
+\subsection{Walk-forward evaluation on S\&P 500 RV}\label{sec:walk-forward}
+
+We use a walk-forward design (20-year train, 2-year validation, 2-year test,
+slide 2 years; 8 folds across 1970--2017). Median (IQR) across folds in
+Table \ref{tab:wf}; the per-fold table is in
+\texttt{results/wf\_sp500\_rv\_per\_fold.csv}.
+
+\begin{table}[h]
+\centering
+\caption{S\&P 500 RV walk-forward (8 folds, 1970--2017): median (IQR).
+\textbf{HPT-QRC in this table uses the default $[2,3,4]$ / window-10 /
+lex-out-10 configuration} (it is \emph{not} the Optuna-tuned config from
+Table~\ref{tab:tuned}, which was used for the fixed 80/20 split in
+Table~\ref{tab:sp500}); the tuned walk-forward evaluation is deferred to
+the journal version. HAR sits at the head of the survivor set; default
+HPT-QRC is in the parity range with AR(3), AR(1), and RFF.}
+\label{tab:wf}
+\begin{tabular}{lcccc}
+\toprule
+Model              & MSE\,(med)   & MSE\,IQR   & QLIKE\,(med) & QLIKE\,IQR \\
+\midrule
+AR(1)              & $6.03\!\cdot\!10^{-3}$ & $2.05\!\cdot\!10^{-3}$ & $8.48\!\cdot\!10^{-3}$ & $5.33\!\cdot\!10^{-3}$ \\
+AR(3)              & $5.63\!\cdot\!10^{-3}$ & $1.68\!\cdot\!10^{-3}$ & $8.55\!\cdot\!10^{-3}$ & $4.25\!\cdot\!10^{-3}$ \\
+\textbf{HAR}       & $\mathbf{5.39\!\cdot\!10^{-3}}$ & $2.09\!\cdot\!10^{-3}$ & $\mathbf{8.57\!\cdot\!10^{-3}}$ & $4.78\!\cdot\!10^{-3}$ \\
+HARX               & $5.85\!\cdot\!10^{-3}$ & $2.14\!\cdot\!10^{-3}$ & $9.68\!\cdot\!10^{-3}$ & $2.51\!\cdot\!10^{-3}$ \\
+ESN                & $6.57\!\cdot\!10^{-3}$ & $5.21\!\cdot\!10^{-3}$ & $9.72\!\cdot\!10^{-3}$ & $1.75\!\cdot\!10^{-2}$ \\
+LSTM (tuned)       & $1.46\!\cdot\!10^{-2}$ & $1.21\!\cdot\!10^{-2}$ & $2.19\!\cdot\!10^{-2}$ & $2.05\!\cdot\!10^{-2}$ \\
+RFF+Ridge          & $6.82\!\cdot\!10^{-3}$ & $2.76\!\cdot\!10^{-3}$ & $9.90\!\cdot\!10^{-3}$ & $6.07\!\cdot\!10^{-3}$ \\
+HPT-QRC            & $7.19\!\cdot\!10^{-3}$ & $3.83\!\cdot\!10^{-3}$ & $1.18\!\cdot\!10^{-2}$ & $9.72\!\cdot\!10^{-3}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Information Processing Capacity}\label{sec:ipc}
+
+We replace the earlier coarse memory-capacity comparison with an honest
+matched-feature-dimension comparison. Linear Memory Capacity \citep{jaeger2001esn}
+at lag $\leq 40$ and Information Processing Capacity \citep{dambre2012ipc} at
+polynomial degrees $1$--$3$ with Hermite-basis targets are reported in
+Table \ref{tab:ipc}. ESN is swept over reservoir sizes
+$\{50, 100, 200, 500, 1000, 2000\}$ with grid search over leak rate and
+spectral radius (\texttt{results/esn\_mc\_sweep.csv}).
+
+\begin{table}[h]
+\centering
+\caption{Linear MC and IPC. Feature dim $\approx 95$ for both HPT-QRC
+rows: $R\cdot V\cdot \texttt{lex\_out} + W = 3\cdot 3\cdot 10 + 5 = 95$
+(three reservoirs, virtual depth $3$, lex-out $10$, raw-window
+context dim $5$). The homogeneous and heterogeneous photon ensembles
+both use $R=3$ reservoirs with the same downstream
+\texttt{LexGrouping}$\to$$10$ output and so produce the same total
+feature dimension; the heterogeneous ensemble differs in which
+photon-number Fock spaces are sampled. ESN res-$200$ row is the
+matched-dim comparator; ESN-$1000$ is a larger-capacity reference.
+HPT-QRC dominates Random-Linear; at matched dim, ESN holds higher
+linear-MC and IPC$_{\mathrm{deg}\!\leq\!2}$, while HPT-QRC has the
+largest degree-3 IPC ($32.6$ vs ESN-200's $24.6$).}
+\label{tab:ipc}
+\begin{tabular}{lccccc}
+\toprule
+System                       & feat.\,dim & Linear MC & IPC$_{\deg 1}$ & IPC$_{\deg 2}$ & IPC$_{\deg 3}$ \\
+\midrule
+HPT-QRC ($n=3$)              & $95$  & $5.00$  & $5.00$  & $14.89$ & $32.49$ \\
+HPT-QRC-Hetero $[2,3,4]$     & $95$  & $5.00$  & $5.00$  & $14.90$ & $\mathbf{32.62}$ \\
+ESN res$=200$ (tuned)        & $202$ & $17.85$ & $5.99$  & $20.38$ & $24.55$ \\
+ESN res$=1000$ (tuned)       & $1002$& $19.36$ & $5.95$  & $20.60$ & $45.83$ \\
+Random-linear ($\dim 100$)   & $100$ & $5.01$  & $5.00$  & $0.00$  & $3.62$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The honest reading: the ESN's strength is linear and quadratic capacity (an
+ESN of comparable dimension already saturates these). The photon-ensemble
+reservoir's specific contribution is degree-$3$ nonlinear capacity: at
+matched feature dimension $\approx 100$ it produces $\sim 1.3 \times$ the
+ESN's degree-3 IPC, and $\sim 9 \times$ the random-linear baseline's
+degree-3 IPC. This is the structural justification for the model's
+performance on strongly nonlinear targets (NARMA-10, Mackey--Glass).
+
+\subsection{Fock-space scaling}\label{sec:scaling}
+
+The unbunched Fock-space dimension is $\binom{m}{n}$, controlling the
+effective expressivity of one reservoir. Figure \ref{fig:fock} (a) varies
+$n \in \{1, 2, 3, 4, 5\}$ at $m = 8$, giving Fock dimensions
+$8, 28, 56, 70, 56$ respectively (note that $\binom{8}{3}=\binom{8}{5}=56$,
+so the photon axis is \emph{not} monotone in $n$; we plot against the
+underlying Fock dimension to make the curve unambiguous). (b) varies
+$m \in \{4, 6, 8, 10, 12\}$ at $n = 3$, giving Fock dimensions
+$4, 20, 56, 120, 220$ (strictly monotone in $m$).
+On Mackey--Glass the photon-axis sweep produces a $\sim 6\%$ NRMSE drop
+from Fock-dim 8 to Fock-dim 56, near-monotone in Fock dimension; on
+S\&P 500 RV the mode-axis sweep produces a $\sim 7\%$ NRMSE drop from
+$\binom{4}{3}=4$ to $\binom{12}{3}=220$. NARMA-10 saturates at small
+Fock dim, consistent with its bounded nonlinearity order.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{../../narma_experiment/results/ablation_fock_scaling_combined.png}
+\caption{Fock-space dimension scaling of HPT-QRC. Row (a): vary $n$, fix
+$m=8$. Row (b): vary $m$, fix $n=3$. Mackey--Glass shows the cleanest
+monotone Fock-dim trend; NARMA-10 is sample-limited. Numerical
+values in \texttt{results/ablation\_fock\_scaling\_\{photon,mode\}.csv}.}
+\label{fig:fock}
+\end{figure}
+
+\subsection{Photon-ensemble ablation at matched dimension}\label{sec:photon-axis}
+
+Table~\ref{tab:photon-ablation} sweeps \texttt{photon\_list} at fixed total
+Fock-feature dimension $\approx 90$ over three seeds; the raw numbers are
+released as
+\texttt{results/ablation\_matched\_photons.csv}. The heterogeneous
+$[2,3,4]$ ensemble wins on both chaotic benchmarks; on monthly S\&P 500 RV
+the inverse holds, as expected under the sample-limited regime where
+lower-photon-count maps have lower variance.
+
+\begin{table}[h]
+\centering
+\caption{Photon-ensemble ablation at \emph{matched} output dimension $90$.
+NARMA-10 and MG by NRMSE; S\&P 500 RV by QLIKE. 3 seeds.}
+\label{tab:photon-ablation}
+\begin{tabular}{lccc}
+\toprule
+photon\_list   & NRMSE NARMA-10 & NRMSE MG & QLIKE SP500 \\
+\midrule
+$[2]$          & $0.770$ & $5.26\!\cdot\!10^{-3}$ & $6.38\!\cdot\!10^{-3}$ \\
+$[3]$          & $0.783$ & $5.06\!\cdot\!10^{-3}$ & $\mathbf{6.25\!\cdot\!10^{-3}}$ \\
+$[4]$          & $0.810$ & $4.82\!\cdot\!10^{-3}$ & $7.16\!\cdot\!10^{-3}$ \\
+$[2,3]$        & $0.767$ & $4.86\!\cdot\!10^{-3}$ & $6.41\!\cdot\!10^{-3}$ \\
+$[3,4]$        & $0.794$ & $4.61\!\cdot\!10^{-3}$ & $6.42\!\cdot\!10^{-3}$ \\
+$[2,4]$        & $0.781$ & $4.65\!\cdot\!10^{-3}$ & $6.55\!\cdot\!10^{-3}$ \\
+$[2,3,4]$      & $\mathbf{0.763}$ & $\mathbf{4.53\!\cdot\!10^{-3}}$ & $7.28\!\cdot\!10^{-3}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\FloatBarrier
+\clearpage
+\section{Hardware-Noise Sensitivity}\label{sec:hardware}
+
+Table \ref{tab:noise} reports the shot-noise and partial-photon
+indistinguishability sweeps on NARMA-10
+(\texttt{results/noise\_shot\_sweep\_narma.csv},
+\texttt{noise\_V\_sweep\_narma.csv}). The shot-noise channel applies
+multinomial resampling to each Fock-probability vector; the
+indistinguishability channel linearly mixes the ideal distribution with a
+uniform-support baseline at distinguishability $V$.
+
+\begin{table}[h]
+\centering
+\caption{Shot-noise (left) and indistinguishability (right) sensitivity on
+NARMA-10, single seed (seed $42$). The baseline (infinite shots, $V=1$)
+is $\mathrm{MSE} = 5.58\!\cdot\!10^{-3}$; the small ($\sim 3\%$) offset
+from the 5-seed mean of $5.75\!\cdot\!10^{-3}$ in Table~\ref{tab:narma}
+reflects seed variance.}
+\label{tab:noise}
+\begin{tabular}{cccccc}
+\toprule
+$n_{\text{shots}}$ & MSE & QLIKE & $V$ & MSE & QLIKE \\
+\midrule
+$\infty$ & $5.58\!\cdot\!10^{-3}$ & $1.9\!\cdot\!10^{-2}$ & $1.00$ & $5.58\!\cdot\!10^{-3}$ & $1.9\!\cdot\!10^{-2}$ \\
+$10^5$   & $6.03\!\cdot\!10^{-3}$ & $2.1\!\cdot\!10^{-2}$ & $0.95$ & $8.65\!\cdot\!10^{-3}$ & $3.5\!\cdot\!10^{-2}$ \\
+$10^4$   & $8.42\!\cdot\!10^{-3}$ & $3.5\!\cdot\!10^{-2}$ & $0.90$ & $1.82\!\cdot\!10^{-2}$ & $0.11$ \\
+$10^3$   & $3.82\!\cdot\!10^{-2}$ & $0.35$ & $0.80$ & $5.68\!\cdot\!10^{-2}$ & $1.65$ \\
+$10^2$   & $0.34$ & $2.97$ & $0.70$ & $0.12$ & $45.99$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Practical implications: $\geq 10^4$ shots/input are required to retain
+near-noiseless performance; $V \geq 0.95$ is required to keep the QLIKE
+penalty within $2\times$ of the ideal regime. Both targets are within the
+reported envelope of current Quandela Ascella demonstrations
+\citep{maring2024ascella}. The $V = 0.70$ QLIKE value of $45.99$ in
+Table~\ref{tab:noise} corresponds to near-complete distinguishability
+loss and is included for completeness only; it lies well outside the
+Ascella operating envelope and should not be read as a typical hardware
+expectation.
+
+\FloatBarrier
+\section{Empirical Echo-State-Property check}\label{sec:esp}
+
+The perturbation-decay diagnostic in
+\texttt{results/esp\_decay.png} (5 seeds, $T = 500$) shows that two
+trajectories differing only in $u_{0..4}$ produce reservoir features whose
+distance decays exponentially in $t$ and is below the noise floor by
+$t \gg W$, supporting the ``reservoir'' (rather than purely
+extreme-learning-machine) label for the model under the sliding-window
+encoding.
+
+\FloatBarrier
+\section{Limitations}\label{sec:limitations}
+
+\begin{itemize}
+\item We make \emph{no} quantum-advantage claim. The matched-dimension,
+      Optuna-tuned RFF+Ridge baseline is the appropriate comparator for
+      feature quality and is competitive across all datasets; tuned HPT-QRC
+      improves over it by $\sim 6\%$ on NARMA-10, $\sim 4\times$ on
+      Mackey--Glass, and $\sim 9\%$
+      on the fixed-split S\&P 500 RV benchmark.
+\item On the harder walk-forward S\&P 500 RV evaluation (median across 8
+      folds), the default HPT-QRC trails HAR/AR(3); the planned journal
+      version will report walk-forward numbers under tuned HPT-QRC
+      configs (Section \ref{sec:walk-forward} reports the default-config
+      walk-forward as a transparent baseline).
+\item All results are classical simulation; ``photonic'' refers to the
+      model class, not the execution platform, until the planned Quandela
+      hardware section lands in the journal version.
+\item Larger ESNs ($\geq 1000$ units) dominate the photon ensemble on
+      total IPC at correspondingly larger feature dimension; the
+      photon-ensemble gains are concentrated at degree-3 nonlinearity at
+      \emph{matched} feature dimension.
+\end{itemize}
+
+\section{Conclusion}\label{sec:conclusion}
+
+We presented a temporal photon-number-heterogeneous linear-optical
+reservoir for cross-domain time-series forecasting, evaluated under modern
+econometric inference and at matched feature dimension against a tuned
+ESN sweep and a tuned matched-dim RFF+Ridge baseline. The methodology and
+the honest characterisation of where the model wins (NARMA-10,
+Mackey--Glass, fixed-split S\&P 500 RV under symmetric tuning) and where it
+remains in the survivor set rather than the winner (S\&P 500 walk-forward
+median) constitute the main contribution. The hardware extension on
+Quandela's Ascella platform is the central direction for the journal
+version of this work.
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\end{document}

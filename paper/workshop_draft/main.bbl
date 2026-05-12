@@ -1,0 +1,120 @@
+\begin{thebibliography}{19}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Amanov and Azamov(2026)]{amanov2026hpqrc}
+A.~Amanov and K.~Azamov.
+\newblock Hybrid photonic quantum reservoir computing for high-dimensional
+  financial surface prediction.
+\newblock \emph{arXiv preprint arXiv:2603.10707}, 2026.
+
+\bibitem[Andrews(1991)]{andrews1991bandwidth}
+Donald W.~K. Andrews.
+\newblock Heteroskedasticity and autocorrelation consistent covariance matrix
+  estimation.
+\newblock \emph{Econometrica}, 59\penalty0 (3):\penalty0 817--858, 1991.
+
+\bibitem[Bienstman et~al.(2025)]{bienstman2025nalm}
+P.~Bienstman et~al.
+\newblock Passive photonic reservoir computing in a nalm cavity.
+\newblock \emph{Nature Communications}, 2025.
+
+\bibitem[Branco et~al.(2024)]{branco2024hardtobeat}
+A.~Branco et~al.
+\newblock Hard to beat: The overlooked impact of rolling windows in the era of
+  machine learning.
+\newblock \emph{Journal of Forecasting}, 43\penalty0 (5):\penalty0 1247--1273,
+  2024.
+
+\bibitem[Corsi(2009)]{corsi2009}
+Fulvio Corsi.
+\newblock A simple approximate long-memory model of realized volatility.
+\newblock \emph{Journal of Financial Econometrics}, 7\penalty0 (2):\penalty0
+  174--196, 2009.
+
+\bibitem[Dambre et~al.(2012)Dambre, Verstraeten, Schrauwen, and
+  Massar]{dambre2012ipc}
+Joni Dambre, David Verstraeten, Benjamin Schrauwen, and Serge Massar.
+\newblock Information processing capacity of dynamical systems.
+\newblock \emph{Scientific Reports}, 2:\penalty0 514, 2012.
+
+\bibitem[Fujii and Nakajima(2017)]{fujii2017qrc}
+Keisuke Fujii and Kohei Nakajima.
+\newblock Harnessing disordered-ensemble quantum dynamics for machine learning.
+\newblock \emph{Physical Review Applied}, 8\penalty0 (2):\penalty0 024030,
+  2017.
+
+\bibitem[Garc{\'\i}a-Beni et~al.(2023)]{garciabeni2023scalable}
+Jorge Garc{\'\i}a-Beni et~al.
+\newblock Scalable photonic platform for quantum reservoir computing.
+\newblock \emph{Physical Review Applied}, 20\penalty0 (1):\penalty0 014024,
+  2023.
+
+\bibitem[Hansen et~al.(2011)Hansen, Lunde, and Nason]{hansen2011mcs}
+Peter~Reinhard Hansen, Asger Lunde, and James~M. Nason.
+\newblock The model confidence set.
+\newblock \emph{Econometrica}, 79\penalty0 (2):\penalty0 453--497, 2011.
+
+\bibitem[Heurtel et~al.(2023)]{heurtel2023perceval}
+N.~Heurtel et~al.
+\newblock Perceval: a software platform for discrete variable photonic quantum
+  computing.
+\newblock \emph{Quantum}, 2023.
+
+\bibitem[Jaeger(2001)]{jaeger2001esn}
+Herbert Jaeger.
+\newblock The "echo state" approach to analysing and training recurrent neural
+  networks.
+\newblock \emph{GMD Report 148, German National Research Center for Information
+  Technology}, 2001.
+
+\bibitem[Li et~al.(2025)Li, Mukhopadhyay, Bayat, and Habibnia]{li2025qrcrv}
+X.~Li, R.~Mukhopadhyay, A.~Bayat, and A.~Habibnia.
+\newblock Quantum reservoir computing for realized volatility forecasting.
+\newblock \emph{arXiv preprint arXiv:2505.13933}, 2025.
+
+\bibitem[Maass et~al.(2002)Maass, Natschl{\"a}ger, and Markram]{maass2002lsm}
+Wolfgang Maass, Thomas Natschl{\"a}ger, and Henry Markram.
+\newblock Real-time computing without stable states: A new framework for neural
+  computation based on perturbations.
+\newblock \emph{Neural Computation}, 14\penalty0 (11):\penalty0 2531--2560,
+  2002.
+
+\bibitem[Maring et~al.(2024)]{maring2024ascella}
+N.~Maring et~al.
+\newblock A versatile single-photon-based quantum computing platform.
+\newblock \emph{Nature Photonics}, 2024.
+
+\bibitem[Nerenberg et~al.(2025)]{nerenberg2025photonquarc}
+S.~Nerenberg et~al.
+\newblock Photon-quarc: photon-number-resolving quantum reservoir computing in
+  linear optics.
+\newblock \emph{Optica}, 2025.
+
+\bibitem[Newey and West(1987)]{newey1987hac}
+Whitney~K. Newey and Kenneth~D. West.
+\newblock A simple, positive semi-definite, heteroskedasticity and
+  autocorrelation consistent covariance matrix.
+\newblock \emph{Econometrica}, 55\penalty0 (3):\penalty0 703--708, 1987.
+
+\bibitem[Patton(2011)]{patton2011volatility}
+Andrew~J. Patton.
+\newblock Volatility forecast comparison using imperfect volatility proxies.
+\newblock \emph{Journal of Econometrics}, 160\penalty0 (1):\penalty0 246--256,
+  2011.
+
+\bibitem[Politis and Romano(1994)]{politis1994stationary}
+Dimitris~N. Politis and Joseph~P. Romano.
+\newblock The stationary bootstrap.
+\newblock \emph{Journal of the American Statistical Association}, 89\penalty0
+  (428):\penalty0 1303--1313, 1994.
+
+\bibitem[Rahimi and Recht(2007)]{rahimi2007rff}
+Ali Rahimi and Benjamin Recht.
+\newblock Random features for large-scale kernel machines.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2007.
+
+\end{thebibliography}
