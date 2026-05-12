@@ -157,20 +157,35 @@ class HARXModel(HARModel):
 # --- Deep Learning (LSTM) ---
 
 class SimpleLSTM(nn.Module):
-    def __init__(self, input_dim, hidden_dim=64):
+    def __init__(self, input_dim, hidden_dim=64, num_layers=1, dropout=0.0):
         super().__init__()
-        self.lstm = nn.LSTM(input_dim, hidden_dim, batch_first=True)
+        self.lstm = nn.LSTM(
+            input_dim, hidden_dim,
+            num_layers=num_layers,
+            dropout=dropout if num_layers > 1 else 0.0,
+            batch_first=True,
+        )
         self.linear = nn.Linear(hidden_dim, 1)
-        
+
     def forward(self, x):
         lstm_out, _ = self.lstm(x)
         return self.linear(lstm_out[:, -1, :])
 
 class LSTMWrapper:
-    def __init__(self, input_dim=1, seq_length=5, epochs=50, lr=0.01):
+    def __init__(self, input_dim=1, seq_length=5, epochs=50, lr=0.01,
+                 hidden_dim=64, num_layers=1, dropout=0.0,
+                 val_frac: float = 0.0, patience: int = 10):
+        """If `val_frac > 0`, holds out the last `val_frac` of training data as
+        a validation set and applies early-stopping with `patience` epochs."""
         self.seq_length = seq_length
         self.epochs = epochs
-        self.model = SimpleLSTM(input_dim=input_dim)
+        self.val_frac = val_frac
+        self.patience = patience
+        self.input_dim = input_dim
+        self.model = SimpleLSTM(input_dim=input_dim,
+                                 hidden_dim=hidden_dim,
+                                 num_layers=num_layers,
+                                 dropout=dropout)
         self.criterion = nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
         
@@ -188,15 +203,43 @@ class LSTMWrapper:
         X_seq, y_seq = self._create_sequences(train_data, y_train)
         X_t = torch.tensor(X_seq, dtype=torch.float32)
         y_t = torch.tensor(y_seq, dtype=torch.float32).view(-1, 1)
-        
-        self.model.train()
-        for epoch in range(self.epochs):
-            self.optimizer.zero_grad()
-            out = self.model(X_t)
-            loss = self.criterion(out, y_t)
-            loss.backward()
-            self.optimizer.step()
-            
+
+        if self.val_frac > 0 and len(X_t) > 20:
+            n_val = max(5, int(len(X_t) * self.val_frac))
+            X_tr, y_tr = X_t[:-n_val], y_t[:-n_val]
+            X_va, y_va = X_t[-n_val:], y_t[-n_val:]
+            best_val = float("inf")
+            best_state = None
+            patience_left = self.patience
+            for epoch in range(self.epochs):
+                self.model.train()
+                self.optimizer.zero_grad()
+                out = self.model(X_tr)
+                loss = self.criterion(out, y_tr)
+                loss.backward()
+                self.optimizer.step()
+                self.model.eval()
+                with torch.no_grad():
+                    v = self.criterion(self.model(X_va), y_va).item()
+                if v < best_val - 1e-7:
+                    best_val = v
+                    best_state = {k: t.detach().clone() for k, t in self.model.state_dict().items()}
+                    patience_left = self.patience
+                else:
+                    patience_left -= 1
+                    if patience_left <= 0:
+                        break
+            if best_state is not None:
+                self.model.load_state_dict(best_state)
+        else:
+            self.model.train()
+            for epoch in range(self.epochs):
+                self.optimizer.zero_grad()
+                out = self.model(X_t)
+                loss = self.criterion(out, y_t)
+                loss.backward()
+                self.optimizer.step()
+
         self.last_data = train_data[-self.seq_length:]
         return self
         
@@ -215,8 +258,14 @@ class LSTMWrapper:
 # appending X inputs alongside y lags.
 
 class RCModel:
-    def __init__(self, in_size=1, ridge_alpha=1e-4, seed=42):
-        self.esn = EchoStateNetwork(in_size=in_size, ridge_alpha=ridge_alpha, seed=seed)
+    def __init__(self, in_size=1, ridge_alpha=1e-4, seed=42,
+                 res_size: int = 100, alpha: float = 0.3,
+                 spectral_radius: float = 0.9, sparsity: float = 0.2):
+        self.esn = EchoStateNetwork(
+            in_size=in_size, ridge_alpha=ridge_alpha, seed=seed,
+            res_size=res_size, alpha=alpha,
+            spectral_radius=spectral_radius, sparsity=sparsity,
+        )
         
     def fit(self, y_train, X_train=None):
         if X_train is not None:

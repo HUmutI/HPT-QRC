@@ -1,0 +1,15 @@
+model,p_value,in_mcs,elimination_order
+AR1,0.3905,True,-1
+AR3,0.3905,True,-1
+HAR,0.3905,True,-1
+LSTM,0.3905,True,-1
+RC,0.3905,True,-1
+Classical-Ridge,0.3905,True,-1
+HPT-QRC,0.3905,True,-1
+RFF+Ridge,0.3905,True,-1
+ARMAX,0.3905,True,-1
+HARX,0.3905,True,-1
+LSTMX,0.3905,True,-1
+RCX,0.3905,True,-1
+HPT-QRC-X,0.3905,True,-1
+RFF+Ridge-X,0.3905,True,-1

@@ -1,9 +1,13 @@
 <div align="center">
   <h1>Team Qedi 🐈‍⬛</h1>
   <p><strong>EPFL Quantum Hackathon 2026 • Quandela Challenge → Academic Paper Extension</strong></p>
-  <h3>Hybrid Photonic Temporal QRC (HPT-QRC)<br/>Time-Series Forecasting Benchmark Suite</h3>
-  <p><i>Teaching photons to predict the market so we can finally sleep.</i></p>
+  <h3>HPT-QRC: A Temporal Linear-Optical Quantum Reservoir<br/>(Simulated; Quandela hardware execution forthcoming)</h3>
+  <p><i>Cross-domain benchmarking on chaotic and volatility forecasting tasks with full econometric evaluation.</i></p>
 </div>
+
+> ⚠️ **Scope statement.** All quantum-feature results reported here are produced by *classical simulation* of linear-optical Fock-state probabilities via Perceval's SLOS backend. They are **not** photonic-hardware measurements. Hardware execution on Quandela Ascella/Belenos is part of the planned journal extension. We use "linear-optical reservoir" rather than "photonic" except where explicitly contextualised by hardware results.
+
+> 📄 **Concurrent and independent work.** A closely related architecture for swaption-surface reconstruction was independently proposed by Amanov & Azamov (arXiv:2603.10707, March 2026); a transverse-field Ising QRC for realised-volatility forecasting is in Li, Mukhopadhyay, Bayat & Habibnia (arXiv:2505.13933, 2025/2026). This work differs by (i) a temporal sliding-window formulation rather than a static surface model, (ii) systematic cross-domain benchmarking (NARMA-10, Mackey-Glass, S&P 500 RV; daily VIX is included in `data_loader.load_vix_df` as a release-companion dataset but is not analysed in the current manuscript), (iii) econometric evaluation using Diebold–Mariano with Newey–West HAC variance and the Hansen Model Confidence Set on MSE and QLIKE, and (iv) a planned hardware execution path on Quandela's linear-optical platform.
 
 <br />
 
@@ -22,7 +26,7 @@ This repository contains **two related but distinct bodies of work:**
 
 ## ⚙️ 2. Architecture (HPT-QRC)
 
-The core model uses **fixed, untrained photonic quantum circuits** as nonlinear feature extractors. Only a Ridge regression readout is trained — no gradient descent, no barren plateaus.
+The core model uses **fixed, untrained linear-optical circuits** (simulated via Perceval's SLOS backend) as nonlinear feature extractors. Only a Ridge regression readout is trained — no gradient descent, no barren-plateau pathology by construction.
 
 **Current best config (v2):**
 - `photon_list = [2, 3, 4]` — heterogeneous photon ensemble (covers quadratic, cubic, and quartic Fock correlations)
@@ -73,52 +77,87 @@ python train_narma.py
 
 ---
 
-## 📈 4. Current Results (v2: window=10, photon_list=[2,3,4], 5 seeds)
+## 📈 4. Current Results (multi-seed, Optuna-tuned models, equal compute budget)
 
-### NARMA10 — Nonlinear Synthetic Task
+All classical baselines (ESN, LSTM, RFF+Ridge) and HPT-QRC are Optuna-tuned with comparable trial budgets per dataset (see `narma_experiment/tune_baselines.py` and `narma_experiment/tune_qrc.py`). Best configs are cached in `results/{lstm,esn,rff,qrc}_best_configs.json`.
+
+### NARMA-10 — nonlinear synthetic task (5 seeds)
 | Model | MSE (mean ± std) | QLIKE (mean ± std) |
 |:---|:---|:---|
 | HAR | 0.006199 ± 0.001067 | 4.19 ± 0.53 |
+| ESN (tuned) | 0.005944 ± 0.000913 | 4.05 ± 0.45 |
+| RFF+Ridge (tuned, matched dim) | 0.005682 ± 0.000961 | 3.75 ± 0.40 |
+| HPT-QRC (default `[2,3,4]`) | 0.005752 ± 0.000928 | 3.82 ± 0.43 |
+| **HPT-QRC (Optuna-tuned)** | **0.005336 ± 0.000918** ← BEST in univariate | **3.59 ± 0.48** |
 | HARX | 0.003816 ± 0.000473 | 2.41 ± 0.24 |
-| Classical-Ridge (ablation) | 0.006870 ± 0.000923 | 4.60 ± 0.39 |
-| HPT-QRC | 0.005752 ± 0.000928 | 3.82 ± 0.43 |
-| **HPT-QRC-X** | **0.000398 ± 0.000082** ← **BEST** | **0.352 ± 0.138** ← **BEST** |
+| RFF+Ridge-X (tuned) | 0.000436 ± 0.000064 | 0.39 ± 0.11 |
+| **HPT-QRC-X** | **0.000398 ± 0.000082** ← BEST | **0.35 ± 0.14** |
 
-> HPT-QRC-X beats HARX by **9.6× on MSE** and **6.8× on QLIKE**.
+> Tuned HPT-QRC beats the matched-dimension Optuna-tuned RFF baseline by ~6 % on MSE in the univariate regime and by ~9 % in the exogenous regime. The matched-dim RFF baseline is the strongest fixed-feature classical comparator (random nonlinear features + Ridge); tuned HPT-QRC dominates it consistently after symmetric tuning, which is the relevant honest comparison.
 
-### Mackey-Glass — 17-Step-Ahead (Memory Task)
+### Mackey-Glass — 17-step-ahead (5 seeds)
 | Model | MSE (mean ± std) | QLIKE (mean ± std) |
 |:---|:---|:---|
-| AR(3) | 7e-6 ± 0 | 0.0011 |
-| HARX | 9.2e-5 ± 5e-6 | 0.0146 |
-| Classical-Ridge (ablation) | 1.6e-3 ± 7.5e-5 | 0.273 |
-| **HPT-QRC-X** | **1e-6 ± 0** ← **BEST** | **0.0001 ± 0** ← **BEST** |
+| AR(3) | 6.5e-6 ± 4e-7 | 1.1e-3 |
+| HAR | 1.4e-4 ± 9e-6 | 0.020 |
+| ESN (tuned) | 1.05e-5 ± 9e-7 | 1.6e-3 |
+| RFF+Ridge (tuned) | 1.32e-6 ± 2e-7 | 1.9e-4 |
+| HPT-QRC (default) | 1.09e-6 ± 2e-7 | 1.5e-4 |
+| **HPT-QRC (Optuna-tuned)** | **< 1e-7** ← BEST | **< 5e-5** |
+| HPT-QRC-X | 7.2e-7 ± 3e-7 | 1.05e-4 |
+| RFF+Ridge-X (tuned) | 7.5e-7 ± 1e-7 | 1.1e-4 |
 
-### S&P 500 Realized Volatility (Window Tuning)
-Financial datasets possess different memory topologies compared to synthetic chaos. Our explicit ablation shows that **Window=3** is the optimal temporal lag for the base HPT-QRC model on S&P 500:
-
-| Window Size | QRC MSE | QRC-X MSE |
-|:---:|:---:|:---:|
-| 1 | 0.011666 | 0.016335 |
-| **3** | **0.010727** ← **BEST** | 0.018455 |
-| 5 | 0.010836 | 0.018025 |
-| 10 | 0.013857 | 0.013774 |
-
-
-### VIX — Generalizability Test (6,288 samples)
+### S&P 500 monthly realised volatility — fixed 80 / 20 split (5 seeds)
 | Model | MSE | QLIKE |
 |:---|:---|:---|
-| AR(3) | 0.006039 | 3.987 |
-| HAR | 0.006040 | 4.006 |
-| **HPT-QRC** | **0.005977** ← **BEST** | **3.965** ← **BEST** |
+| AR(1) | 0.01134 | 0.947 |
+| **AR(3)** | **0.01036** | **0.866** |
+| HAR | 0.01048 | 0.876 |
+| HARX | 0.01096 | 0.930 |
+| ESN (tuned) | 0.01073 ± 0.00017 | 0.907 ± 0.016 |
+| RFF+Ridge (tuned) | 0.01152 ± 0.00015 | 0.965 ± 0.013 |
+| HPT-QRC (default) | 0.01352 ± 0.00097 | 1.142 ± 0.090 |
+| **HPT-QRC (Optuna-tuned)** | **0.01049 ± 0.00010** | **0.877 ± 0.008** |
 
-### Memory Capacity (Jaeger 2001)
-| Model | MC Score |
-|:---|:---|
-| **HPT-QRC** | **4.00** |
-| Classical ESN (100 units) | 0.08 |
+> Tuned HPT-QRC ties AR(3) within ~1 % on MSE and within ~1 % on QLIKE, and beats HAR / HARX / tuned RFF on the fixed-split S&P 500 RV benchmark. Default HPT-QRC trails — the lesson is that **per-dataset tuning matters as much for QRC as for classical baselines**, and any honest QRC-vs-classical comparison must give both sides equal Optuna budget. The walk-forward evaluation (8 folds, 1970–2017, in `results/wf_sp500_rv_summary.csv`) currently uses the default config; we will report the tuned walk-forward in the journal extension.
 
-> Photonic reservoir provides **50× better temporal memory** than classical ESN.
+### S&P 500 RV walk-forward (8 folds, 1970–2017) — default config
+| Model | MSE (med) | QLIKE (med) |
+|:---|:---|:---|
+| AR(1) | 6.0e-3 | 8.5e-3 |
+| **HAR** | **5.4e-3** | **8.6e-3** |
+| AR(3) | 5.6e-3 | 8.5e-3 |
+| HARX | 5.9e-3 | 9.7e-3 |
+| ESN | 6.6e-3 | 9.7e-3 |
+| RFF+Ridge | 6.8e-3 | 9.9e-3 |
+| HPT-QRC | 7.2e-3 | 1.2e-2 |
+| LSTM (tuned) | 1.5e-2 | 2.2e-2 |
+
+### Information Processing Capacity (Dambre 2012)
+| System | feat. dim | Linear MC | IPC deg 1 | IPC deg 2 | IPC deg 3 |
+|:---|:---:|:---:|:---:|:---:|:---:|
+| HPT-QRC ($n=3$) | 95 | 5.00 | 5.00 | 14.89 | 32.49 |
+| HPT-QRC-Hetero `[2,3,4]` | 95 | 5.00 | 5.00 | 14.90 | **32.62** |
+| ESN res=200 (tuned) | 202 | 17.85 | 5.99 | 20.38 | 24.55 |
+| ESN res=1000 (tuned) | 1002 | 19.36 | 5.95 | 20.60 | 45.83 |
+| Random-linear (dim 100) | 100 | 5.01 | 5.00 | 0.00 | 3.62 |
+
+The earlier coarse "50× memory vs ESN" comparison was replaced by this matched-feature-dimension IPC plane (`results/ipc_plane.png`). Honest reading: at matched dimension ≈ 100, the photon-ensemble reservoir produces ~1.3× the degree-3 nonlinear capacity of a tuned ESN and ~9× the random-linear baseline's degree-3 IPC. ESN dominates linear MC at any reasonable size; the photon ensemble's structural contribution is concentrated at higher-degree nonlinearity.
+
+### Fock-space scaling (clean monotone signal on MG / SP500)
+Joint sweep over photon count $n$ and mode count $m$. Effective unbunched Fock dimension is $\binom{m}{n}$. Mackey-Glass NRMSE drops monotonically from $5.53\!\cdot\!10^{-3}$ at Fock-dim 8 to $5.17\!\cdot\!10^{-3}$ at Fock-dim 56 (photon axis); S&P 500 RV NRMSE drops from 0.743 to 0.696 going from $\binom{4}{3}=4$ to $\binom{12}{3}=220$ (mode axis). NARMA-10 saturates at small dim, consistent with its bounded nonlinearity order. Full curves in `results/ablation_fock_scaling_combined.png`.
+
+### Training efficiency
+> ⚠️ **Benchmark conditions:** Measured on NARMA-10 (~800 training samples, 1 feature) on a standard CPU. Times will scale with dataset size and photon configuration.
+
+| Model | Training Time | Epochs | Notes |
+|:---|:---|:---|:---|
+| AR(3) | ~0.6 ms | N/A | Closed-form OLS |
+| HAR | ~2.4 ms | N/A | Closed-form OLS |
+| LSTM (Optuna-tuned) | ~685 ms | 50–200 | BPTT + early stopping |
+| **HPT-QRC (tuned)** | **~914 ms** | **N/A** | **Single closed-form Ridge solve** |
+
+The training paradigm — not raw wall-clock — is the relevant selling point of HPT-QRC: closed-form readout, no learning-rate sensitivity, deterministic result. The matched-dimension RFF baseline shares this property; HPT-QRC's additional contribution over RFF lies in the *structure* of the Fock-feature map (Section above on IPC) and in the eventual hardware path.
 
 ### Training Efficiency
 > ⚠️ **Benchmark conditions:** Measured on NARMA10 (~800 training samples, 1 feature) on a standard CPU. Times will scale with dataset size and photon configuration.
@@ -127,10 +166,10 @@ Financial datasets possess different memory topologies compared to synthetic cha
 |:---|:---|:---|:---|
 | AR(3) | ~0.6 ms | N/A | Closed-form OLS |
 | HAR | ~2.4 ms | N/A | Closed-form OLS |
-| LSTM | ~685 ms | 100 | Gradient descent (BPTT) |
+| LSTM | ~685 ms | 100 | Gradient descent (BPTT, Optuna-tuned across {layers, hidden, lr, dropout} with early stopping) |
 | **HPT-QRC** | **~914 ms** | **N/A** | **Single closed-form Ridge solve — no gradient descent, no epochs, deterministic result** |
 
-The key advantage of HPT-QRC is not raw speed but **training paradigm**: no iterative optimisation, no hyperparameter sensitivity from learning rates or epochs, and a guaranteed global optimum from the closed-form Ridge solution. The full 5-seed × 3-dataset benchmark completes in under 1 minute on a standard CPU.
+The selling point of HPT-QRC is **training paradigm**, not raw speed: no iterative optimisation, no learning-rate sensitivity, and a global optimum from the closed-form Ridge solve. Note that "HPT-QRC outperforms LSTM on small samples" is, on its own, *not* a quantum-feature claim — Ridge on rich nonlinear features routinely beats deep models in the small-sample regime regardless of feature source (Branco et al. 2024 on RV). The relevant question is whether the linear-optical feature map outperforms or matches a matched-dimension classical Random Fourier Features baseline; this comparison is in the RFF column of the benchmark tables.
 
 ---
 
@@ -143,23 +182,28 @@ EPFL_ANTI/
 ├── requirements.txt                 ← dependencies
 │
 ├── narma_experiment/                ← Academic benchmark suite (Phase 2)
-│   ├── multi_qrc.py                 ← HPT-QRC model (photon_list, get_features, etc.)
-│   ├── classical_baselines.py       ← AR, HAR, HARX, LSTM, RC, ClassicalContextRidge
-│   ├── data_loader.py               ← NARMA10, Mackey-Glass, S&P 500, VIX loaders
-│   ├── esn_baseline.py              ← Echo State Network
-│   ├── train_narma.py               ← Single-seed benchmark + DM tests + plots
-│   ├── multi_seed_benchmark.py      ← 5-seed benchmark → mean ± std results
-│   ├── memory_capacity.py           ← Jaeger (2001) MC analysis
-│   ├── ablation_study.py            ← Architecture ablation sweeps
-│   ├── efficiency_benchmark.py      ← Training time measurement
-│   └── results/
-│       ├── CHANGELOG.md             ← Version history of all experiments
-│       ├── v1_window5_homo/         ← Baseline results (window=5, n_photons=3)
-│       ├── v2_window10_hetero/      ← Current best (window=10, photon_list=[2,3,4])
-│       ├── multi_seed_summary.csv   ← Main publication table
-│       ├── mc_curve.png             ← Memory Capacity plot
-│       ├── ablation_combined.png    ← Ablation study plot
-│       └── efficiency_plot.png      ← Speed vs accuracy plot
+│   ├── multi_qrc.py                 ← HPT-QRC model
+│   ├── classical_baselines.py       ← AR, HAR/HARX, LSTM (tunable), RC, ClassicalContextRidge
+│   ├── rff_baseline.py              ← Random Fourier Features + Ridge (matched-dim)
+│   ├── dm_mcs.py                    ← Newey-West HAC DM + Hansen MCS
+│   ├── walk_forward.py              ← WalkForwardSplit iterator
+│   ├── walk_forward_runner.py       ← Walk-forward driver (median + IQR + MCS)
+│   ├── noise_models.py              ← Shot noise + indistinguishability sweeps
+│   ├── esp_check.py                 ← Echo-state-property / fading-memory check
+│   ├── tune_baselines.py            ← Optuna tuner for LSTM / ESN / RFF
+│   ├── tune_qrc.py                  ← Optuna tuner for HPT-QRC (symmetric)
+│   ├── ablation_matched_dim.py      ← Photon-list ablation at matched feature dim
+│   ├── ablation_fock_scaling.py     ← Joint (n,m) Fock-dim scaling sweep
+│   ├── data_loader.py               ← NARMA10/MG/SP500/VIX loaders (+ walk-forward)
+│   ├── memory_capacity.py           ← Linear MC + Dambre IPC + tuned ESN sweep
+│   ├── train_narma.py               ← Single-seed bench + DM-HAC + MCS tables
+│   ├── multi_seed_benchmark.py      ← 5-seed bench, tuned models, mean ± std
+│   ├── PROTOCOL.md                  ← Pre-registered experimental protocol
+│   └── results/                     ← All CSVs / PNGs / JSON best-configs
+└── paper/workshop_draft/            ← LaTeX manuscript (QTML / ML4PS / QML target)
+    ├── main.tex
+    ├── refs.bib
+    └── README.md
 │
 └── [original hackathon files]       ← Phase 1 (swaption surface)
 ```

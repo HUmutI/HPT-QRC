@@ -9,6 +9,8 @@ from sklearn.metrics import mean_squared_error
 from data_loader import load_narma10, load_sp500, load_mackey_glass
 from classical_baselines import ARModel, ARMAXModel, HARModel, HARXModel, LSTMWrapper, RCModel, ClassicalContextRidge
 from multi_qrc import HPT_QRC_Multi
+from rff_baseline import RFFRidge, match_qrc_feature_dim
+from dm_mcs import generate_dm_hac_table, mcs_from_predictions, mcs_to_dataframe
 
 matplotlib.use("Agg")
 
@@ -159,6 +161,15 @@ def benchmark_dataset(name, y_train, y_test, X_train=None, X_test=None, is_log_s
     preds["HPT-QRC"] = p_qrc
     results.append({"Model": "HPT-QRC", "MSE": mean_squared_error(y_test, p_qrc), "QLIKE": qlike(y_test, p_qrc)})
 
+    # 7b. Random Fourier Features + Ridge (matched feature dimension)
+    print("-> Training RFF+Ridge (matched dim, classical comparator)...")
+    rff_dim = match_qrc_feature_dim(qrc)
+    rff = RFFRidge(in_size=1, window=10, output_dim=rff_dim, gamma=0.1,
+                   use_har_context=use_har_context).fit(y_train)
+    p_rff = rff.predict(y_test)
+    preds["RFF+Ridge"] = p_rff
+    results.append({"Model": "RFF+Ridge", "MSE": mean_squared_error(y_test, p_rff), "QLIKE": qlike(y_test, p_rff)})
+
     # Exogenous Models (if X is provided)
     if X_train is not None and X_test is not None:
         print("--- Running Exogenous Variants ---")
@@ -204,18 +215,41 @@ def benchmark_dataset(name, y_train, y_test, X_train=None, X_test=None, is_log_s
         preds["HPT-QRC-X"] = p_qrc_x
         results.append({"Model": "HPT-QRC-X", "MSE": mean_squared_error(y_test, p_qrc_x), "QLIKE": qlike(y_test, p_qrc_x)})
 
+        # 11b. RFF+Ridge-X (matched feature dimension, exogenous)
+        print("-> Training RFF+Ridge-X (matched dim, exogenous comparator)...")
+        rff_x = RFFRidge(in_size=qrc_in_dim, window=10,
+                          output_dim=match_qrc_feature_dim(qrc_x), gamma=0.1,
+                          use_har_context=use_har_context).fit(y_train, X_train)
+        p_rff_x = rff_x.predict(y_test, X_test)
+        preds["RFF+Ridge-X"] = p_rff_x
+        results.append({"Model": "RFF+Ridge-X",
+                        "MSE": mean_squared_error(y_test, p_rff_x),
+                        "QLIKE": qlike(y_test, p_rff_x)})
+
     df_res = pd.DataFrame(results)
-    
-    # Generate DM Table for MSE
+
+    # Legacy DM (simple variance) — kept for back-compat with existing plotting
     dm_table_mse = generate_dm_table(y_test, preds, crit="MSE")
-    # Generate DM Table for QLIKE
     dm_table_qlike = generate_dm_table(y_test, preds, crit="QLIKE")
-    
-    # Save Results
+
+    # Newey-West HAC DM tables (PROTOCOL.md §6)
+    dm_hac_mse  = generate_dm_hac_table(y_test, preds, loss="mse")
+    dm_hac_qlike = generate_dm_hac_table(y_test, preds, loss="qlike")
+
+    # Hansen Model Confidence Set per metric (PROTOCOL.md §6)
+    mcs_mse  = mcs_to_dataframe(mcs_from_predictions(y_test, preds, loss="mse",
+                                                     alpha=0.10, B=2000, block_len=20))
+    mcs_qlike = mcs_to_dataframe(mcs_from_predictions(y_test, preds, loss="qlike",
+                                                       alpha=0.10, B=2000, block_len=20))
+
     os.makedirs("results", exist_ok=True)
     df_res.to_csv(f"results/{name}_benchmark.csv", index=False)
     dm_table_mse.to_csv(f"results/{name}_DM_MSE.csv")
     dm_table_qlike.to_csv(f"results/{name}_DM_QLIKE.csv")
+    dm_hac_mse.to_csv(f"results/{name}_DM_HAC_MSE.csv")
+    dm_hac_qlike.to_csv(f"results/{name}_DM_HAC_QLIKE.csv")
+    mcs_mse.to_csv(f"results/{name}_MCS_MSE.csv", index=False)
+    mcs_qlike.to_csv(f"results/{name}_MCS_QLIKE.csv", index=False)
     
     # Generate Plot
     plt.figure(figsize=(14, 7))

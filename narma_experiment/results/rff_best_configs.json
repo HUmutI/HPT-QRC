@@ -1,0 +1,29 @@
+{
+  "NARMA10": {
+    "best_params": {
+      "dim_mult": 0.5,
+      "gamma": 0.0010714845538373173,
+      "ridge_alpha": 0.00038006965008712267,
+      "window": 10
+    },
+    "best_val_mse": 0.005922167120535211
+  },
+  "Mackey_Glass": {
+    "best_params": {
+      "dim_mult": 2.0,
+      "gamma": 0.21972313123109624,
+      "ridge_alpha": 3.71586967051431e-06,
+      "window": 15
+    },
+    "best_val_mse": 7.779465572180792e-08
+  },
+  "SP500_RV": {
+    "best_params": {
+      "dim_mult": 2.0,
+      "gamma": 0.002434735033150995,
+      "ridge_alpha": 0.00038054960751838997,
+      "window": 5
+    },
+    "best_val_mse": 0.006662413458082177
+  }
+}

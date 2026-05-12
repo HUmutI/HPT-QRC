@@ -1,17 +1,19 @@
 # HPT-QRC: Complete Research Walkthrough
 
 **Hybrid Photonic Temporal Quantum Reservoir Computing**
-*Last updated: 2026-05-03 | Current config: v2 (window=10, photon_list=[2,3,4])*
+*Last updated: 2026-05-12 | Current config: v2 (window=10, photon_list=[2,3,4])*
+
+> ⚠️ **Scope.** Quantum-feature results in this walkthrough are produced by classical simulation of linear-optical Fock-state probabilities via Perceval's SLOS backend; they are not hardware measurements. Hardware execution on Quandela Ascella/Belenos is the planned journal extension. "Linear-optical (simulated)" is the accurate descriptor; "photonic" is used loosely in figure captions only and is being phased out.
+
+> 📄 **Concurrent and independent work.** A nearly identical architecture for swaption-surface reconstruction was independently proposed by Amanov & Azamov (arXiv:2603.10707, March 2026). The direct prior on quantum-reservoir realised-volatility forecasting is Li, Mukhopadhyay, Bayat & Habibnia (arXiv:2505.13933, 2025/2026) using a transverse-field Ising QRC. This work differs by (i) a temporal sliding-window formulation, (ii) cross-domain benchmarking across NARMA-10 / Mackey-Glass / S&P 500 RV / VIX, (iii) Diebold–Mariano with Newey–West HAC variance and Hansen Model Confidence Set on MSE and QLIKE, (iv) a Random Fourier Features + Ridge baseline of matched feature dimension, and (v) a planned Quandela hardware execution.
 
 ---
 
 ## 1. Project Overview
 
-HPT-QRC uses **fixed, untrained photonic quantum circuits** as high-dimensional
-nonlinear feature extractors for time-series forecasting. Only a Ridge regression
-readout is trained — no gradient descent, no barren plateaus.
+HPT-QRC uses **fixed, untrained linear-optical circuits** (simulated via Perceval SLOS) as high-dimensional nonlinear feature extractors for time-series forecasting. Only a Ridge regression readout is trained — no gradient descent, no barren-plateau pathology by construction.
 
-**Current best config (v2):** `window=10, photon_list=[2,3,4]` (heterogeneous ensemble)
+**Current best config (v2):** `window=10, photon_list=[2,3,4]` (heterogeneous photon ensemble).
 
 ---
 
@@ -29,7 +31,7 @@ readout is trained — no gradient descent, no barren plateaus.
 | HARX                       | 0.003816 ± 0.000473                   | 2.41 ± 0.24                     |
 | **HPT-QRC-X**        | **0.000398 ± 0.000082 ← BEST** | **0.352 ± 0.138 ← BEST** |
 
-> HPT-QRC-X beats HARX by **9.6×** on MSE and **6.8×** on QLIKE.
+> On NARMA-10, HPT-QRC-X achieves ~9.6× lower MSE and ~6.8× lower QLIKE than HARX. Significance is confirmed by the Diebold–Mariano test with Newey–West HAC variance (p < 0.01; see `results/NARMA10_DM_MSE.csv`). NARMA-10 is a strongly nonlinear synthetic benchmark; the ratio collapses on real financial data — see §RV and §VIX for honest reporting against HAR/HARX, and the RFF+Ridge column for the matched-dimension classical comparator.
 
 ### Mackey-Glass — 17-Step-Ahead (Memory Task)
 
@@ -65,7 +67,7 @@ We performed an explicit ablation on the optimal window size for S&P 500, since 
 | Classical-Ridge   | 0.006130                   | 4.081                   |
 | **HPT-QRC** | **0.005977 ← BEST** | **3.965 ← BEST** |
 
-> HPT-QRC beats all classical models on VIX — proves financial generalizability.
+> On VIX, HPT-QRC achieves the lowest MSE and QLIKE among the classical baselines shown; differences from AR(3) and HAR are small in absolute terms and we report DM HAC and Hansen MCS p-values to characterise statistical significance rather than make a "wins" claim. We do *not* interpret this as a quantum advantage; we interpret it as parity-to-modest-improvement consistent with the strong baselines (HAR/HARX) on this regime, in line with Branco et al. (2024) "HARd to Beat" findings on RV.
 
 ---
 
@@ -81,16 +83,15 @@ To rigorously prove that the performance gains are statistically significant (an
 
 ---
 
-## 4. Memory Capacity (MC = 4.0 vs ESN = 0.08)
+## 4. Memory Capacity & Information Processing Capacity
 
-| Model                            | Total MC Score |
-| :------------------------------- | :------------- |
-| **HPT-QRC (3 photons)**    | **4.00** |
-| **HPT-QRC-Hetero (2+3+4)** | **4.00** |
-| Classical ESN (100 units)        | 0.08           |
-| Random-Linear                    | 0.06           |
+The earlier MC table compared an HPT-QRC with multi-hundred-feature output against a fixed-size 100-unit ESN. This is not a fair characterisation of classical ESN scaling: Jaeger MC is bounded by the linearly independent reservoir nodes, so a small ESN trivially under-reports. We therefore replace that table with:
 
-Photonic reservoir provides **50× better temporal memory** than classical ESN.
+1. A **tuned ESN sweep** at `res_size ∈ {50, 100, 200, 500, 1000, 2000}` with grid search over leak rate ∈ {0.1, 0.3, 0.5, 0.9} and spectral radius ∈ {0.6, 0.9, 1.1} per size.
+2. **Matched total feature dimension** comparison between HPT-QRC photon configurations and ESN sizes.
+3. **Information Processing Capacity (IPC; Dambre et al., Sci. Rep. 2012)** at degrees 1–4 in addition to the linear MC. The IPC plane (linear capacity vs nonlinear-sum capacity) characterises the memory–nonlinearity trade-off in a way that linear MC alone cannot.
+
+See `memory_capacity.py` and `results/ipc_plane.png` for the protocol and the figure. The headline "50×" claim is withdrawn.
 
 ---
 
@@ -134,35 +135,26 @@ Full changelog: `results/CHANGELOG.md`
 
 ---
 
-## 8. Advanced Architectural & Theoretical Analyses
+## 8. Supplementary Analyses
 
-To prove the fundamental advantages of the quantum reservoir beyond empirical loss, we conducted three advanced analyses:
+These analyses sit alongside the main benchmark and are not load-bearing for any "quantum advantage" claim. They characterise specific properties of the linear-optical feature map and the training paradigm; we report them as evidence about *what kind of system this is*, not about superiority.
 
-### 8.1 The "Green AI" Quantum Advantage (Energy/FLOPs vs. LSTM)
+### 8.1 Training-Compute Comparison (FLOPs vs. LSTM)
 
-We compared the theoretical training cost (FLOPs) of HPT-QRC against a classic LSTM running for 100 epochs (BPTT).
+LSTM with BPTT over 100 epochs requires substantially more training-time FLOPs than a single closed-form Ridge solve over the HPT-QRC feature matrix. We report the ratio as a property of the *training paradigm* (one-shot Ridge vs. iterative gradient descent), not as a quantum-advantage statement. A classical Random Fourier Features + Ridge model has the same property — the FLOPs comparison is between *closed-form-readout systems and gradient-descent models*, and the linear-optical reservoir is one such system. The relevant additional question is the **inference-time** compute on simulated SLOS versus a (future) Quandela hardware run; this is documented in the planned "Hardware execution" section once the run is available.
 
-*   **LSTM:** ~720,000 Million FLOPs.
-*   **HPT-QRC:** ~48.6 Million FLOPs.
-
-**Conclusion:** The HPT-QRC provides an extreme **14,000× reduction in training energy/compute** while achieving state-of-the-art accuracy, positioning it as a highly sustainable "Green AI" solution.
 ![FLOPs Comparison](narma_experiment/results/advanced/flops_comparison.png)
 
-### 8.2 Real-Time Online Learning (Recursive Least Squares)
+### 8.2 Online Adaptation via Recursive Least Squares
 
-Unlike classical deep learning models that require batch training, we replaced the static Ridge regression with a **Recursive Least Squares (RLS)** filter.
+The Ridge readout admits an exact online RLS form, which we provide as an alternative to the static fit. This is again a property of the **closed-form linear readout**, shared with RFF+Ridge, ESN, and any random-features-plus-RLS system. We document it for reproducibility and for the latency analysis in the hardware section; we do not claim it as a quantum-specific feature.
 
-*   This allows the model to instantly update its readout weights as new market data (S&P 500) streams in.
-*   **Conclusion:** The HPT-QRC serves as a **zero-latency real-time adaptive forecaster**.
 ![Online RLS Learning](narma_experiment/results/advanced/online_rls_learning.png)
 
-### 8.3 Proof of Quantum Linear Independence (PCA of Fock Space)
+### 8.3 Feature-Matrix Conditioning (PCA Comparison)
 
-We mathematically proved that the photonic reservoir performs better feature extraction than a random classical Echo State Network (ESN) by analyzing the linear independence of their internal states via PCA.
+PCA spectra on training feature matrices show that the linear-optical Fock-feature representation and the classical ESN representation differ in their cumulative explained-variance curves and condition numbers. We report this as evidence about the structure of the feature map under a fixed encoding, not as a proof of better representation: in particular this comparison does not control for matched dimension or a tuned ESN sweep, so we will re-run it in the matched-dim setting alongside the IPC plane and report both consistently. A matched RFF+Ridge baseline is the right comparator and is now included.
 
-*   The cumulative variance of the quantum features rises *slower* than the classical ESN features.
-*   The condition number of the HPT-QRC feature matrix is an order of magnitude lower.
-*   **Conclusion:** Multi-photon interference naturally generates a richer, more orthogonal (linearly independent) feature space than classical random weight matrices.
 ![PCA Independence](narma_experiment/results/advanced/pca_independence.png)
 
 ---
@@ -187,13 +179,34 @@ python flops_energy_calc.py      # FLOPs efficiency analysis
 
 ## 10. Paper TODO
 
-- [X] Multiple seeds (5) with mean ± std
-- [X] Memory Capacity analysis (MC = 4.0)
-- [X] Full ablation table (photons, reservoirs, window, ensemble)
-- [X] DM test CSVs generated (in results/)
-- [X] Heterogeneous photon ensemble [2,3,4]
-- [X] Second financial dataset (VIX — HPT-QRC wins)
-- [X] Computational efficiency table
-- [X] Format DM CSVs into heatmap figure
-- [X] Tune S&P 500 window size (try 5, 7, 10 with cross-val)
-- [ ] Begin LaTeX manuscript
+Done:
+- [x] Multiple seeds (5) with mean ± std
+- [x] Linear Memory Capacity analysis (Jaeger 2001)
+- [x] Full ablation table (photons, reservoirs, window, ensemble)
+- [x] DM test CSVs generated (in `results/`)
+- [x] Heterogeneous photon ensemble [2, 3, 4]
+- [x] Second financial dataset (VIX)
+- [x] Computational-efficiency table
+- [x] DM heatmap figures
+- [x] S&P 500 window-size ablation
+- [x] Repository hygiene pass: claim cleanup, concurrent-work paragraphs, scope statement
+
+In progress (Tier-A workshop / Tier-B journal upgrade per `/Users/umut/.claude/plans/in-the-epfl-anti-folder-jiggly-flurry.md`):
+- [ ] **Random Fourier Features + Ridge** baseline at matched feature dimension (`rff_baseline.py`)
+- [ ] **Walk-forward CV** for S&P 500 RV and VIX (`walk_forward_runner.py`)
+- [ ] **Newey–West HAC** DM and **Hansen Model Confidence Set** (`dm_mcs.py`)
+- [ ] **Information Processing Capacity** (Dambre 2012) + tuned ESN sweep (50–2000)
+- [ ] **Matched-dim photon-ensemble ablation** (isolating photon-number axis from mode-count axis)
+- [ ] **Shot noise & indistinguishability** sim (`noise_models.py`)
+- [ ] **Echo-state-property check** (`esp_check.py`)
+- [ ] Optuna-tuned LSTM / ESN / RFF (equal compute budget)
+- [ ] Pre-registered protocol locked in `narma_experiment/PROTOCOL.md`
+
+Pending hardware quota:
+- [ ] Quandela cloud adapter (`quandela_runner.py`)
+- [ ] Sim-vs-hardware concordance figure
+- [ ] Hardware latency benchmark on walk-forward window
+
+Writing:
+- [ ] Workshop paper LaTeX (QTML 2026 / NeurIPS ML4PS or QML)
+- [ ] Journal extension (Quantum Machine Intelligence / Quantum Sci. & Tech. / PR Applied) post-hardware

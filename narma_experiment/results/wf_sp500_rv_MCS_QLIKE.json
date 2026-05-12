@@ -1,0 +1,28 @@
+{
+  "survivors": [
+    "AR1",
+    "AR3",
+    "HAR",
+    "HARX",
+    "ESN",
+    "LSTM",
+    "RFF+Ridge",
+    "HPT-QRC"
+  ],
+  "per_model_p": {
+    "AR1": 0.312,
+    "AR3": 0.312,
+    "HAR": 0.312,
+    "HARX": 0.312,
+    "ESN": 0.312,
+    "LSTM": 0.312,
+    "RFF+Ridge": 0.312,
+    "HPT-QRC": 0.312
+  },
+  "alpha": 0.1,
+  "B": 2000,
+  "block_len": 20,
+  "T": 192,
+  "M": 8,
+  "elimination": []
+}

@@ -1,0 +1,9 @@
+model,p_value,in_mcs,elimination_order
+AR1,0.125,True,-1
+AR3,0.125,True,-1
+HAR,0.125,True,-1
+HARX,0.125,True,-1
+ESN,0.125,True,-1
+LSTM,0.125,True,-1
+RFF+Ridge,0.125,True,-1
+HPT-QRC,0.125,True,-1

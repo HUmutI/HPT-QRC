@@ -52,41 +52,80 @@ def load_narma10(n_train=800, n_test=200, warmup=1000, seed=42):
     
     return X_train, y_train, X_test, y_test
 
-def load_sp500(filepath="/Users/umut/Desktop/EPFL_ANTI/narma_experiment/literature/qrc_repo/Data.CSV"):
+def load_sp500(filepath="/Users/umut/Desktop/EPFL_ANTI/narma_experiment/literature/qrc_repo/Data.CSV",
+               lag_exog: int = 1):
     """
     Loads the Realized Volatility data from the QRC repository.
     The file 'Data.CSV' contains 'RV' as the target, and 'MKT', 'SMB', 'HML' etc as exogenous regressors.
-    
-    For exact replicability, we'll mimic the standard volatility forecasting train/test split:
-    usually ~70-80% train, ~20-30% test, but here we do: 1950-1999 train, 2000+ test as standard,
-    or just use a raw ratio if dates aren't easily partitioned.
-    Actually, let's use an 80/20 train/test split.
+
+    Leakage-control: exogenous regressors are *lagged* by `lag_exog` steps (default 1) so that
+    the feature row aligned with target t uses information available no later than t-1. The
+    Fama-French / macro variables in this dataset are monthly aggregates published with a delay
+    in practice; using contemporaneous values would over-state predictive power.
+
+    Returns (y_train, y_test, X_train, X_test). Default 80/20 split (kept for legacy benchmarks).
+    For walk-forward CV use `load_sp500_df` + `walk_forward.WalkForwardSplit`.
     """
     if not os.path.exists(filepath):
         raise FileNotFoundError(f"S&P 500 Dataset not found at {filepath}")
-        
+
     df = pd.read_csv(filepath)
-    
-    # 'RV' is the target realized volatility
+
     y_target = df['RV'].values.reshape(-1, 1)
-    
-    # Exogenous variables (X) for HARX, ARMAX, RCX etc.
-    # Standard choice in empirical finance is to use returns, risk-free rate, or other Fama-French markers.
+
     exog_cols = ['MKT', 'SMB', 'HML', 'TB', 'DEF', 'IP', 'INF']
     X_exog = df[exog_cols].values
-    
+
+    # Lag exogenous by `lag_exog` steps to avoid contemporaneous leakage.
+    if lag_exog > 0:
+        X_exog = np.vstack([np.zeros((lag_exog, X_exog.shape[1])), X_exog[:-lag_exog]])
+
     n_samples = len(df)
     n_train = int(n_samples * 0.8)
-    
-    # Core target history (univariate modeling without X)
+
     y_train = y_target[:n_train]
-    y_test = y_target[n_train:]
-    
-    # Exogenous variable inputs
+    y_test  = y_target[n_train:]
     X_train = X_exog[:n_train]
-    X_test = X_exog[n_train:]
-    
+    X_test  = X_exog[n_train:]
+
     return y_train, y_test, X_train, X_test
+
+
+def load_sp500_df(filepath="/Users/umut/Desktop/EPFL_ANTI/narma_experiment/literature/qrc_repo/Data.CSV",
+                  lag_exog: int = 1) -> pd.DataFrame:
+    """
+    Date-indexed view of the S&P 500 RV dataset for walk-forward CV.
+
+    Columns: 'y' (RV target), plus lagged Fama-French/macro factors X_*.
+    Index: pandas DatetimeIndex from the 'Date' column.
+    """
+    df = pd.read_csv(filepath)
+    df['Date'] = pd.to_datetime(df['Date'])
+    df = df.set_index('Date').sort_index()
+    exog_cols = ['MKT', 'SMB', 'HML', 'TB', 'DEF', 'IP', 'INF']
+    out = pd.DataFrame(index=df.index)
+    out['y'] = df['RV'].values
+    if lag_exog > 0:
+        for c in exog_cols:
+            out[f'X_{c}'] = df[c].shift(lag_exog).values
+    else:
+        for c in exog_cols:
+            out[f'X_{c}'] = df[c].values
+    return out.dropna()
+
+
+def load_vix_df(start: str = "2000-01-01", end: str = "2024-12-31") -> pd.DataFrame:
+    """
+    Date-indexed view of log-VIX for walk-forward CV. Columns: 'y'. No exog.
+    """
+    try:
+        import yfinance as yf
+    except ImportError as exc:
+        raise ImportError("yfinance not installed. Run: pip install yfinance") from exc
+    df = yf.download("^VIX", start=start, end=end, progress=False, auto_adjust=True)
+    close = df["Close"].dropna()
+    out = pd.DataFrame({"y": np.log(close.values.flatten())}, index=close.index)
+    return out
 
 def load_mackey_glass(n_train=800, n_test=200, warmup=1000, tau=17, seed=42):
     """

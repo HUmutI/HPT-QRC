@@ -27,6 +27,25 @@ from classical_baselines import (
     LSTMWrapper, RCModel, ClassicalContextRidge
 )
 from multi_qrc import HPT_QRC_Multi
+from rff_baseline import RFFRidge, match_qrc_feature_dim
+import json
+
+# Tuned QRC configs (per dataset) — produced by tune_qrc.py with Optuna 20 trials,
+# matching the equal-compute-budget protocol of tune_baselines.py for ESN/LSTM/RFF.
+def _load_qrc_cfg(path: str = "results/qrc_best_configs.json"):
+    try:
+        with open(path) as fh:
+            raw = json.load(fh)
+    except FileNotFoundError:
+        return {}
+    out = {}
+    for ds, blob in raw.items():
+        p = dict(blob["best_params"])
+        p["photon_list"] = [int(x) for x in p["photon_list"].strip("[]").split(",")]
+        out[ds] = p
+    return out
+
+QRC_TUNED = _load_qrc_cfg()
 
 # ---------------------------------------------------------------------------
 # Metrics
@@ -67,12 +86,24 @@ def run_one_seed(seed):
     rc  = RCModel(in_size=1, seed=seed).fit(y_tr); p = rc.predict(y_te);      preds["RC"] = p;              rows.append(("RC",             mean_squared_error(y_te, p), qlike_narma(y_te, p)))
     ccr = ClassicalContextRidge(window=5).fit(y_tr); p = ccr.predict(y_te);   preds["Classical-Ridge"] = p; rows.append(("Classical-Ridge",mean_squared_error(y_te, p), qlike_narma(y_te, p)))
     qrc = HPT_QRC_Multi(in_size=1, window=10, photon_list=[2,3,4], seed=seed).fit(y_tr); p = qrc.predict(y_te); preds["HPT-QRC"] = p; rows.append(("HPT-QRC", mean_squared_error(y_te, p), qlike_narma(y_te, p)))
+    # Tuned QRC (Optuna 20 trials per dataset, matched compute budget to baselines)
+    if QRC_TUNED:
+        cfg = QRC_TUNED["NARMA10"]
+        qrc_t = HPT_QRC_Multi(in_size=1, seed=seed, **cfg).fit(y_tr)
+        p = qrc_t.predict(y_te); preds["HPT-QRC (tuned)"] = p
+        rows.append(("HPT-QRC (tuned)", mean_squared_error(y_te, p), qlike_narma(y_te, p)))
+    rff = RFFRidge(in_size=1, window=10, output_dim=match_qrc_feature_dim(qrc), gamma=0.1, seed=seed).fit(y_tr)
+    p = rff.predict(y_te); preds["RFF+Ridge"] = p
+    rows.append(("RFF+Ridge", mean_squared_error(y_te, p), qlike_narma(y_te, p)))
 
     # Exogenous
     harx = HARXModel().fit(y_tr, X_tr); p = harx.predict(y_te, X_te); preds["HARX"] = p; rows.append(("HARX", mean_squared_error(y_te, p), qlike_narma(y_te, p)))
     qrc_in = 1 + X_tr.shape[1]
     qrcx = HPT_QRC_Multi(in_size=qrc_in, window=10, photon_list=[2,3,4], seed=seed).fit(y_tr, X_tr)
     p = qrcx.predict(y_te, X_te); preds["HPT-QRC-X"] = p; rows.append(("HPT-QRC-X", mean_squared_error(y_te, p), qlike_narma(y_te, p)))
+    rff_x = RFFRidge(in_size=qrc_in, window=10, output_dim=match_qrc_feature_dim(qrcx), gamma=0.1, seed=seed).fit(y_tr, X_tr)
+    p = rff_x.predict(y_te, X_te); preds["RFF+Ridge-X"] = p
+    rows.append(("RFF+Ridge-X", mean_squared_error(y_te, p), qlike_narma(y_te, p)))
 
     results["NARMA10"] = pd.DataFrame(rows, columns=["Model", "MSE", "QLIKE"])
 
@@ -88,11 +119,19 @@ def run_one_seed(seed):
     rc  = RCModel(in_size=1, seed=seed).fit(y_tr); p = rc.predict(y_te); rows.append(("RC", mean_squared_error(y_te, p), qlike_loss(y_te, p)))
     ccr = ClassicalContextRidge(window=5).fit(y_tr); p = ccr.predict(y_te); rows.append(("Classical-Ridge", mean_squared_error(y_te, p), qlike_loss(y_te, p)))
     qrc = HPT_QRC_Multi(in_size=1, window=10, photon_list=[2,3,4], seed=seed).fit(y_tr); p = qrc.predict(y_te); rows.append(("HPT-QRC", mean_squared_error(y_te, p), qlike_loss(y_te, p)))
+    if QRC_TUNED:
+        cfg = QRC_TUNED["Mackey_Glass"]
+        qrc_t = HPT_QRC_Multi(in_size=1, seed=seed, **cfg).fit(y_tr)
+        p = qrc_t.predict(y_te); rows.append(("HPT-QRC (tuned)", mean_squared_error(y_te, p), qlike_loss(y_te, p)))
+    rff = RFFRidge(in_size=1, window=10, output_dim=match_qrc_feature_dim(qrc), gamma=0.1, seed=seed).fit(y_tr)
+    p = rff.predict(y_te); rows.append(("RFF+Ridge", mean_squared_error(y_te, p), qlike_loss(y_te, p)))
 
     harx = HARXModel().fit(y_tr, X_tr); p = harx.predict(y_te, X_te); rows.append(("HARX", mean_squared_error(y_te, p), qlike_loss(y_te, p)))
     qrc_in = 1 + X_tr.shape[1]
     qrcx = HPT_QRC_Multi(in_size=qrc_in, window=10, photon_list=[2,3,4], seed=seed).fit(y_tr, X_tr)
     p = qrcx.predict(y_te, X_te); rows.append(("HPT-QRC-X", mean_squared_error(y_te, p), qlike_loss(y_te, p)))
+    rff_x = RFFRidge(in_size=qrc_in, window=10, output_dim=match_qrc_feature_dim(qrcx), gamma=0.1, seed=seed).fit(y_tr, X_tr)
+    p = rff_x.predict(y_te, X_te); rows.append(("RFF+Ridge-X", mean_squared_error(y_te, p), qlike_loss(y_te, p)))
 
     results["Mackey_Glass"] = pd.DataFrame(rows, columns=["Model", "MSE", "QLIKE"])
 
@@ -113,11 +152,19 @@ def run_one_seed(seed):
     ccr = ClassicalContextRidge(window=5).fit(y_tr); p = ccr.predict(y_te); rows.append(("Classical-Ridge", mean_squared_error(y_te, p), qlike_sp(y_te, p)))
     qrc = HPT_QRC_Multi(in_size=1, window=10, photon_list=[2,3,4], seed=seed, use_har_context=True).fit(y_tr)
     p = qrc.predict(y_te); rows.append(("HPT-QRC", mean_squared_error(y_te, p), qlike_sp(y_te, p)))
+    if QRC_TUNED:
+        cfg = QRC_TUNED["SP500_RV"]
+        qrc_t = HPT_QRC_Multi(in_size=1, seed=seed, use_har_context=True, **cfg).fit(y_tr)
+        p = qrc_t.predict(y_te); rows.append(("HPT-QRC (tuned)", mean_squared_error(y_te, p), qlike_sp(y_te, p)))
+    rff = RFFRidge(in_size=1, window=10, output_dim=match_qrc_feature_dim(qrc), gamma=0.1, seed=seed, use_har_context=True).fit(y_tr)
+    p = rff.predict(y_te); rows.append(("RFF+Ridge", mean_squared_error(y_te, p), qlike_sp(y_te, p)))
 
     harx = HARXModel().fit(y_tr, X_tr); p = harx.predict(y_te, X_te); rows.append(("HARX", mean_squared_error(y_te, p), qlike_sp(y_te, p)))
     qrc_in = 1 + X_tr.shape[1]
     qrcx = HPT_QRC_Multi(in_size=qrc_in, window=10, photon_list=[2,3,4], seed=seed, use_har_context=True).fit(y_tr, X_tr)
     p = qrcx.predict(y_te, X_te); rows.append(("HPT-QRC-X", mean_squared_error(y_te, p), qlike_sp(y_te, p)))
+    rff_x = RFFRidge(in_size=qrc_in, window=10, output_dim=match_qrc_feature_dim(qrcx), gamma=0.1, seed=seed, use_har_context=True).fit(y_tr, X_tr)
+    p = rff_x.predict(y_te, X_te); rows.append(("RFF+Ridge-X", mean_squared_error(y_te, p), qlike_sp(y_te, p)))
 
     results["SP500_RV"] = pd.DataFrame(rows, columns=["Model", "MSE", "QLIKE"])
 

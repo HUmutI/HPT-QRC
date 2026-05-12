@@ -1,0 +1,29 @@
+{
+  "NARMA10": {
+    "best_params": {
+      "res_size": 500,
+      "alpha": 0.9,
+      "spectral_radius": 0.9,
+      "ridge_alpha": 0.0029492419675725325
+    },
+    "best_val_mse": 0.006370978262919149
+  },
+  "Mackey_Glass": {
+    "best_params": {
+      "res_size": 1000,
+      "alpha": 0.9,
+      "spectral_radius": 1.1,
+      "ridge_alpha": 2.781428564375755e-06
+    },
+    "best_val_mse": 3.615753876494403e-08
+  },
+  "SP500_RV": {
+    "best_params": {
+      "res_size": 200,
+      "alpha": 0.5,
+      "spectral_radius": 0.6,
+      "ridge_alpha": 0.0004791625356624334
+    },
+    "best_val_mse": 0.006660519119116439
+  }
+}
