@@ -375,10 +375,9 @@ finds linear volatility models difficult to separate at this frequency.
 \begin{table}[h]
 \centering
 \caption{DM test statistics and two-sided HAC $p$-values for
-HPT-QRC (tuned) vs.\ primary baselines on S\&P 500 RV (fixed 80/20 split).
-$DM > 0$ indicates HPT-QRC has higher loss than the comparator;
-$DM < 0$ indicates HPT-QRC has lower loss. Full pairwise matrices in
-\texttt{results/SP500\_Realized\_Volatility\_DM\_HAC\_\{MSE,QLIKE\}.csv}.}
+HPT-QRC (tuned) vs.\ all baselines on S\&P 500 RV (fixed 80/20 split).
+$DM > 0$ indicates HPT-QRC has higher loss than the comparator (comparator
+wins); $DM < 0$ indicates HPT-QRC has lower loss (HPT-QRC wins).}
 \label{tab:dm_sp500}
 \begin{tabular}{lcccc}
 \toprule
@@ -387,10 +386,14 @@ $DM < 0$ indicates HPT-QRC has lower loss. Full pairwise matrices in
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}
   & $DM$ & $p$ & $DM$ & $p$ \\
 \midrule
-AR(3)       & $2.037$ & $0.042$ & $1.925$ & $0.054$ \\
-HAR         & $1.979$ & $0.048$ & $1.732$ & $0.083$ \\
-HARX        & $-1.768$ & $0.077$ & $-1.178$ & $0.239$ \\
-RFF+Ridge   & $-1.717$ & $0.086$ & $-1.705$ & $0.088$ \\
+AR(1)           & $1.493$ & $0.135$ & $1.663$ & $0.096$ \\
+AR(3)           & $2.037$ & $0.042$ & $1.925$ & $0.054$ \\
+HAR             & $1.979$ & $0.048$ & $1.732$ & $0.083$ \\
+ESN             & $1.952$ & $0.051$ & $1.829$ & $0.067$ \\
+Classical-Ridge & $1.678$ & $0.093$ & $0.853$ & $0.394$ \\
+HARX            & $-1.768$ & $0.077$ & $-1.178$ & $0.239$ \\
+RFF+Ridge       & $-1.717$ & $0.086$ & $-1.705$ & $0.088$ \\
+LSTM            & $-0.853$ & $0.394$ & $-1.146$ & $0.252$ \\
 \bottomrule
 \end{tabular}
 \end{table}
