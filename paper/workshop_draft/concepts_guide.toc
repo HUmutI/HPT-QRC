@@ -1,0 +1,29 @@
+\contentsline {part}{I\hspace {1em}Time Series \& Statistics}{4}{part.1}%
+\contentsline {section}{\numberline {1}AutoRegressive Models --- AR(1) and AR(3)}{4}{section.1}%
+\contentsline {section}{\numberline {2}HAR Model --- Heterogeneous AutoRegressive}{5}{section.2}%
+\contentsline {paragraph}{HARX (HAR with Exogenous Variables).}{5}{section*.3}%
+\contentsline {section}{\numberline {3}Realized Volatility (RV)}{6}{section.3}%
+\contentsline {section}{\numberline {4}Ridge Regression}{6}{section.4}%
+\contentsline {section}{\numberline {5}MSE and QLIKE Loss Functions}{7}{section.5}%
+\contentsline {part}{II\hspace {1em}Machine Learning Foundations}{9}{part.2}%
+\contentsline {section}{\numberline {6}Reservoir Computing and Echo State Networks (ESN)}{9}{section.6}%
+\contentsline {section}{\numberline {7}Random Fourier Features (RFF)}{10}{section.7}%
+\contentsline {section}{\numberline {8}Optuna and the TPE Algorithm}{11}{section.8}%
+\contentsline {section}{\numberline {9}Walk-Forward Validation}{12}{section.9}%
+\contentsline {part}{III\hspace {1em}Statistical Inference}{13}{part.3}%
+\contentsline {section}{\numberline {10}The Diebold-Mariano (DM) Test}{13}{section.10}%
+\contentsline {section}{\numberline {11}Newey-West HAC Variance}{14}{section.11}%
+\contentsline {section}{\numberline {12}Hansen Model Confidence Set (MCS)}{15}{section.12}%
+\contentsline {paragraph}{Stationary Bootstrap.}{16}{section*.4}%
+\contentsline {part}{IV\hspace {1em}Quantum Photonics}{17}{part.4}%
+\contentsline {section}{\numberline {13}Quantum States and Fock Space}{17}{section.13}%
+\contentsline {section}{\numberline {14}Linear Optical Interferometers and Phase Encoding}{18}{section.14}%
+\contentsline {section}{\numberline {15}The Permanent of a Matrix and Boson Sampling}{19}{section.15}%
+\contentsline {section}{\numberline {16}Perceval, SLOS, and MerLin}{19}{section.16}%
+\contentsline {section}{\numberline {17}LexGrouping --- Compressing Fock Probabilities}{21}{section.17}%
+\contentsline {part}{V\hspace {1em}Benchmarks and Architecture}{22}{part.5}%
+\contentsline {section}{\numberline {18}NARMA-10 Benchmark}{22}{section.18}%
+\contentsline {section}{\numberline {19}Mackey-Glass Benchmark}{23}{section.19}%
+\contentsline {section}{\numberline {20}Information Processing Capacity (IPC)}{23}{section.20}%
+\contentsline {section}{\numberline {21}Virtual Depth}{25}{section.21}%
+\contentsline {section}{\numberline {22}The Fock-Space Scaling and Heterogeneous Ensemble}{25}{section.22}%

@@ -31,56 +31,63 @@
 \@writefile{toc}{\contentsline {paragraph}{Encoding.}{2}{section*.3}\protected@file@percent }
 \citation{maring2024ascella}
 \citation{corsi2009}
-\citation{rahimi2007rff}
 \@writefile{toc}{\contentsline {paragraph}{Per-reservoir circuit.}{3}{section*.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{Heterogeneous photon ensemble.}{3}{section*.5}\protected@file@percent }
+\newlabel{eq:lexgroup}{{1}{3}{Heterogeneous photon ensemble}{equation.1}{}}
 \@writefile{toc}{\contentsline {paragraph}{Readout.}{3}{section*.6}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{Hyperparameter tuning.}{3}{section*.7}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Optuna-tuned HPT-QRC configurations per dataset (\texttt  {results/qrc\_best\_configs.json}).}}{3}{table.1}\protected@file@percent }
 \newlabel{tab:tuned}{{1}{3}{Optuna-tuned HPT-QRC configurations per dataset (\texttt {results/qrc\_best\_configs.json})}{table.1}{}}
 \@writefile{toc}{\contentsline {paragraph}{Complexity.}{3}{section*.8}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4}Experiments}{3}{section.4}\protected@file@percent }
-\newlabel{sec:experiments}{{4}{3}{Experiments}{section.4}{}}
-\@writefile{toc}{\contentsline {paragraph}{Datasets.}{3}{section*.9}\protected@file@percent }
+\citation{rahimi2007rff}
 \citation{andrews1991bandwidth}
 \citation{branco2024hardtobeat}
-\citation{jaeger2001esn}
-\citation{dambre2012ipc}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Experiments}{4}{section.4}\protected@file@percent }
+\newlabel{sec:experiments}{{4}{4}{Experiments}{section.4}{}}
+\@writefile{toc}{\contentsline {paragraph}{Datasets.}{4}{section*.9}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{Baselines.}{4}{section*.10}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{Inference.}{4}{section*.11}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Multi-seed benchmark}{4}{subsection.4.1}\protected@file@percent }
 \newlabel{sec:results-multi}{{4.1}{4}{Multi-seed benchmark}{subsection.4.1}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces NARMA-10, 5 seeds, mean $\pm $ std. Tuned HPT-QRC beats RFF on mean MSE; HPT-QRC-X is the best overall and beats RFF+Ridge-X by $\sim 9\%$.}}{4}{table.2}\protected@file@percent }
 \newlabel{tab:narma}{{2}{4}{NARMA-10, 5 seeds, mean $\pm $ std. Tuned HPT-QRC beats RFF on mean MSE; HPT-QRC-X is the best overall and beats RFF+Ridge-X by $\sim 9\%$}{table.2}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Walk-forward evaluation on S\&P 500 RV}{4}{subsection.4.2}\protected@file@percent }
-\newlabel{sec:walk-forward}{{4.2}{4}{Walk-forward evaluation on S\&P 500 RV}{subsection.4.2}{}}
+\citation{jaeger2001esn}
+\citation{dambre2012ipc}
 \@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Mackey-Glass ($\tau {=}17$), 5 seeds, mean $\pm $ std. Tuned HPT-QRC achieves the lowest MSE ($3.3\!\cdot \!10^{-7}$), outperforming the next-best classical baseline (RFF+Ridge, $1.32\!\cdot \!10^{-6}$) by $\sim 4\times $ and AR(3) by $\sim 20\times $.}}{5}{table.3}\protected@file@percent }
 \newlabel{tab:mg}{{3}{5}{Mackey-Glass ($\tau {=}17$), 5 seeds, mean $\pm $ std. Tuned HPT-QRC achieves the lowest MSE ($3.3\!\cdot \!10^{-7}$), outperforming the next-best classical baseline (RFF+Ridge, $1.32\!\cdot \!10^{-6}$) by $\sim 4\times $ and AR(3) by $\sim 20\times $}{table.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{Diebold--Mariano inference (S\&P 500 RV, fixed split).}{5}{section*.12}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Walk-forward evaluation on S\&P 500 RV}{5}{subsection.4.2}\protected@file@percent }
+\newlabel{sec:walk-forward}{{4.2}{5}{Walk-forward evaluation on S\&P 500 RV}{subsection.4.2}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Information Processing Capacity}{5}{subsection.4.3}\protected@file@percent }
 \newlabel{sec:ipc}{{4.3}{5}{Information Processing Capacity}{subsection.4.3}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Fock-space scaling}{5}{subsection.4.4}\protected@file@percent }
-\newlabel{sec:scaling}{{4.4}{5}{Fock-space scaling}{subsection.4.4}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces S\&P 500 monthly realised volatility, fixed 80/20 split, 5 seeds. \textbf  {HPT-QRC (tuned)} uses the Optuna-selected config of Table~\ref {tab:tuned}; \textbf  {HPT-QRC (default)} uses $[2,3,4]$/window-10/lex-out-10 for reference. The walk-forward analogue of this benchmark (Table~\ref {tab:wf}) currently reports the default config. Tuned HPT-QRC ties AR(3) and HAR within seed variance ($\Delta \,\mathrm  {MSE}$ vs HAR $= +1\!\cdot \!10^{-5}$, $\Delta \,\mathrm  {QLIKE} = +2\!\cdot \!10^{-3}$) and beats HARX / tuned RFF.}}{6}{table.4}\protected@file@percent }
 \newlabel{tab:sp500}{{4}{6}{S\&P 500 monthly realised volatility, fixed 80/20 split, 5 seeds. \textbf {HPT-QRC (tuned)} uses the Optuna-selected config of Table~\ref {tab:tuned}; \textbf {HPT-QRC (default)} uses $[2,3,4]$/window-10/lex-out-10 for reference. The walk-forward analogue of this benchmark (Table~\ref {tab:wf}) currently reports the default config. Tuned HPT-QRC ties AR(3) and HAR within seed variance ($\Delta \,\mathrm {MSE}$ vs HAR $= +1\!\cdot \!10^{-5}$, $\Delta \,\mathrm {QLIKE} = +2\!\cdot \!10^{-3}$) and beats HARX / tuned RFF}{table.4}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Fock-space dimension scaling of HPT-QRC. Row (a): vary $n$, fix $m=8$. Row (b): vary $m$, fix $n=3$. Mackey--Glass shows the cleanest monotone Fock-dim trend; NARMA-10 is sample-limited. Numerical values in \texttt  {results/ablation\_fock\_scaling\_\{photon,mode\}.csv}.}}{6}{figure.1}\protected@file@percent }
-\newlabel{fig:fock}{{1}{6}{Fock-space dimension scaling of HPT-QRC. Row (a): vary $n$, fix $m=8$. Row (b): vary $m$, fix $n=3$. Mackey--Glass shows the cleanest monotone Fock-dim trend; NARMA-10 is sample-limited. Numerical values in \texttt {results/ablation\_fock\_scaling\_\{photon,mode\}.csv}}{figure.1}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}Photon-ensemble ablation at matched dimension}{6}{subsection.4.5}\protected@file@percent }
-\newlabel{sec:photon-axis}{{4.5}{6}{Photon-ensemble ablation at matched dimension}{subsection.4.5}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces S\&P 500 RV walk-forward (8 folds, 1970--2017): median (IQR). \textbf  {HPT-QRC in this table uses the default $[2,3,4]$ / window-10 / lex-out-10 configuration} (it is \emph  {not} the Optuna-tuned config from Table~\ref {tab:tuned}, which was used for the fixed 80/20 split in Table~\ref {tab:sp500}); the tuned walk-forward evaluation is deferred to the journal version. HAR sits at the head of the survivor set; default HPT-QRC is in the parity range with AR(3), AR(1), and RFF.}}{7}{table.5}\protected@file@percent }
-\newlabel{tab:wf}{{5}{7}{S\&P 500 RV walk-forward (8 folds, 1970--2017): median (IQR). \textbf {HPT-QRC in this table uses the default $[2,3,4]$ / window-10 / lex-out-10 configuration} (it is \emph {not} the Optuna-tuned config from Table~\ref {tab:tuned}, which was used for the fixed 80/20 split in Table~\ref {tab:sp500}); the tuned walk-forward evaluation is deferred to the journal version. HAR sits at the head of the survivor set; default HPT-QRC is in the parity range with AR(3), AR(1), and RFF}{table.5}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Linear MC and IPC. Feature dim $\approx 95$ for both HPT-QRC rows: $R\cdot V\cdot \texttt  {lex\_out} + W = 3\cdot 3\cdot 10 + 5 = 95$ (three reservoirs, virtual depth $3$, lex-out $10$, raw-window context dim $5$). The homogeneous and heterogeneous photon ensembles both use $R=3$ reservoirs with the same downstream \texttt  {LexGrouping}$\to $$10$ output and so produce the same total feature dimension; the heterogeneous ensemble differs in which photon-number Fock spaces are sampled. ESN res-$200$ row is the matched-dim comparator; ESN-$1000$ is a larger-capacity reference. HPT-QRC dominates Random-Linear; at matched dim, ESN holds higher linear-MC and IPC$_{\mathrm  {deg}\!\leq \!2}$, while HPT-QRC has the largest degree-3 IPC ($32.6$ vs ESN-200's $24.6$).}}{7}{table.6}\protected@file@percent }
-\newlabel{tab:ipc}{{6}{7}{Linear MC and IPC. Feature dim $\approx 95$ for both HPT-QRC rows: $R\cdot V\cdot \texttt {lex\_out} + W = 3\cdot 3\cdot 10 + 5 = 95$ (three reservoirs, virtual depth $3$, lex-out $10$, raw-window context dim $5$). The homogeneous and heterogeneous photon ensembles both use $R=3$ reservoirs with the same downstream \texttt {LexGrouping}$\to $$10$ output and so produce the same total feature dimension; the heterogeneous ensemble differs in which photon-number Fock spaces are sampled. ESN res-$200$ row is the matched-dim comparator; ESN-$1000$ is a larger-capacity reference. HPT-QRC dominates Random-Linear; at matched dim, ESN holds higher linear-MC and IPC$_{\mathrm {deg}\!\leq \!2}$, while HPT-QRC has the largest degree-3 IPC ($32.6$ vs ESN-200's $24.6$)}{table.6}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces Photon-ensemble ablation at \emph  {matched} output dimension $90$. NARMA-10 and MG by NRMSE; S\&P 500 RV by QLIKE. 3 seeds.}}{7}{table.7}\protected@file@percent }
-\newlabel{tab:photon-ablation}{{7}{7}{Photon-ensemble ablation at \emph {matched} output dimension $90$. NARMA-10 and MG by NRMSE; S\&P 500 RV by QLIKE. 3 seeds}{table.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Fock-space scaling}{6}{subsection.4.4}\protected@file@percent }
+\newlabel{sec:scaling}{{4.4}{6}{Fock-space scaling}{subsection.4.4}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces DM test statistics and two-sided HAC $p$-values for HPT-QRC (tuned) vs.\ all baselines on S\&P 500 RV (fixed 80/20 split). $DM > 0$ indicates HPT-QRC has higher loss than the comparator (comparator wins); $DM < 0$ indicates HPT-QRC has lower loss (HPT-QRC wins).}}{7}{table.5}\protected@file@percent }
+\newlabel{tab:dm_sp500}{{5}{7}{DM test statistics and two-sided HAC $p$-values for HPT-QRC (tuned) vs.\ all baselines on S\&P 500 RV (fixed 80/20 split). $DM > 0$ indicates HPT-QRC has higher loss than the comparator (comparator wins); $DM < 0$ indicates HPT-QRC has lower loss (HPT-QRC wins)}{table.5}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces S\&P 500 RV walk-forward (8 folds, 1970--2017): median (IQR). \textbf  {HPT-QRC in this table uses the default $[2,3,4]$ / window-10 / lex-out-10 configuration} (it is \emph  {not} the Optuna-tuned config from Table~\ref {tab:tuned}, which was used for the fixed 80/20 split in Table~\ref {tab:sp500}); the tuned walk-forward evaluation is deferred to the journal version. HAR sits at the head of the survivor set; default HPT-QRC is in the parity range with AR(3), AR(1), and RFF.}}{7}{table.6}\protected@file@percent }
+\newlabel{tab:wf}{{6}{7}{S\&P 500 RV walk-forward (8 folds, 1970--2017): median (IQR). \textbf {HPT-QRC in this table uses the default $[2,3,4]$ / window-10 / lex-out-10 configuration} (it is \emph {not} the Optuna-tuned config from Table~\ref {tab:tuned}, which was used for the fixed 80/20 split in Table~\ref {tab:sp500}); the tuned walk-forward evaluation is deferred to the journal version. HAR sits at the head of the survivor set; default HPT-QRC is in the parity range with AR(3), AR(1), and RFF}{table.6}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Fock-space dimension scaling of HPT-QRC. Row (a): vary $n$, fix $m=8$. Row (b): vary $m$, fix $n=3$. Mackey--Glass shows the cleanest monotone Fock-dim trend; NARMA-10 is sample-limited. Numerical values in \texttt  {results/ablation\_fock\_scaling\_\{photon,mode\}.csv}.}}{7}{figure.1}\protected@file@percent }
+\newlabel{fig:fock}{{1}{7}{Fock-space dimension scaling of HPT-QRC. Row (a): vary $n$, fix $m=8$. Row (b): vary $m$, fix $n=3$. Mackey--Glass shows the cleanest monotone Fock-dim trend; NARMA-10 is sample-limited. Numerical values in \texttt {results/ablation\_fock\_scaling\_\{photon,mode\}.csv}}{figure.1}{}}
 \citation{maring2024ascella}
+\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces Linear MC and IPC. Feature dim $\approx 95$ for both HPT-QRC rows: $R\cdot V\cdot \texttt  {lex\_out} + W = 3\cdot 3\cdot 10 + 5 = 95$ (three reservoirs, virtual depth $3$, lex-out $10$, raw-window context dim $5$). The homogeneous and heterogeneous photon ensembles both use $R=3$ reservoirs with the same downstream \texttt  {LexGrouping}$\to $$10$ output and so produce the same total feature dimension; the heterogeneous ensemble differs in which photon-number Fock spaces are sampled. ESN res-$200$ row is the matched-dim comparator; ESN-$1000$ is a larger-capacity reference. HPT-QRC dominates Random-Linear; at matched dim, ESN holds higher linear-MC and IPC$_{\mathrm  {deg}\!\leq \!2}$, while HPT-QRC has the largest degree-3 IPC ($32.6$ vs ESN-200's $24.6$).}}{8}{table.7}\protected@file@percent }
+\newlabel{tab:ipc}{{7}{8}{Linear MC and IPC. Feature dim $\approx 95$ for both HPT-QRC rows: $R\cdot V\cdot \texttt {lex\_out} + W = 3\cdot 3\cdot 10 + 5 = 95$ (three reservoirs, virtual depth $3$, lex-out $10$, raw-window context dim $5$). The homogeneous and heterogeneous photon ensembles both use $R=3$ reservoirs with the same downstream \texttt {LexGrouping}$\to $$10$ output and so produce the same total feature dimension; the heterogeneous ensemble differs in which photon-number Fock spaces are sampled. ESN res-$200$ row is the matched-dim comparator; ESN-$1000$ is a larger-capacity reference. HPT-QRC dominates Random-Linear; at matched dim, ESN holds higher linear-MC and IPC$_{\mathrm {deg}\!\leq \!2}$, while HPT-QRC has the largest degree-3 IPC ($32.6$ vs ESN-200's $24.6$)}{table.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}Photon-ensemble ablation at matched dimension}{8}{subsection.4.5}\protected@file@percent }
+\newlabel{sec:photon-axis}{{4.5}{8}{Photon-ensemble ablation at matched dimension}{subsection.4.5}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces Photon-ensemble ablation at \emph  {matched} output dimension $90$. NARMA-10 and MG by NRMSE; S\&P 500 RV by QLIKE. 3 seeds.}}{8}{table.8}\protected@file@percent }
+\newlabel{tab:photon-ablation}{{8}{8}{Photon-ensemble ablation at \emph {matched} output dimension $90$. NARMA-10 and MG by NRMSE; S\&P 500 RV by QLIKE. 3 seeds}{table.8}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {5}Hardware-Noise Sensitivity}{8}{section.5}\protected@file@percent }
 \newlabel{sec:hardware}{{5}{8}{Hardware-Noise Sensitivity}{section.5}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces Shot-noise (left) and indistinguishability (right) sensitivity on NARMA-10, single seed (seed $42$). The baseline (infinite shots, $V=1$) is $\mathrm  {MSE} = 5.58\!\cdot \!10^{-3}$; the small ($\sim 3\%$) offset from the 5-seed mean of $5.75\!\cdot \!10^{-3}$ in Table~\ref {tab:narma} reflects seed variance.}}{8}{table.8}\protected@file@percent }
-\newlabel{tab:noise}{{8}{8}{Shot-noise (left) and indistinguishability (right) sensitivity on NARMA-10, single seed (seed $42$). The baseline (infinite shots, $V=1$) is $\mathrm {MSE} = 5.58\!\cdot \!10^{-3}$; the small ($\sim 3\%$) offset from the 5-seed mean of $5.75\!\cdot \!10^{-3}$ in Table~\ref {tab:narma} reflects seed variance}{table.8}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {6}Empirical Echo-State-Property check}{8}{section.6}\protected@file@percent }
-\newlabel{sec:esp}{{6}{8}{Empirical Echo-State-Property check}{section.6}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {7}Limitations}{8}{section.7}\protected@file@percent }
-\newlabel{sec:limitations}{{7}{8}{Limitations}{section.7}{}}
+\citation{maring2024ascella}
+\@writefile{lot}{\contentsline {table}{\numberline {9}{\ignorespaces Shot-noise (left) and indistinguishability (right) sensitivity on NARMA-10, single seed (seed $42$). The baseline (infinite shots, $V=1$) is $\mathrm  {MSE} = 5.58\!\cdot \!10^{-3}$; the small ($\sim 3\%$) offset from the 5-seed mean of $5.75\!\cdot \!10^{-3}$ in Table~\ref {tab:narma} reflects seed variance.}}{9}{table.9}\protected@file@percent }
+\newlabel{tab:noise}{{9}{9}{Shot-noise (left) and indistinguishability (right) sensitivity on NARMA-10, single seed (seed $42$). The baseline (infinite shots, $V=1$) is $\mathrm {MSE} = 5.58\!\cdot \!10^{-3}$; the small ($\sim 3\%$) offset from the 5-seed mean of $5.75\!\cdot \!10^{-3}$ in Table~\ref {tab:narma} reflects seed variance}{table.9}{}}
+\@writefile{toc}{\contentsline {paragraph}{Bunched events.}{9}{section*.13}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Hardware throughput.}{9}{section*.14}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}Empirical Echo-State-Property check}{9}{section.6}\protected@file@percent }
+\newlabel{sec:esp}{{6}{9}{Empirical Echo-State-Property check}{section.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {7}Limitations}{9}{section.7}\protected@file@percent }
+\newlabel{sec:limitations}{{7}{9}{Limitations}{section.7}{}}
 \bibstyle{plainnat}
 \bibdata{refs}
 \bibcite{amanov2026hpqrc}{{1}{2026}{{Amanov and Azamov}}{{}}}
@@ -95,13 +102,13 @@
 \bibcite{heurtel2023perceval}{{10}{2023}{{Heurtel et~al.}}{{}}}
 \bibcite{jaeger2001esn}{{11}{2001}{{Jaeger}}{{}}}
 \bibcite{li2025qrcrv}{{12}{2025}{{Li et~al.}}{{Li, Mukhopadhyay, Bayat, and Habibnia}}}
+\@writefile{toc}{\contentsline {section}{\numberline {8}Conclusion}{10}{section.8}\protected@file@percent }
+\newlabel{sec:conclusion}{{8}{10}{Conclusion}{section.8}{}}
 \bibcite{maass2002lsm}{{13}{2002}{{Maass et~al.}}{{Maass, Natschl{\"a}ger, and Markram}}}
-\@writefile{toc}{\contentsline {section}{\numberline {8}Conclusion}{9}{section.8}\protected@file@percent }
-\newlabel{sec:conclusion}{{8}{9}{Conclusion}{section.8}{}}
 \bibcite{maring2024ascella}{{14}{2024}{{Maring et~al.}}{{}}}
 \bibcite{nerenberg2025photonquarc}{{15}{2025}{{Nerenberg et~al.}}{{}}}
 \bibcite{newey1987hac}{{16}{1987}{{Newey and West}}{{}}}
 \bibcite{patton2011volatility}{{17}{2011}{{Patton}}{{}}}
 \bibcite{politis1994stationary}{{18}{1994}{{Politis and Romano}}{{}}}
 \bibcite{rahimi2007rff}{{19}{2007}{{Rahimi and Recht}}{{}}}
-\gdef \@abspage@last{10}
+\gdef \@abspage@last{11}
