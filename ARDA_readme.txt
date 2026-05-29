@@ -9,16 +9,21 @@ Goal:    Benchmark QRC against classical models on NARMA10, Mackey-Glass,
 SETUP (do this first)
 ---------------------
 
-1. Create and activate the conda environment:
+1. Clone the repo:
+
+     git clone https://github.com/HUmutI/HPT-QRC.git
+     cd HPT-QRC
+
+2. Create and activate the conda environment:
 
      conda create -n quandela python=3.11
      conda activate quandela
 
-2. Install standard dependencies:
+3. Install all dependencies:
 
      pip install -r requirements.txt
 
-3. Verify install:
+4. Verify install:
 
      python -c "import perceval; import merlin; print('OK')"
 
