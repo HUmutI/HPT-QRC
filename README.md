@@ -20,7 +20,7 @@ This repository contains **two related but distinct bodies of work:**
 | **Phase 1 — Hackathon** | Original winning submission for the EPFL Quantum Hackathon 2026 (Quandela Challenge). Forecasts swaption volatility surfaces using HPT-QRC. |
 | **Phase 2 — Academic Paper** | Extended benchmarking framework for submission to a peer-reviewed venue. Tests HPT-QRC across three rigorous datasets with full statistical validation. |
 
-**You are currently on Phase 2.** All new benchmarking code lives in `narma_experiment/`.
+**You are currently on Phase 2.** All new benchmarking code lives in `src/`, `experiments/`, and `scripts/`.
 
 ---
 
@@ -51,35 +51,45 @@ Time Series Input → Sliding Window (size=10)
 ```bash
 conda create -n quandela python=3.11
 conda activate quandela
-pip install -r requirements.txt
-pip install yfinance   # for VIX dataset
+pip install perceval-quandela merlin optuna yfinance statsmodels
 ```
 
 ### Run Full Benchmark Suite
+Run all scripts from the **project root** (`EPFL_ANTI/`):
+
 ```bash
-cd narma_experiment/
-
 # Main results — 5 seeds, mean ± std (publication-ready)
-python multi_seed_benchmark.py
-
-# Memory Capacity analysis (Jaeger 2001)
-python memory_capacity.py
-
-# Ablation study (photons, reservoirs, window, ensemble type)
-python ablation_study.py
-
-# Computational efficiency table
-python efficiency_benchmark.py
+python experiments/multi_seed_benchmark.py
 
 # Single-seed run + DM test tables + overlay plots
-python train_narma.py
+python experiments/train_narma.py
+
+# Memory Capacity analysis (Jaeger 2001)
+python experiments/memory_capacity.py
+
+# Ablation study (photons, reservoirs, window, ensemble type)
+python experiments/ablation_study.py
+
+# Computational efficiency table
+python experiments/efficiency_benchmark.py
+
+# Walk-forward cross-validation
+python experiments/walk_forward_runner.py
+
+# Hyperparameter tuning (run before multi_seed_benchmark)
+python experiments/tune_qrc.py
+python experiments/tune_baselines.py
+
+# Post-processing plots
+python scripts/plot_dm_heatmaps.py
+python scripts/format_dm.py
 ```
 
 ---
 
 ## 📈 4. Current Results (multi-seed, Optuna-tuned models, equal compute budget)
 
-All classical baselines (ESN, LSTM, RFF+Ridge) and HPT-QRC are Optuna-tuned with comparable trial budgets per dataset (see `narma_experiment/tune_baselines.py` and `narma_experiment/tune_qrc.py`). Best configs are cached in `results/{lstm,esn,rff,qrc}_best_configs.json`.
+All classical baselines (ESN, LSTM, RFF+Ridge) and HPT-QRC are Optuna-tuned with comparable trial budgets per dataset (see `experiments/tune_baselines.py` and `experiments/tune_qrc.py`). Best configs are cached in `results/{lstm,esn,rff,qrc}_best_configs.json`.
 
 ### NARMA-10 — nonlinear synthetic task (5 seeds)
 | Model | MSE (mean ± std) | QLIKE (mean ± std) |
@@ -178,34 +188,47 @@ The selling point of HPT-QRC is **training paradigm**, not raw speed: no iterati
 ```
 EPFL_ANTI/
 ├── README.md                        ← this file
-├── walkthrough.md                   ← full research walkthrough & results log
-├── requirements.txt                 ← dependencies
 │
-├── narma_experiment/                ← Academic benchmark suite (Phase 2)
-│   ├── multi_qrc.py                 ← HPT-QRC model
-│   ├── classical_baselines.py       ← AR, HAR/HARX, LSTM (tunable), RC, ClassicalContextRidge
+├── docs/                            ← documentation & research notes
+│   ├── PROTOCOL.md                  ← pre-registered experimental protocol
+│   ├── walkthrough.md               ← full research walkthrough & results log
+│   └── claude_deepsearch.md         ← deep research notes
+│
+├── src/                             ← core library (imported by experiments)
+│   ├── multi_qrc.py                 ← HPT-QRC model (HPT_QRC_Multi)
+│   ├── data_loader.py               ← NARMA10 / Mackey-Glass / SP500 / VIX loaders
+│   ├── classical_baselines.py       ← AR, HAR/HARX, LSTM, RC, ClassicalContextRidge
+│   ├── esn_baseline.py              ← Echo State Network
 │   ├── rff_baseline.py              ← Random Fourier Features + Ridge (matched-dim)
-│   ├── dm_mcs.py                    ← Newey-West HAC DM + Hansen MCS
-│   ├── walk_forward.py              ← WalkForwardSplit iterator
-│   ├── walk_forward_runner.py       ← Walk-forward driver (median + IQR + MCS)
-│   ├── noise_models.py              ← Shot noise + indistinguishability sweeps
-│   ├── esp_check.py                 ← Echo-state-property / fading-memory check
-│   ├── tune_baselines.py            ← Optuna tuner for LSTM / ESN / RFF
-│   ├── tune_qrc.py                  ← Optuna tuner for HPT-QRC (symmetric)
-│   ├── ablation_matched_dim.py      ← Photon-list ablation at matched feature dim
-│   ├── ablation_fock_scaling.py     ← Joint (n,m) Fock-dim scaling sweep
-│   ├── data_loader.py               ← NARMA10/MG/SP500/VIX loaders (+ walk-forward)
-│   ├── memory_capacity.py           ← Linear MC + Dambre IPC + tuned ESN sweep
-│   ├── train_narma.py               ← Single-seed bench + DM-HAC + MCS tables
-│   ├── multi_seed_benchmark.py      ← 5-seed bench, tuned models, mean ± std
-│   ├── PROTOCOL.md                  ← Pre-registered experimental protocol
-│   └── results/                     ← All CSVs / PNGs / JSON best-configs
-└── paper/workshop_draft/            ← LaTeX manuscript (QTML / ML4PS / QML target)
-    ├── main.tex
-    ├── refs.bib
-    └── README.md
+│   ├── dm_mcs.py                    ← Newey-West HAC DM test + Hansen MCS
+│   ├── noise_models.py              ← Shot noise + indistinguishability models
+│   └── walk_forward.py              ← WalkForwardSplit iterator
 │
-└── [original hackathon files]       ← Phase 1 (swaption surface)
+├── experiments/                     ← runnable benchmark scripts (run from project root)
+│   ├── train_narma.py               ← single-seed benchmark + DM-HAC + MCS tables
+│   ├── multi_seed_benchmark.py      ← 5-seed benchmark, mean ± std (publication-ready)
+│   ├── walk_forward_runner.py       ← walk-forward CV driver (median + IQR + MCS)
+│   ├── memory_capacity.py           ← linear MC + Dambre IPC + tuned ESN sweep
+│   ├── esp_check.py                 ← echo-state-property / fading-memory check
+│   ├── efficiency_benchmark.py      ← wall-clock training time + model size table
+│   ├── pca_independence.py          ← PCA / linear independence analysis of features
+│   ├── online_rls.py                ← online recursive least-squares adaptation
+│   ├── flops_energy_calc.py         ← static FLOP / energy estimate
+│   ├── ablation_study.py            ← photons / reservoirs / window ablation
+│   ├── ablation_fock_scaling.py     ← joint (n_photons, n_modes) Fock-dim sweep
+│   ├── ablation_matched_dim.py      ← photon-list ablation at matched feature dim
+│   ├── tune_qrc.py                  ← Optuna tuner for HPT-QRC
+│   ├── tune_baselines.py            ← Optuna tuner for LSTM / ESN / RFF
+│   └── tune_sp500_window.py         ← window-size tuning for S&P 500
+│
+├── scripts/                         ← post-processing utilities
+│   ├── plot_dm_heatmaps.py          ← DM test heatmap plots
+│   ├── format_dm.py                 ← print DM tables as markdown
+│   └── render_report.py             ← render full walkthrough report
+│
+├── results/                         ← generated outputs (CSVs, PNGs, JSON configs)
+├── literature/                      ← reference papers and benchmark data (Data.CSV)
+└── paper/workshop_draft/            ← LaTeX manuscript
 ```
 
 ---

@@ -40,3 +40,26 @@ venv.bak/
 
 # DS Store
 .DS_Store
+
+# Editor & IDE
+.vscode/
+.idea/
+
+# Claude Code (personal AI config — do not commit)
+.claude/
+
+# Model weights (large binaries)
+*.pt
+*.pth
+*.ckpt
+
+# Archives
+*.zip
+*.tar.gz
+
+# Optuna study databases
+*.db
+
+# Generated results (regenerable from experiments)
+# Comment out if you want to track results in git
+# results/
