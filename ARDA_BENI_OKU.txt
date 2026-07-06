@@ -1,0 +1,78 @@
+DOSYA REHBERİ — EPFL_ANTI
+============================
+
+
+Proje: HPT-QRC (Hibrit Foton Temporal Quantum Reservoir Computing)
+Amaç:  NARMA10, Mackey-Glass, S&P 500 üzerinde QRC benchmark + akademik paper
+
+
+KLASÖR YAPISI
+-------------
+
+src/                    → Çekirdek kütüphane (buraya dokunma, sadece import edilir)
+  multi_qrc.py          → Ana QRC modeli (HPT_QRC_Multi sınıfı)
+  data_loader.py        → Veri yükleyiciler: NARMA10, Mackey-Glass, SP500, VIX
+  classical_baselines.py→ AR, HAR, HARX, LSTM, RC, ClassicalContextRidge modelleri
+  esn_baseline.py       → Echo State Network
+  rff_baseline.py       → Random Fourier Features + Ridge (klasik karşılaştırma)
+  dm_mcs.py             → Diebold-Mariano testi + Hansen MCS (istatistik)
+  noise_models.py       → Shot noise ve indistinguishability modelleri
+  walk_forward.py       → Walk-forward CV split mantığı
+
+experiments/            → Çalıştırılabilir deney scriptleri (proje kökünden çalıştır)
+  train_narma.py        → Tek seed benchmark + DM tabloları + overlay plotlar
+  multi_seed_benchmark.py → 5 seed, mean±std, yayına hazır sayılar  ← ANA SCRIPT
+  walk_forward_runner.py  → Walk-forward cross-validation
+  memory_capacity.py    → Bellek kapasitesi analizi (Jaeger 2001)
+  esp_check.py          → Echo-state-property / fading-memory kontrolü
+  efficiency_benchmark.py → Eğitim süresi ve model boyutu tablosu
+  pca_independence.py   → PCA / doğrusal bağımsızlık analizi
+  online_rls.py         → Online recursive least-squares
+  flops_energy_calc.py  → FLOP / enerji tahmini (statik hesap)
+  ablation_study.py     → Ablasyon: foton sayısı, reservoir sayısı, pencere
+  ablation_fock_scaling.py  → Fock-dim ölçekleme sweep'i
+  ablation_matched_dim.py   → Eşleştirilmiş feature dim ablasyonu
+  tune_qrc.py           → Optuna ile QRC hiperparametre arama
+  tune_baselines.py     → Optuna ile LSTM/ESN/RFF hiperparametre arama
+  tune_sp500_window.py  → S&P 500 için pencere boyutu araması
+
+scripts/                → Post-processing araçları (sonuçları görselleştir)
+  plot_dm_heatmaps.py   → DM test heatmap grafikleri üret
+  format_dm.py          → DM tablolarını markdown olarak yazdır
+  render_report.py      → Walkthrough raporu oluştur
+
+results/                → Deney çıktıları (CSV, PNG, JSON) — git'e commit etmeyebiliriz
+docs/                   → Belgeler
+  PROTOCOL.md           → Pre-registered deney protokolü (ne yapacağız, nasıl)
+  walkthrough.md        → Tam araştırma günlüğü ve sonuçlar
+  claude_deepsearch.md  → Araştırma notları
+
+literature/             → Referans makaleler ve benchmark verisi
+  qrc_repo/Data.CSV     → S&P 500 realized volatility verisi (asıl veri dosyası)
+  esn_repo/             → ESN referans implementasyonu
+
+paper/                  → LaTeX manuscript
+  workshop_draft/       → Ana tex dosyaları burада
+
+
+NASIL ÇALIŞTIRILIR
+------------------
+
+Conda environment:
+  conda activate quandela
+
+HEP PROJE KÖKÜNDEN (EPFL_ANTI/) çalıştır, alt klasörden değil:
+
+  python experiments/multi_seed_benchmark.py   # ana benchmark
+  python experiments/train_narma.py            # tek seed hızlı test
+  python experiments/ablation_study.py         # ablasyon
+  python scripts/plot_dm_heatmaps.py           # sonuç grafikleri
+
+
+KISA ÖZET
+---------
+- Model kodu    → src/multi_qrc.py
+- Veri kodu     → src/data_loader.py
+- Deney çalıştır → experiments/multi_seed_benchmark.py
+- Sonuçlar      → results/
+- Paper         → paper/workshop_draft/
