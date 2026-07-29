@@ -64,19 +64,27 @@ Standard input-driven protocol, 5 seeds, NRMSE (RMSE ÷ std of the target; lower
 The ridge penalty is selected on a validation slice **per model**, and every model passes
 through the identical readout and metric (`src/rc_protocol.py`).
 
-| Model | Mackey-Glass (h=17) | NARMA-10 | NARMA-20 | S&P 500 RV |
-|---|---|---|---|---|
-| **Photonic (recurrent)** | **0.0007** | **0.0912 ± 0.011** | **0.2262 ± 0.034** | 0.7023 |
-| Photonic (no feedback) | 0.0007 | 0.2026 ± 0.028 | 0.4616 ± 0.119 | 0.7023 |
-| Echo state network | 0.0007 | 0.2997 ± 0.092 | 0.4522 ± 0.074 | **0.6822** |
-| Random Fourier features | 0.0021 | 0.1816 ± 0.047 | 0.4555 ± 0.073 | 0.7284 |
-| Polynomial window | 0.0284 | 0.1690 ± 0.037 | 0.5103 ± 0.151 | 0.7045 |
-| Linear window (control) | 0.6132 | 0.4200 ± 0.066 | 0.4861 ± 0.086 | 0.6957 |
+| Model | NARMA-5 | NARMA-10 | NARMA-20 | MG (h=17) | Lorenz-63 (h=20) | S&P 500 RV |
+|---|---|---|---|---|---|---|
+| **Photonic (recurrent)** | 0.0158 | **0.0912** | **0.2262** | **0.0007** | **0.3599** | 0.7023 |
+| Photonic (no feedback) | 0.0158 | 0.2026 | 0.4616 | 0.0007 | 0.5929 | 0.7023 |
+| Echo state network | **0.0115** | 0.2997 | 0.4522 | 0.0007 | 0.6794 | **0.6822** |
+| Random Fourier features | 0.0168 | 0.1816 | 0.4555 | 0.0021 | 0.7453 | 0.7284 |
+| Polynomial window | 0.0167 | 0.1690 | 0.5103 | 0.0284 | 3.7489 | 0.7045 |
+| Linear window (control) | 0.3967 | 0.4200 | 0.4861 | 0.6132 | 0.9489 | 0.6957 |
 
-Diebold–Mariano with Newey–West HAC, against the photonic model:
+The photonic reservoir wins NARMA-10, NARMA-20 and Lorenz-63; ties on Mackey-Glass; and
+loses on NARMA-5 and S&P 500. Diebold–Mariano with Newey–West HAC, against the photonic
+model:
 
-- **NARMA-10 and NARMA-20** — p < 0.001 against every baseline. The photonic model wins.
-- **Mackey-Glass** — p = 0.41 vs the ESN. A genuine tie; the task saturates.
+- **NARMA-10 and NARMA-20** — p < 0.001 against every baseline.
+- **Mackey-Glass** — p = 0.41 vs the ESN. A genuine tie; the task saturates at 7e-4.
+- **NARMA-5** — the ESN wins (0.0115 vs 0.0158). The task needs only 5 steps of memory, which
+  is exactly the regime where a large tanh reservoir's long linear memory is enough and the
+  photonic map's nonlinearity buys nothing.
+- **Lorenz-63** — best mean, but seed variance is large (± 0.28 against the ESN's ± 0.67) on
+  a chaotic task where individual trajectories differ a lot. Treat the ordering as
+  suggestive, not established.
 - **S&P 500 RV** — p = 0.45–0.88. Nothing is distinguishable. The photonic model ranks third
   of six and we report that as-is; the Hansen MCS retains all six models.
 

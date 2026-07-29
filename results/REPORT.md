@@ -5,18 +5,20 @@ interpretation and caveats.
 
 NRMSE, mean ± std over seeds. Lower is better.
 
-| Model | narma10 | narma20 | mackey_glass_h17 | sp500_rv |
-|---|---|---|---|---|
-| Photonic (recurrent) | 0.0912 ± 0.0113 | 0.2262 ± 0.0337 | 7.12e-04 ± 6.89e-04 | 0.7023 ± 0.0119 |
-| Photonic (no feedback) | 0.2026 ± 0.0275 | 0.4616 ± 0.1186 | 7.12e-04 ± 6.89e-04 | 0.7023 ± 0.0119 |
-| Echo state network | 0.2997 ± 0.0923 | 0.4522 ± 0.0743 | 7.08e-04 ± 6.98e-04 | 0.6822 ± 0.0021 |
-| Random Fourier features | 0.1816 ± 0.0474 | 0.4555 ± 0.0728 | 0.0021 ± 0.0019 | 0.7284 ± 0.0074 |
-| Polynomial window | 0.1690 ± 0.0372 | 0.5103 ± 0.1511 | 0.0284 ± 0.0236 | 0.7045 ± 0.00e+00 |
-| Linear window (control) | 0.4200 ± 0.0660 | 0.4861 ± 0.0860 | 0.6132 ± 0.0566 | 0.6957 ± 0.00e+00 |
+| Model | narma20 | narma5 | mackey_glass_h17 | narma10 | lorenz63 | sp500_rv |
+|---|---|---|---|---|---|---|
+| Photonic (recurrent) | 0.2262 ± 0.0337 | 0.0158 ± 0.0025 | 7.12e-04 ± 6.89e-04 | 0.0912 ± 0.0113 | 0.3599 ± 0.2799 | 0.7023 ± 0.0119 |
+| Photonic (no feedback) | 0.4616 ± 0.1186 | 0.0158 ± 0.0025 | 7.12e-04 ± 6.89e-04 | 0.2026 ± 0.0275 | 0.5929 ± 0.8722 | 0.7023 ± 0.0119 |
+| Echo state network | 0.4522 ± 0.0743 | 0.0115 ± 0.0026 | 7.08e-04 ± 6.98e-04 | 0.2997 ± 0.0923 | 0.6794 ± 0.6748 | 0.6822 ± 0.0021 |
+| Random Fourier features | 0.4555 ± 0.0728 | 0.0168 ± 0.0019 | 0.0021 ± 0.0019 | 0.1816 ± 0.0474 | 0.7453 ± 1.0031 | 0.7284 ± 0.0074 |
+| Polynomial window | 0.5103 ± 0.1511 | 0.0167 ± 0.0028 | 0.0284 ± 0.0236 | 0.1690 ± 0.0372 | 3.7489 ± 2.3953 | 0.7045 ± 0.00e+00 |
+| Linear window (control) | 0.4861 ± 0.0860 | 0.3967 ± 0.0491 | 0.6132 ± 0.0566 | 0.4200 ± 0.0660 | 0.9489 ± 0.0724 | 0.6957 ± 0.00e+00 |
 
-- **narma10** — Diebold-Mariano vs photonic: Photonic (no feedback) p=0.0002, Echo state network p=0.0000, Random Fourier features p=0.0002, Polynomial window p=0.0001, Linear window (control) p=0.0000
 - **narma20** — Diebold-Mariano vs photonic: Photonic (no feedback) p=0.0000, Echo state network p=0.0000, Random Fourier features p=0.0000, Polynomial window p=0.0000, Linear window (control) p=0.0000
+- **narma5** — Diebold-Mariano vs photonic: Photonic (no feedback) p=1.0000, Echo state network p=0.0572, Random Fourier features p=0.3226, Polynomial window p=0.1876, Linear window (control) p=0.0000
 - **mackey_glass_h17** — Diebold-Mariano vs photonic: Photonic (no feedback) p=1.0000, Echo state network p=0.4062, Random Fourier features p=0.0004, Polynomial window p=0.0002, Linear window (control) p=0.0000
+- **narma10** — Diebold-Mariano vs photonic: Photonic (no feedback) p=0.0002, Echo state network p=0.0000, Random Fourier features p=0.0002, Polynomial window p=0.0001, Linear window (control) p=0.0000
+- **lorenz63** — Diebold-Mariano vs photonic: Photonic (no feedback) p=0.4788, Echo state network p=0.0248, Random Fourier features p=0.9599, Polynomial window p=0.0034, Linear window (control) p=0.0000
 - **sp500_rv** — Diebold-Mariano vs photonic: Photonic (no feedback) p=1.0000, Echo state network p=0.4451, Random Fourier features p=0.2880, Polynomial window p=0.7888, Linear window (control) p=0.8776
 
 ## Matched capacity (NARMA-10)

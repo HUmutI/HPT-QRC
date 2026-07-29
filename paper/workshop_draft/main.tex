@@ -61,9 +61,12 @@ more features than the baselines, we sweep every model family across a common fe
 dimension: at $\approx 1400$ features the photonic map attains $0.109$ against $0.188$ for
 random Fourier features and $0.268$ for an echo state network, and the latter saturates
 beyond $2000$ units while the photonic map does not. Removing the feedback, with all else
-fixed, doubles the error on both NARMA tasks. On Mackey--Glass the model ties a tuned echo
-state network, and on S\&P~500 realised volatility it ranks third of six with no model
-statistically distinguishable from any other; we report both outcomes unmodified.
+fixed, doubles the error on both NARMA tasks. It also wins on Lorenz-63 at horizon 20, though
+with large seed variance on that chaotic task. It ties a tuned echo state network on
+Mackey--Glass, loses to one on NARMA-5 --- a task needing only five steps of memory, where
+long linear memory suffices and the photonic map's nonlinearity buys nothing --- and ranks
+third of six on S\&P~500 realised volatility with no model statistically distinguishable from
+any other. Every outcome is reported unmodified.
 Simulating the Ascella and Belenos operating points read from Quandela's cloud API with
 threshold detectors, we find accuracy essentially unchanged by photon distinguishability
 (flat for Hong--Ou--Mandel visibility from $0.50$ to $1.00$) and by multi-photon emission
@@ -227,10 +230,19 @@ Every baseline receives the same Optuna trial budget as the photonic model.
 
 \section{Experiments}\label{sec:experiments}
 
-Tasks are NARMA-5, NARMA-10 and NARMA-20 driven by i.i.d.\ uniform input; Mackey--Glass at
-horizon 17; Lorenz-63 at horizon 20; and monthly S\&P~500 realised volatility
-\citep{corsi2009}. Lorenz-63 at horizon 1 is excluded as a benchmark: a tuned echo state
-network and a plain ridge both score $\sim\!10^{-4}$, so it discriminates nothing.
+Tasks span three distinct sources of temporal difficulty. NARMA-5, NARMA-10 and NARMA-20
+\citep{jaeger2001esn} are driven by i.i.d.\ uniform input and demand nonlinear memory of a
+stochastic drive. Mackey--Glass at horizon 17 is delay-induced chaos. Lorenz-63 at horizon 20
+is deterministic continuous-time chaos, probing how far ahead a model can forecast before
+sensitive dependence destroys predictability. Monthly S\&P~500 realised volatility
+\citep{corsi2009} is the one empirical series.
+
+Horizon choice matters for the chaotic tasks and we set it deliberately. Lorenz-63 at horizon
+1 discriminates nothing --- a tuned echo state network and a plain ridge both score
+$\sim\!10^{-4}$, because at $\mathrm{d}t = 0.02$ the next sample is nearly a linear function
+of the current one. Past horizon 80, NRMSE exceeds 1 for every model, meaning none beats
+predicting the mean. Horizon 20, roughly $0.4$ Lyapunov times, is the window in which the
+task separates models.
 
 \subsection{Forecasting accuracy}\label{sec:accuracy}
 
@@ -248,11 +260,20 @@ network and a plain ridge both score $\sim\!10^{-4}$, so it discriminates nothin
   \label{tab:dm}
 \end{table}
 
-The photonic reservoir wins NARMA-10 and NARMA-20 with $p < 0.001$ against every baseline. On
-Mackey--Glass it ties the echo state network ($p = 0.41$); the task saturates, with three
-models at $7\!\cdot\!10^{-4}$. On S\&P~500 realised volatility it ranks third of six and no
-model is distinguishable from any other ($p = 0.45$--$0.88$). We draw no conclusion from the
-financial task.
+The photonic reservoir wins NARMA-10 and NARMA-20 with $p < 0.001$ against every baseline, and
+has the best mean on Lorenz-63. On Mackey--Glass it ties the echo state network ($p = 0.41$);
+the task saturates, with three models at $7\!\cdot\!10^{-4}$.
+
+Three results run against it, and are worth stating explicitly. On \textbf{NARMA-5} the echo
+state network wins ($0.0115$ against $0.0158$). This is the expected place for it to lose: the
+task requires only five steps of memory, precisely the regime where a large tanh reservoir's
+long linear memory is sufficient and the photonic map's extra nonlinearity buys nothing --- the
+mirror image of Section~\ref{sec:ipc}. On \textbf{Lorenz-63} the best mean comes with a seed
+standard deviation of $0.28$ (against the echo state network's $0.67$ and random Fourier
+features' $1.00$); individual chaotic trajectories differ enough that we treat the ordering as
+suggestive rather than established. On \textbf{S\&P~500 realised volatility} it ranks third of
+six and no model is distinguishable from any other ($p = 0.45$--$0.88$); we draw no conclusion
+from the financial task.
 
 Removing feedback while changing nothing else roughly doubles the error on both NARMA tasks
 ($p < 0.001$), which is the ablation the architecture rests on.

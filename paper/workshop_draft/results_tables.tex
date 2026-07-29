@@ -3,30 +3,30 @@
 % Requires siunitx for \num.
 
 \newcommand{\PaperTableBenchmarks}{%
-\begin{tabular}{lrrrr}
+\begin{tabular}{lrrrrrr}
 \toprule
-Model & NARMA-10 & NARMA-20 & Mackey-Glass ($h{=}17$) & S\&P 500 RV \\
+Model & NARMA-5 & NARMA-10 & NARMA-20 & Mackey-Glass ($h{=}17$) & Lorenz-63 ($h{=}20$) & S\&P 500 RV \\
 \midrule
-Photonic (recurrent) & \textbf{0.0912 $\pm$ 0.0113} & \textbf{0.2262 $\pm$ 0.0337} & 0.0007 $\pm$ 0.0007 & 0.7023 $\pm$ 0.0119 \\
-Photonic (no feedback) & 0.2026 $\pm$ 0.0275 & 0.4616 $\pm$ 0.1186 & 0.0007 $\pm$ 0.0007 & 0.7023 $\pm$ 0.0119 \\
-Echo state network & 0.2997 $\pm$ 0.0923 & 0.4522 $\pm$ 0.0743 & \textbf{0.0007 $\pm$ 0.0007} & \textbf{0.6822 $\pm$ 0.0021} \\
-Random Fourier features & 0.1816 $\pm$ 0.0474 & 0.4555 $\pm$ 0.0728 & 0.0021 $\pm$ 0.0019 & 0.7284 $\pm$ 0.0074 \\
-Polynomial window & 0.1690 $\pm$ 0.0372 & 0.5103 $\pm$ 0.1511 & 0.0284 $\pm$ 0.0236 & 0.7045 $\pm$ 0.0000 \\
-Linear window (control) & 0.4200 $\pm$ 0.0660 & 0.4861 $\pm$ 0.0860 & 0.6132 $\pm$ 0.0566 & 0.6957 $\pm$ 0.0000 \\
+Photonic (recurrent) & 0.0158 $\pm$ 0.0025 & \textbf{0.0912 $\pm$ 0.0113} & \textbf{0.2262 $\pm$ 0.0337} & 0.0007 $\pm$ 0.0007 & \textbf{0.3599 $\pm$ 0.2799} & 0.7023 $\pm$ 0.0119 \\
+Photonic (no feedback) & 0.0158 $\pm$ 0.0025 & 0.2026 $\pm$ 0.0275 & 0.4616 $\pm$ 0.1186 & 0.0007 $\pm$ 0.0007 & 0.5929 $\pm$ 0.8722 & 0.7023 $\pm$ 0.0119 \\
+Echo state network & \textbf{0.0115 $\pm$ 0.0026} & 0.2997 $\pm$ 0.0923 & 0.4522 $\pm$ 0.0743 & \textbf{0.0007 $\pm$ 0.0007} & 0.6794 $\pm$ 0.6748 & \textbf{0.6822 $\pm$ 0.0021} \\
+Random Fourier features & 0.0168 $\pm$ 0.0019 & 0.1816 $\pm$ 0.0474 & 0.4555 $\pm$ 0.0728 & 0.0021 $\pm$ 0.0019 & 0.7453 $\pm$ 1.0031 & 0.7284 $\pm$ 0.0074 \\
+Polynomial window & 0.0167 $\pm$ 0.0028 & 0.1690 $\pm$ 0.0372 & 0.5103 $\pm$ 0.1511 & 0.0284 $\pm$ 0.0236 & 3.7489 $\pm$ 2.3953 & 0.7045 $\pm$ 0.0000 \\
+Linear window (control) & 0.3967 $\pm$ 0.0491 & 0.4200 $\pm$ 0.0660 & 0.4861 $\pm$ 0.0860 & 0.6132 $\pm$ 0.0566 & 0.9489 $\pm$ 0.0724 & 0.6957 $\pm$ 0.0000 \\
 \bottomrule
 \end{tabular}
 }
 
 \newcommand{\PaperTableDM}{%
-\begin{tabular}{lrrrr}
+\begin{tabular}{lrrrrrr}
 \toprule
-Baseline vs photonic & NARMA-10 & NARMA-20 & Mackey-Glass ($h{=}17$) & S\&P 500 RV \\
+Baseline vs photonic & NARMA-5 & NARMA-10 & NARMA-20 & Mackey-Glass ($h{=}17$) & Lorenz-63 ($h{=}20$) & S\&P 500 RV \\
 \midrule
-Photonic (no feedback) & 0.0002 & 0.0000 & 1.0000 & 1.0000 \\
-Echo state network & 0.0000 & 0.0000 & 0.4062 & 0.4451 \\
-Random Fourier features & 0.0002 & 0.0000 & 0.0004 & 0.2880 \\
-Polynomial window & 0.0001 & 0.0000 & 0.0002 & 0.7888 \\
-Linear window (control) & 0.0000 & 0.0000 & 0.0000 & 0.8776 \\
+Photonic (no feedback) & 1.0000 & 0.0002 & 0.0000 & 1.0000 & 0.4788 & 1.0000 \\
+Echo state network & 0.0572 & 0.0000 & 0.0000 & 0.4062 & 0.0248 & 0.4451 \\
+Random Fourier features & 0.3226 & 0.0002 & 0.0000 & 0.0004 & 0.9599 & 0.2880 \\
+Polynomial window & 0.1876 & 0.0001 & 0.0000 & 0.0002 & 0.0034 & 0.7888 \\
+Linear window (control) & 0.0000 & 0.0000 & 0.0000 & 0.0000 & 0.0000 & 0.8776 \\
 \bottomrule
 \end{tabular}
 }
