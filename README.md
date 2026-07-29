@@ -112,6 +112,22 @@ At matched dimension the photonic map is ahead, and it stays ahead: the ESN satu
 ~2000 units while the photonic model continues to improve. A single reservoir at dim 701
 already matches the ESN's best.
 
+**The same pattern holds on channel equalisation, with an important qualification.** The
+photonic map needs high dimension to work at all there, and is far *worse* than the baselines
+below it:
+
+| dim | photonic | ESN | RFF |
+|---|---|---|---|
+| ~2 400 | 0.3921 | **0.0985** | 0.1488 |
+| ~4 800 | — | 0.0948 | 0.1498 |
+| ~16 000 | **0.0879** | 0.0950 | 0.1498 |
+
+The baselines saturate — the ESN is flat at 0.0947–0.0950 from 4 000 features to 16 000, and
+RFF is flat at 0.1498 throughout — while the photonic model improves from 0.392 to 0.088 across
+the same range. So it wins at matched dimension in the high-capacity regime and loses badly in
+the low-capacity one. Both are reported because the second is the regime a current device could
+actually run.
+
 ![capacity](results/figures/capacity_narma10.png)
 
 ### The encoding window tracks the task's own order

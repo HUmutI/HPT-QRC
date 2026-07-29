@@ -1,0 +1,17 @@
+{
+  "dataset": "parity_d3",
+  "model": "poly",
+  "trials": 100,
+  "params": {
+    "window": 6,
+    "degree": 3
+  },
+  "raw_params": {
+    "window": 6,
+    "degree": 3
+  },
+  "ridge_alpha": 1e-09,
+  "val_nrmse": 5.488218242682486e-13,
+  "test_nrmse": 4.64357086803608e-13,
+  "feature_dim": 83
+}
