@@ -64,9 +64,12 @@ def table_benchmarks() -> str:
     datasets = [d for d in DATASET_LABEL if d in set(frame.dataset)]
     models = [m for m in LABEL if m in set(frame.model)]
 
-    # Bold the best mean per dataset.
+    # Median, not mean. On the chaotic tasks the seed distribution is heavy-tailed -- one
+    # unlucky Lorenz-63 trajectory sends a model's mean to 3.5x its median and would decide
+    # the ranking on a single draw. The interquartile range is quoted for the same reason.
     best = {
-        d: frame[frame.dataset == d].groupby("model")["nrmse"].mean().idxmin() for d in datasets
+        d: frame[frame.dataset == d].groupby("model")["nrmse"].median().idxmin()
+        for d in datasets
     }
 
     lines = [
@@ -82,7 +85,8 @@ def table_benchmarks() -> str:
             if not len(sub):
                 cells.append("---")
                 continue
-            cell = f"{_num(sub.mean())} $\\pm$ {_num(sub.std())}"
+            iqr = sub.quantile(0.75) - sub.quantile(0.25)
+            cell = f"{_num(sub.median())} ({_num(iqr)})"
             if best.get(dataset) == model:
                 cell = f"\\textbf{{{cell}}}"
             cells.append(cell)
