@@ -200,3 +200,37 @@ def test_driven_narma_is_not_the_autoregressive_variant():
     # In the driven variant it is not.
     assert not np.allclose(driven_u[1:, 0], driven_y[:-1], atol=1e-6)
     assert set(TASKS) >= {"narma10", "narma10_autoregressive"}
+
+
+def test_ridge_path_matches_sklearn_ridge():
+    """The SVD path must reproduce sklearn's Ridge exactly, or penalty selection is wrong."""
+    from sklearn.linear_model import Ridge
+
+    from src.rc_protocol import _RidgePath
+
+    rng = np.random.default_rng(0)
+    x = rng.normal(size=(80, 25))
+    y = x @ rng.normal(size=25) + 0.1 * rng.normal(size=80)
+    x_new = rng.normal(size=(12, 25))
+
+    path = _RidgePath(x, y)
+    for alpha in (1e-6, 1e-2, 1.0, 100.0, 1e4):
+        reference = Ridge(alpha=alpha, fit_intercept=True).fit(x, y).predict(x_new)
+        assert np.allclose(path.predict(x_new, alpha), reference, atol=1e-8)
+
+
+def test_ridge_path_matches_sklearn_when_overparameterised():
+    """The regime that matters here: far more features than training rows."""
+    from sklearn.linear_model import Ridge
+
+    from src.rc_protocol import _RidgePath
+
+    rng = np.random.default_rng(1)
+    x = rng.normal(size=(40, 300))
+    y = x @ rng.normal(size=300) + 0.1 * rng.normal(size=40)
+    x_new = rng.normal(size=(10, 300))
+
+    path = _RidgePath(x, y)
+    for alpha in (1e-3, 1.0, 50.0):
+        reference = Ridge(alpha=alpha, fit_intercept=True).fit(x, y).predict(x_new)
+        assert np.allclose(path.predict(x_new, alpha), reference, atol=1e-7)

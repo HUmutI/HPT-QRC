@@ -72,6 +72,35 @@ class Split:
         return slice(self.n_train, self.n_total)
 
 
+class _RidgePath:
+    """Ridge solutions for many penalties from a single decomposition.
+
+    Refitting ``Ridge`` per penalty recomputes the same decomposition every time. With
+    feature counts in the thousands -- routine for a photonic ensemble -- that dominates the
+    entire hyperparameter search. One economy SVD of the centred training block gives every
+    penalty on the grid for the price of one fit:
+
+        w(alpha) = V diag(s / (s^2 + alpha)) U^T (y - ybar)
+
+    Results are identical to ``Ridge(alpha=...)`` with ``fit_intercept=True`` up to
+    floating-point error, which ``tests/test_protocol_and_model.py`` checks.
+    """
+
+    def __init__(self, x: np.ndarray, y: np.ndarray):
+        self.x_mean = x.mean(axis=0)
+        self.y_mean = float(y.mean())
+        centred = x - self.x_mean
+        self.u, self.s, self.vt = np.linalg.svd(centred, full_matrices=False)
+        self.uty = self.u.T @ (y - self.y_mean)
+
+    def coefficients(self, alpha: float) -> np.ndarray:
+        scale = self.s / (self.s**2 + alpha)
+        return self.vt.T @ (scale * self.uty)
+
+    def predict(self, x: np.ndarray, alpha: float) -> np.ndarray:
+        return (x - self.x_mean) @ self.coefficients(alpha) + self.y_mean
+
+
 def fit_readout(features: np.ndarray, y: np.ndarray, split: Split, standardize: bool = True):
     """Select the ridge penalty on validation, refit on all training rows, predict test.
 
@@ -86,12 +115,13 @@ def fit_readout(features: np.ndarray, y: np.ndarray, split: Split, standardize: 
     else:
         f_sel = features
 
-    best_alpha, best_score = ALPHA_GRID[0], np.inf
+    path = _RidgePath(f_sel[split.fit_slice], y[split.fit_slice])
+    val_x, val_y = f_sel[split.val_slice], y[split.val_slice]
+    best_alpha, best_score = float(ALPHA_GRID[0]), np.inf
     for alpha in ALPHA_GRID:
-        model = Ridge(alpha=alpha).fit(f_sel[split.fit_slice], y[split.fit_slice])
-        score = nrmse(y[split.val_slice], model.predict(f_sel[split.val_slice]))
+        score = nrmse(val_y, path.predict(val_x, alpha))
         if np.isfinite(score) and score < best_score:
-            best_alpha, best_score = alpha, score
+            best_alpha, best_score = float(alpha), score
 
     # Refit on washout..n_train with the selected penalty, rescaling on the same rows.
     if standardize:
@@ -100,7 +130,7 @@ def fit_readout(features: np.ndarray, y: np.ndarray, split: Split, standardize: 
     else:
         f_fin = features
     final = Ridge(alpha=best_alpha).fit(f_fin[split.full_train_slice], y[split.full_train_slice])
-    return final.predict(f_fin[split.test_slice]), float(best_alpha), float(best_score)
+    return final.predict(f_fin[split.test_slice]), best_alpha, float(best_score)
 
 
 def evaluate_features(features: np.ndarray, y: np.ndarray, split: Split) -> dict:
