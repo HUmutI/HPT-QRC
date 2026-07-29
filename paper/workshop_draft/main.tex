@@ -413,6 +413,40 @@ $\sim\!48$ counts from 1000 requested shots spread over 56 Fock bins, and its fe
 correlated only $0.18$--$0.48$ with simulation. That was sampling noise, not a calibration
 fault.
 
+\section{When would photonics beat simulating it?}\label{sec:crossover}
+
+The obvious objection to a photonic reservoir at these scales is that a laptop simulates it
+faster, and it deserves a number rather than a deflection. Classical simulation cost grows
+combinatorially in photon number: composing the unitary costs $O(d m^3)$ and the permanent
+batch costs $\binom{m}{n} \cdot n! \cdot n$ multiply-adds per timestep. The device's cost grows
+as $1/\eta^{n}$, since it must accumulate a fixed number of coincidences and the rate falls as
+$\eta^{n}$. Which grows faster settles the question.
+
+Taking the measured throughput of our implementation ($7.3 \times 10^{7}$ complex multiply-adds
+per second, single core) and the measured platform specifications, at the
+$3 \times 10^{4}$-coincidence threshold established in Section~\ref{sec:noise}:
+
+\begin{table}[H]\centering
+  \PaperTableRates
+  \caption{Coincidence rate and the time to collect $3\!\times\!10^{4}$ events per timestep.}
+  \label{tab:rates2}
+\end{table}
+
+\textbf{There is no crossover at any photon number on current hardware.} The device is closest
+at $n = 2$ and is still $1.6 \times 10^{3}$ times slower than simulating it on one core for
+Ascella, and $6.6 \times 10^{3}$ times slower for Belenos.
+
+The useful part is that the requirement is now quantitative. A crossover at $n = 12$ in $24$
+modes would need $\eta \ge 0.105$ on Ascella against its present $0.0244$, a factor of four,
+or $\eta \ge 0.132$ on Belenos, a factor of three. The required transmittance \emph{falls} with
+photon number --- $0.978$ at $n=2$ down to $0.105$ at $n=12$ --- because classical cost
+outgrows the rate penalty. High photon number is therefore the regime where optics could win,
+provided loss drops far enough to reach it. At $n = 2$ and $n = 3$ on Belenos the required
+transmittance exceeds unity, meaning simulation is so cheap there that no device could beat it.
+
+This is why we make no computational-advantage claim, and why we read loss reduction rather
+than photon count as the operative engineering target for this class of model.
+
 \section{Hardware execution}\label{sec:hardware}
 
 \textbf{No result in this paper is a measurement on a quantum processor.} Both
