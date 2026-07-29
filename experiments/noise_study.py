@@ -120,11 +120,18 @@ def main() -> None:
     ap.add_argument("--seeds", type=int, default=3)
     ap.add_argument("--use-tuned", action="store_true",
                     help="use the accuracy-tuned config instead of the hardware-viable one")
+    ap.add_argument("--encode-window", type=int, default=None,
+                    help="override the encoding window; should match the task's memory order")
     args = ap.parse_args()
 
     RESULTS.mkdir(parents=True, exist_ok=True)
     u, y, split = load_task(args.dataset)
     config = load_config(args.dataset, use_tuned=args.use_tuned)
+    if args.encode_window:
+        # NARMA-N needs both u_t and u_{t-N+1} in one encoding, so a window fixed at 10
+        # cripples the model on NARMA-20 before any noise is applied and the sweep would
+        # measure the wrong thing.
+        config["encode_window"] = args.encode_window
     seeds = list(range(42, 42 + args.seeds))
     print(f"dataset={args.dataset}  config={config}", flush=True)
 
