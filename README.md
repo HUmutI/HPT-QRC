@@ -242,7 +242,40 @@ a direct consequence of the same scaling.
 
 ---
 
-## 4. Hardware status
+## 4. Cloud execution
+
+The full cloud path — chunked submission, threshold-detector sampling, coincidence
+post-selection, cached job results — has been exercised end to end on Quandela's cloud
+platforms. 600 timesteps, 8000 requested coincidences per step, 2 photons in 12 modes,
+2 reservoirs, NARMA-10:
+
+| Platform | Device NRMSE | Exact sim | Classical control | Lift | Feature corr. |
+|---|---|---|---|---|---|
+| `sim:ascella` | 0.3931 | 0.2898 | 0.4230 | 1.076 | 0.999 |
+| `sim:slos` | 0.4211 | 0.2898 | 0.4230 | 1.004 | 1.000 |
+
+Two things this does and does not show.
+
+**It does** validate the two-photon design decision. Device-vs-simulation feature
+correlation is 0.999 (worst case 0.994) across 600 timesteps. The earlier three-photon probe
+on the Belenos QPU managed only 0.18–0.48, because at `transmittance³` it collected ~48
+counts per step across 56 Fock bins.
+
+**It does not** demonstrate robustness to device noise. `sim:ascella` scored *better* than
+the noiseless `sim:slos` at the same shot count, which it cannot do if it were adding noise;
+the two agree to within sampling scatter. Combined with the platform returning exactly the
+requested count at zero drop rate, the conclusion is that these "emulators" apply sampling
+but no device model this experiment can detect — `sim:ascella` in fact self-describes as
+"Arcturus simulator". `scripts/compare_platforms.py` re-tests this directly by sending
+identical phase settings to each platform. **All noise evidence in Section 3 therefore rests
+on Perceval's `NoiseModel`**, which is Quandela's own implementation of the device physics,
+not on these platforms.
+
+Note also that the lift at 8000 shots is only 1.00–1.08, consistent with the shot-convergence
+result that ~3×10⁴ coincidences per timestep are needed before the reservoir is clearly worth
+using.
+
+## 5. QPU status
 
 **Both `qpu:ascella` and `qpu:belenos` have reported `status: maintenance` throughout this
 work, so no result in this repository is a QPU measurement.** What exists:
@@ -272,7 +305,7 @@ where the reservoir gives a 1.46× improvement over the classical control.
 
 ---
 
-## 5. Layout
+## 6. Layout
 
 ```
 src/
@@ -302,7 +335,7 @@ be built once and each timestep costs a few small matrix products plus a batch o
 permanents. It computes the same distribution — the test suite checks it against both MerLin
 and Perceval's SLOS backend to 1e-10.
 
-## 6. Reproducing
+## 7. Reproducing
 
 ```bash
 conda create -n quandela python=3.11 && conda activate quandela
@@ -319,7 +352,7 @@ Hardware runs need a Quandela token in `PCVL_CLOUD_TOKEN` (see `hardware/README.
 should be rehearsed with `--local` first; every cloud job is cached, so a re-run never
 re-spends shots.
 
-## 7. What we do not claim
+## 8. What we do not claim
 
 - No quantum advantage. The comparison is against classical feature maps on classical data,
   and the photonic model is simulated.
