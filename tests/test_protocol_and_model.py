@@ -103,15 +103,36 @@ def test_feedback_flag_changes_dynamics():
     assert np.allclose(feats[fill:50], feats[50 + fill :], atol=1e-10)
 
 
-def test_esp_decay_vanishes_for_contracting_feedback():
+@pytest.mark.parametrize("encode_window", [1, 10])
+def test_esp_decay_vanishes_for_contracting_feedback(encode_window):
+    """encode_window > 1 is covered because esp_decay must build the same lagged drive
+    transform() does; feeding it the raw input silently mismatches the reservoir width."""
     u, _, split = _toy()
     model = TemporalPhotonicQRC(
         n_modes=6, photon_list=(2,), reservoirs_per_photon=1, g_fb=0.3, leak=0.3,
-        washout=split.washout, seed=4,
+        encode_window=encode_window, washout=split.washout, seed=4,
     )
     model.build_features(u, split.n_train)
     decay = model.esp_decay(u)
+    assert len(decay) == len(u)
     assert decay[-50:].mean() < 0.05 * max(decay.max(), 1e-12)
+
+
+def test_esp_decay_grows_with_feedback_gain():
+    """A larger feedback gain must retain the perturbation longer, or g_fb is not the
+    contractivity knob the model claims it is."""
+    u, _, split = _toy()
+
+    def tail_fraction(gain):
+        model = TemporalPhotonicQRC(
+            n_modes=6, photon_list=(2,), reservoirs_per_photon=1, g_fb=gain, leak=0.3,
+            encode_window=5, washout=split.washout, seed=4,
+        )
+        model.build_features(u, split.n_train)
+        decay = model.esp_decay(u)
+        return decay[-50:].mean() / max(decay.max(), 1e-30)
+
+    assert tail_fraction(3.0) > tail_fraction(0.1)
 
 
 def test_ridge_penalty_is_selected_not_fixed():

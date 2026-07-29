@@ -350,6 +350,10 @@ class TemporalPhotonicQRC:
         """
         u = _as_2d(u)
         us = self.input_scaler_.transform(u)
+        # Reservoirs are driven by the lagged encoding, not the raw input, so this must
+        # build the drive exactly as transform() does or the widths disagree.
+        if self.encode_window > 1:
+            us = self._lags(us, self.encode_window)
         rng = np.random.default_rng(seed)
         decay = np.zeros(len(us))
         for r in self.reservoirs:

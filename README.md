@@ -102,6 +102,48 @@ already matches the ESN's best.
 
 ![capacity](results/figures/capacity_narma10.png)
 
+### The encoding window tracks the task's own order
+
+NARMA-N's target contains the cross-lag product `u_t · u_{t-N+1}`, which a linear-optical map
+can only form if both lags sit in the *same* encoding. Sweeping `encode_window` with
+everything else fixed (`experiments/ablation_encoding.py`, 3 seeds) shows the optimum
+tracking N:
+
+| Task | Task order N | Best `encode_window` | NRMSE |
+|---|---|---|---|
+| NARMA-5 | 5 | 8 | 0.128 |
+| NARMA-10 | 10 | 12 | 0.265 |
+| NARMA-20 | 20 | 25 | 0.470 |
+
+This is a prediction the architecture makes and the data confirms, rather than a
+hyperparameter found by search.
+
+**Caveat on the feedback ablation.** In this small hardware-viable configuration the feedback
+contributes only 5–11 % and slightly *hurts* on NARMA-5. The 2× effect in the benchmark table
+is measured at the accuracy-tuned configuration (16 modes, photons {2,3}, depth 3, 8
+reservoirs). Feedback's contribution grows with model capacity; both numbers are real and
+both are reported.
+
+### Echo state property
+
+A reservoir's state must be a function of the input history alone, which requires
+perturbations to the initial state to decay. Sweeping the feedback gain
+(`experiments/esp_check.py`, 3 seeds; memory = steps for a perturbation to fall below 1 % of
+its peak):
+
+| `g_fb` | Memory (steps) | Regime | NRMSE |
+|---|---|---|---|
+| 0.0 | 44 | contracting | 0.281 |
+| 0.3 | 72 | contracting | **0.276** |
+| 0.6 | 109 | contracting | 0.277 |
+| 1.0 | 352 | contracting | 0.390 |
+| 1.5 | never | **ESP-violating** | 0.449 |
+| ≥ 2.0 | never | **ESP-violating** | 0.65–0.73 |
+
+Memory lengthens with feedback gain until the echo state property breaks, and the best
+accuracy sits just below that transition — the standard edge-of-stability picture. The
+benchmarks use `g_fb = 0.3`, inside the contracting regime.
+
 ### What it is winning with
 
 `experiments/memory_ipc.py` measures linear memory capacity (Jaeger) and information
