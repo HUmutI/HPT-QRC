@@ -393,18 +393,36 @@ fault.
 \texttt{qpu:ascella} and \texttt{qpu:belenos} reported \texttt{maintenance} throughout this
 work.
 
-The execution path is implemented and rehearsed against Quandela's cloud device emulators.
+The execution path itself has been run end to end on Quandela's cloud, including chunked
+submission, threshold-detector sampling, coincidence post-selection and result caching. Over
+600 timesteps at $8\!\times\!10^{3}$ requested coincidences per step, device-measured features
+correlate with simulation at $0.999$ (worst case $0.994$). This is the quantitative validation
+of the two-photon decision: the earlier three-photon probe on the Belenos QPU reached only
+$0.18$--$0.48$, because at $\eta^{3}$ it collected $\sim\!48$ counts per step across 56 Fock
+bins.
+
+We caution against over-reading the cloud \emph{emulator} platforms. Running the identical
+configuration on \texttt{sim:ascella} and on the noiseless \texttt{sim:slos} at the same shot
+count gave NRMSE $0.393$ and $0.421$ respectively --- the nominal device emulator scored
+\emph{better}, which it cannot do if it were adding noise. Together with the platform
+returning exactly the requested number of accepted samples at zero measured drop rate, we
+conclude these platforms apply sampling but no device model detectable by this experiment.
+Every noise result in Section~\ref{sec:noise} therefore comes from Perceval's device model,
+not from them.
+
 Because a closed feedback loop cannot be batched into a single cloud job
 (Section~\ref{sec:free-feedback}), two protocols are provided. In \emph{replay}, the recurrence
 is evaluated in simulation to produce the phase trajectory, which is then replayed on the
 device as one batched job and the readout trained on device-measured features; this measures
-the device's feature map faithfully but the feedback path is simulated, and we would report it
+the device's feature map faithfully but the feedback path is simulated, and we report it
 as such. In \emph{open-loop}, feedback is disabled and every timestep is independent, so the run
 is end-to-end on the device at the cost of a weaker model.
 
-We also record an operational finding: on the free tier a job is cancelled at five minutes.
-One of our submissions was terminated at 307\,s having completed 4\% of its iterations,
-which requires chunked submission with per-chunk caching.
+Two operational findings are worth recording for others attempting this. On the free tier a
+job is cancelled at five minutes: one of our submissions was terminated at 307\,s having
+completed 4\% of its iterations, which forces chunked submission with per-chunk caching. And
+the shot budget per call must be set explicitly and generously, since the post-selection that
+follows consumes it.
 
 \section{Limitations}\label{sec:limitations}
 
