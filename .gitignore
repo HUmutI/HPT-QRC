@@ -63,3 +63,6 @@ venv.bak/
 # Generated results (regenerable from experiments)
 # Comment out if you want to track results in git
 # results/
+
+# local run logs
+logs/
