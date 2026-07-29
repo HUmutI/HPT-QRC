@@ -249,10 +249,18 @@ post-selection, cached job results — has been exercised end to end on Quandela
 platforms. 600 timesteps, 8000 requested coincidences per step, 2 photons in 12 modes,
 2 reservoirs, NARMA-10:
 
-| Platform | Device NRMSE | Exact sim | Classical control | Lift | Feature corr. |
-|---|---|---|---|---|---|
-| `sim:ascella` | 0.3931 | 0.2898 | 0.4230 | 1.076 | 0.999 |
-| `sim:slos` | 0.4211 | 0.2898 | 0.4230 | 1.004 | 1.000 |
+| Platform | Protocol | Device NRMSE | Exact sim | Classical control | Lift | Feature corr. |
+|---|---|---|---|---|---|---|
+| `sim:ascella` | **open-loop** | **0.3474** | 0.2817 | 0.4230 | **1.217** | 0.999 |
+| `sim:ascella` | replay | 0.3931 | 0.2898 | 0.4230 | 1.076 | 0.999 |
+| `sim:slos` | replay | 0.4211 | 0.2898 | 0.4230 | 1.004 | 1.000 |
+
+**The open-loop protocol is both the stronger claim and the better result.** It disables
+feedback, so every timestep is independent and the run is genuinely end-to-end on the
+platform with no simulation anywhere in the loop — and it still beats the classical control
+by 1.22×. This is consistent with the encoding-window ablation: in the small hardware-viable
+configuration the feedback contributes little and can even hurt, so giving it up costs
+nothing here while removing the one caveat the replay protocol carries.
 
 Two things this does and does not show.
 

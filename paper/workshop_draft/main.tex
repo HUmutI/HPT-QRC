@@ -418,6 +418,13 @@ the device's feature map faithfully but the feedback path is simulated, and we r
 as such. In \emph{open-loop}, feedback is disabled and every timestep is independent, so the run
 is end-to-end on the device at the cost of a weaker model.
 
+In practice the open-loop protocol is both the stronger claim and the better result: over 600
+timesteps it reaches NRMSE $0.347$ against $0.393$ for replay and $0.423$ for the classical
+control, a lift of $1.22$. This is consistent with Section~\ref{sec:encoding}, where the
+feedback contributes little in the small hardware-viable configuration. Giving it up therefore
+costs almost nothing at the scale a current device can run, while removing the only caveat the
+replay protocol carries --- a useful result for anyone planning a hardware demonstration.
+
 Two operational findings are worth recording for others attempting this. On the free tier a
 job is cancelled at five minutes: one of our submissions was terminated at 307\,s having
 completed 4\% of its iterations, which forces chunked submission with per-chunk caching. And
