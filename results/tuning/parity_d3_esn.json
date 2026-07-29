@@ -1,0 +1,23 @@
+{
+  "dataset": "parity_d3",
+  "model": "esn",
+  "trials": 100,
+  "params": {
+    "res_size": 200,
+    "leak": 0.9811172115855964,
+    "spectral_radius": 1.018868189730551,
+    "input_scaling": 0.604418731441221,
+    "sparsity": 0.4180248489282642
+  },
+  "raw_params": {
+    "res_size": 200,
+    "leak": 0.9811172115855964,
+    "spectral_radius": 1.018868189730551,
+    "input_scaling": 0.604418731441221,
+    "sparsity": 0.4180248489282642
+  },
+  "ridge_alpha": 100.0,
+  "val_nrmse": 0.9947398903558872,
+  "test_nrmse": 1.0059839167722875,
+  "feature_dim": 201
+}

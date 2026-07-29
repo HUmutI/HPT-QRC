@@ -17,11 +17,16 @@ it is labelled clearly and is not the headline task.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 
 from .rc_protocol import Split
 
-__all__ = ["TASKS", "load_task", "narma", "mackey_glass", "lorenz63"]
+_DATA = Path(__file__).resolve().parents[1] / "data"
+
+__all__ = ["TASKS", "load_task", "narma", "mackey_glass", "lorenz63", "henon",
+           "channel_equalisation", "temporal_parity", "santa_fe", "sunspots"]
 
 
 def narma(order: int = 10, n: int = 1000, seed: int = 42, warmup: int = 1000):
@@ -83,6 +88,96 @@ def lorenz63(n: int = 1000, horizon: int = 1, dt: float = 0.02, seed: int = 42,
     return series[:-horizon].reshape(-1, 1)[:n], series[horizon:][:n]
 
 
+def henon(n: int = 2000, horizon: int = 1, seed: int = 42, warmup: int = 1000,
+          a: float = 1.4, b: float = 0.3):
+    """Henon map, predicted ``horizon`` steps ahead from its own past.
+
+    Discrete-time chaos, so unlike Lorenz there is no integration timescale to trade off:
+    even one step ahead is a genuinely hard nonlinear problem.
+    """
+    rng = np.random.default_rng(seed)
+    total = n + warmup + horizon
+    x, y = 0.1 + 0.01 * rng.standard_normal(), 0.1
+    traj = np.empty(total)
+    for t in range(total):
+        x, y = 1.0 - a * x * x + y, b * x
+        traj[t] = x
+    series = traj[warmup:]
+    return series[:-horizon].reshape(-1, 1)[:n], series[horizon:][:n]
+
+
+def channel_equalisation(n: int = 3000, seed: int = 42, warmup: int = 200,
+                         noise_db: float = 32.0):
+    """Nonlinear channel equalisation (Jaeger et al., Science 2004).
+
+    Symbols are drawn from {-3, -1, 1, 3}, passed through a linear channel with 10 taps and
+    then a memoryless cubic nonlinearity; the task is to recover the symbol from the
+    distorted signal. Unlike NARMA the target is *not* a polynomial of the recent drive --- it
+    is an inverse problem --- so it tests whether the feature map helps outside the regime
+    NARMA rewards.
+    """
+    rng = np.random.default_rng(seed)
+    total = n + warmup + 10
+    symbols = rng.choice([-3.0, -1.0, 1.0, 3.0], size=total)
+
+    def tap(index):
+        return symbols[np.clip(index, 0, total - 1)]
+
+    q = np.empty(total)
+    for t in range(total):
+        q[t] = (
+            0.08 * tap(t + 2) - 0.12 * tap(t + 1) + tap(t) + 0.18 * tap(t - 1)
+            - 0.10 * tap(t - 2) + 0.091 * tap(t - 3) - 0.05 * tap(t - 4)
+            + 0.04 * tap(t - 5) + 0.03 * tap(t - 6) + 0.01 * tap(t - 7)
+        )
+    signal = q + 0.036 * q**2 - 0.011 * q**3
+    power = np.mean(signal**2)
+    signal = signal + rng.normal(0.0, np.sqrt(power / (10 ** (noise_db / 10))), size=total)
+    return signal[warmup : warmup + n].reshape(-1, 1), symbols[warmup : warmup + n]
+
+
+def temporal_parity(n: int = 3000, delay: int = 3, order: int = 3, seed: int = 42):
+    """Parity of ``order`` consecutive bits ending ``delay`` steps in the past.
+
+    A hard binary memory-and-nonlinearity task used in the photonic reservoir literature.
+    It requires an exact product of several delayed inputs, which is precisely the structure
+    a multi-photon interference pattern can represent and a smooth kernel struggles with.
+    """
+    rng = np.random.default_rng(seed)
+    bits = rng.choice([-1.0, 1.0], size=n + delay + order)
+    target = np.array(
+        [np.prod(bits[t + delay - order + 1 : t + delay + 1]) for t in range(n)]
+    )
+    return bits[:n].reshape(-1, 1), target
+
+
+def santa_fe(n: int | None = None, horizon: int = 1):
+    """Santa Fe competition set A: chaotic intensity of a far-infrared laser.
+
+    The standard photonic reservoir-computing benchmark, and real measured data rather than a
+    simulated system. Vendored at ``data/santafe_laser.npy`` (10093 samples, 0-255).
+    """
+    path = _DATA / "santafe_laser.npy"
+    if not path.exists():
+        raise FileNotFoundError(
+            f"{path} missing. Fetch with:\n"
+            "  curl -sLo data/santafe_laser.npy https://raw.githubusercontent.com/"
+            "reservoirpy/reservoirpy/master/reservoirpy/datasets/santafe_laser.npy"
+        )
+    series = np.load(path).astype(float).ravel()
+    if n:
+        series = series[: n + horizon]
+    return series[:-horizon].reshape(-1, 1), series[horizon:]
+
+
+def sunspots(horizon: int = 1):
+    """Monthly sunspot counts: real, long, quasi-periodic with irregular amplitude."""
+    from statsmodels.datasets import sunspots as _sun
+
+    series = _sun.load_pandas().data["SUNACTIVITY"].values.astype(float)
+    return series[:-horizon].reshape(-1, 1), series[horizon:]
+
+
 def _autoregressive(series: np.ndarray, horizon: int = 1):
     series = np.asarray(series, dtype=float).ravel()
     return series[:-horizon].reshape(-1, 1), series[horizon:]
@@ -135,6 +230,14 @@ TASKS: dict[str, callable] = {
     "sp500_rv": _sp500,
     "vix": _vix,
     "narma10_autoregressive": _y_autoregressive_narma10,
+    # Added to test whether the feature map helps outside the regime NARMA rewards.
+    "santa_fe": lambda: santa_fe(n=4000),
+    # Horizon 1 is exactly a quadratic in two lags, so a tuned ESN scores 0.007 and the task
+    # discriminates nothing; by horizon 10 nothing beats predicting the mean. Horizon 4 is the
+    # window where models separate (tuned ESN 0.86, linear 0.97).
+    "henon": lambda: henon(n=2000, horizon=4),
+    "channel_eq": lambda: channel_equalisation(n=3000),
+    "parity_d3": lambda: temporal_parity(n=3000, delay=3, order=3),
 }
 
 
@@ -167,4 +270,10 @@ def _reseed(name: str, seed: int):
         return lorenz63(n=2000, horizon=20, seed=seed)
     if name == "narma10_autoregressive":
         return _y_autoregressive_narma10(seed=seed)
+    if name == "henon":
+        return henon(n=2000, horizon=4, seed=seed)
+    if name == "channel_eq":
+        return channel_equalisation(n=3000, seed=seed)
+    if name == "parity_d3":
+        return temporal_parity(n=3000, delay=3, order=3, seed=seed)
     raise TypeError(f"task {name!r} is a fixed empirical dataset and cannot be reseeded")

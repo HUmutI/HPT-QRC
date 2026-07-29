@@ -1,0 +1,15 @@
+{
+  "dataset": "henon",
+  "model": "linear",
+  "trials": 100,
+  "params": {
+    "window": 25
+  },
+  "raw_params": {
+    "window": 25
+  },
+  "ridge_alpha": 100.0,
+  "val_nrmse": 0.8672793650789336,
+  "test_nrmse": 0.8638685358962611,
+  "feature_dim": 25
+}
