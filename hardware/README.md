@@ -44,11 +44,12 @@ The conventions in section 5 were verified against those exact versions.
 | Zero-cost gate | `python hardware/compare_sim_local.py` | free |
 | Local rehearsal | `python hardware/run_reservoir_hw.py --local --steps 600` | free |
 | Cloud rehearsal | `python hardware/run_reservoir_hw.py --platform sim:slos --steps 100` | simulator |
-| Rate probe | `python hardware/run_reservoir_hw.py --platform qpu:ascella --steps 10 --shots 5000` | small |
-| Full run | `python hardware/run_reservoir_hw.py --platform qpu:ascella --steps 600 --shots 30000` | see PLAN.md §3 |
+| QPU submit | `python hardware/submit_qpu_run.py --platform qpu:belenos --steps 120 --shots 20000` | one job |
+| QPU harvest | `python hardware/fetch_qpu_run.py` | free |
 
-Always run the probe before the full run: the budget in `PLAN.md` assumes the published
-transmittance, and the probe measures the real coincidence rate.
+Submit and harvest are separate because the queue runs to hours and a laptop will not stay
+awake for it. Size the run from the *measured* coincidence rate, not the published
+transmittance — the two differ substantially.
 
 ## 4. Files
 
@@ -90,11 +91,13 @@ Established against perceval 1.1.0 / merlin 0.3.1, checked by `compare_sim_local
   `sim:ascella` and `sim:belenos`. Check status programmatically —
   `RemoteProcessor(name, token)._rpc_handler.fetch_platform_details()` returns `status` and
   `bookable`. `sim:clifford` now reports `decommissioned`, so the field is maintained.
-- **The emulators do not appear to emulate noise.** At equal shot count `sim:ascella` scored
-  *better* than the noiseless `sim:slos` on an identical 600-step configuration, and it
-  self-describes as "Arcturus simulator". Treat them as cloud sampling simulators, not device
-  models. `scripts/compare_platforms.py` re-tests this by sending one shared phase batch to
-  every platform and measuring each against an exact local calculation.
+- **The emulators do apply a small device model.** Judged against the distribution a perfect
+  sampler would give at the same shot count, `sim:slos` sits at +5 sigma and `sim:ascella` at
+  +26 sigma, so the emulator adds noise beyond sampling -- 0.008 of total variation on top of
+  0.019 of sampling error. Do **not** infer this from downstream NRMSE: `sim:ascella` scored
+  better than the noiseless `sim:slos` on a 600-step run, which is seed scatter in a
+  regression, not a statement about the distributions. `scripts/compare_platforms.py` does it
+  properly, against a calibrated null.
 - **The free tier allows one waiting job at a time.** A second submission returns HTTP 400 with
   no useful message. Queue Ascella only after the Belenos job clears.
 - **Use `submit_qpu_run.py` + `fetch_qpu_run.py` for QPU work, not `run_reservoir_hw.py`.** The
