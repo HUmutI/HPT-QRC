@@ -4,20 +4,20 @@
   "trials": 150,
   "params": {
     "res_size": 1000,
-    "leak": 0.8406375749030827,
-    "spectral_radius": 0.7344362433374221,
-    "input_scaling": 0.39868533154505387,
-    "sparsity": 0.2054368025127506
+    "leak": 0.4873681548630404,
+    "spectral_radius": 1.480762297857468,
+    "input_scaling": 2.629140986366104,
+    "sparsity": 0.4182590762860141
   },
   "raw_params": {
     "res_size": 1000,
-    "leak": 0.8406375749030827,
-    "spectral_radius": 0.7344362433374221,
-    "input_scaling": 0.39868533154505387,
-    "sparsity": 0.2054368025127506
+    "leak": 0.4873681548630404,
+    "spectral_radius": 1.480762297857468,
+    "input_scaling": 2.629140986366104,
+    "sparsity": 0.4182590762860141
   },
-  "ridge_alpha": 1e-09,
-  "val_nrmse": 1.409636755353573e-07,
-  "test_nrmse": 3.1572998493072174e-07,
+  "ridge_alpha": 3.162277660168379e-06,
+  "val_nrmse": 0.030242630698198544,
+  "test_nrmse": 0.13585835119302883,
   "feature_dim": 1001
 }

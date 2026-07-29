@@ -1,38 +1,70 @@
-# Workshop paper draft
+# Workshop draft
 
-Source for the workshop submission of the HPT-QRC paper.
+**`main.tex` still contains numbers from the retracted v1/v2 results.** Do not compile and
+circulate it until its tables are replaced. See `results/CHANGELOG.md` for what was retracted
+and why.
 
-## Targets
-
-- **Primary:** QTML 2026 (Quantum Techniques in Machine Learning).
-- **Secondary:** NeurIPS 2026 *Machine Learning and the Physical Sciences* workshop.
-- **Backup:** NeurIPS 2026 / ICML 2026 QML workshop.
-
-## Build
+## Tables are generated, not typed
 
 ```bash
-pdflatex main
-bibtex main
-pdflatex main
-pdflatex main
+python scripts/make_paper_tables.py     # -> paper/workshop_draft/results_tables.tex
 ```
 
-## Figure dependencies
+Then in `main.tex`:
 
-The placeholder table in `main.tex` references CSVs produced by:
+```latex
+\usepackage{siunitx}    % results_tables.tex uses \num
+\input{results_tables}
+...
+\begin{table}[h]\centering
+  \PaperTableBenchmarks
+  \caption{NRMSE, 5 seeds, mean $\pm$ std, standard input-driven protocol.}
+\end{table}
+```
 
-- `narma_experiment/multi_seed_benchmark.py` → `results/multi_seed_summary.csv` (mean ± std across seeds).
-- `narma_experiment/walk_forward_runner.py --dataset sp500` → `results/wf_sp500_rv_summary.csv` (median + IQR across folds).
-- `narma_experiment/walk_forward_runner.py --dataset vix` → `results/wf_vix_summary.csv`.
-- `narma_experiment/memory_capacity.py` → `results/ipc_plane.png` (IPC plane figure).
-- `narma_experiment/train_narma.py` → `results/<Dataset>_MCS_{MSE,QLIKE}.csv` (Hansen MCS survivor tables).
-- `narma_experiment/esp_check.py` → `results/esp_decay.png` (fading-memory diagnostic).
-- `narma_experiment/noise_models.py --sweep both --dataset narma` → `results/noise_*_sweep_narma.csv`.
+Available macros: `\PaperTableBenchmarks`, `\PaperTableDM`, `\PaperTableCapacity`,
+`\PaperTableMemory`, `\PaperTableNoise`, `\PaperTableRates`.
 
-## Editorial guardrails (PROTOCOL.md §9)
+Hand-typed numbers are how a paper ends up disagreeing with its own repository. Regenerate
+after any results change.
 
-- No "quantum advantage" claims anywhere in the paper.
-- No "outperforms" without specifying RFF+Ridge matched-dim comparison.
-- No order-of-magnitude memory-capacity claims without matched-dim ESN sweep.
-- The "Concurrent and independent work" paragraph for arXiv:2603.10707 must remain prominent in the related-work section.
-- "Photonic" must always appear with a "(Perceval-simulated)" qualifier until the hardware-execution section lands in the journal version.
+## Figures
+
+```bash
+python experiments/make_figures.py
+```
+
+Writes to `results/figures/`: `capacity_narma10.png`, `noise_narma10.png`, `benchmark.png`,
+`coincidence_rate.png`.
+
+## What the paper can claim
+
+- A recurrent linear-optical reservoir beats tuned classical feature maps on NARMA-10 and
+  NARMA-20, **at matched feature dimension**, with DM-HAC $p < 0.001$.
+- Recurrence accounts for roughly half the error: removing feedback and changing nothing
+  else doubles NRMSE on both NARMA tasks.
+- Accuracy is essentially unaffected by device imperfections at measured Ascella and Belenos
+  operating points, while being strongly limited by coincidence count — which gives a design
+  rule (optimise rate, not photon quality) and a quantitative feasibility threshold.
+
+## What the paper must not claim
+
+- No quantum advantage of any kind.
+- Nothing about S&P 500 realised volatility. The model ranks third of six there and no model
+  is statistically distinguishable from any other ($p = 0.45$–$0.88$). Report it and move on.
+- No hardware claim. Both QPUs have been in maintenance; nothing here is a chip measurement.
+  If a hardware run lands, the `replay` protocol simulates the feedback path and that must be
+  stated in the caption, not just the appendix.
+- No "outperforms" without both the matched-dimension column and the DM-HAC $p$-value. The
+  tuned photonic configuration uses more features than the baselines.
+- The Model Confidence Set has little power at these sample sizes (200–600 test points) and
+  retains almost every model on every task. Do not present it as though it discriminates.
+
+## Required corrections to the current draft
+
+- The abstract's numbers, all result tables, and the memory-capacity section are from the
+  retracted results.
+- Remove any surviving "50× memory capacity" claim. Measured linear memory capacity is ~11
+  for the photonic reservoir against 27–30 for an ESN — it has *less* linear memory and wins
+  through nonlinear capacity per feature instead.
+- The figure paths reference the pre-reorganisation `narma_experiment/` directory.

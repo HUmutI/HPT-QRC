@@ -1,89 +1,104 @@
-# Hardware — Quandela Ascella QPU
+# Hardware — Quandela QPU execution
 
-Code for running HPT-QRC on real photonic hardware via Quandela Cloud.
-Strategy and budget math live in [PLAN.md](PLAN.md). Simulation code in `src/` is untouched;
-this folder only replaces the feature-extraction step (exact p-vector → sampled histogram).
+**Status: no result in this repository is a QPU measurement.** Both `qpu:ascella` and
+`qpu:belenos` have reported `status: maintenance` throughout the current work. The code here
+is implemented and rehearsed locally and against the cloud simulator.
+
+Note that every earlier run in this directory used **Belenos**, not Ascella, despite what
+older versions of these docs said. Ascella is the preferred target when it returns: 80 MHz
+against 4.94 MHz, and g² of 1.95 % against 18.2 %.
 
 ## 1. Account & token
 
-1. Create an account at <https://cloud.quandela.com> (apply for the **Academic** tier — see PLAN.md §5).
-2. Generate an access token in the web console (account → tokens).
-3. Make it available to perceval (pick one):
+Resolution order in `hw_backend.get_token()`:
 
 ```bash
-export PCVL_CLOUD_TOKEN='<your-token>'          # per shell / .zshrc
+export PCVL_CLOUD_TOKEN=...        # perceval's native variable, preferred
+export QUANDELA_TOKEN=...          # fallback
 # or save once on this machine:
-python -c "import perceval as pcvl; pcvl.save_token('<your-token>')"
+python -c "import perceval as pcvl; pcvl.save_token('...')"
 ```
 
-Never commit the token. `QUANDELA_TOKEN` also works (our fallback in `hw_backend.py`).
+Free tier: 200 credits/month, **5 minutes per job**, one queued job at a time, low priority,
+bookable free QPU slots. Shots are the billing unit — a shot is any detected event containing
+at least one photon.
 
 ## 2. Environment
 
-Use the existing conda env (has perceval 1.1.0 + merlin 0.3.1):
-
 ```bash
-conda activate quandela
+conda activate quandela      # perceval-quandela 1.1.0, merlinquantum 0.3.1
 ```
 
-Test the connection (no shots consumed — just fetches platform specs):
-
-```bash
-python hardware/hw_backend.py
-```
+The conventions in section 5 were verified against those exact versions.
 
 ## 3. Run order
 
 | Step | Command | Cost |
 |---|---|---|
-| 1. Offline sanity | `python hardware/compare_sim_local.py` | free (local) |
-| 2. Cloud rehearsal | `python hardware/run_probe.py --platform sim:slos` | ~free (cloud simulator) |
-| 3. Cost probe | `python hardware/run_probe.py` | ~1e4 shots on Ascella |
-| 4. Validation subset | `run_hw_subset.py` (build after probe) | decided from probe numbers |
+| Core correctness | `python -m pytest tests/ -q` | free |
+| Zero-cost gate | `python hardware/compare_sim_local.py` | free |
+| Local rehearsal | `python hardware/run_reservoir_hw.py --local --steps 600` | free |
+| Cloud rehearsal | `python hardware/run_reservoir_hw.py --platform sim:slos --steps 100` | simulator |
+| Rate probe | `python hardware/run_reservoir_hw.py --platform qpu:ascella --steps 10 --shots 5000` | small |
+| Full run | `python hardware/run_reservoir_hw.py --platform qpu:ascella --steps 600 --shots 30000` | see PLAN.md §3 |
 
-Do not skip step 1: it verifies phase export, state ordering, and input-encoding
-conventions against the merlin simulation with zero cloud cost. If it fails,
-a hardware run would produce garbage silently.
-
-Record your dashboard credit balance before/after step 3 and note it in
-`run_log.csv` (`credits_note` column).
+Always run the probe before the full run: the budget in `PLAN.md` assumes the published
+transmittance, and the probe measures the real coincidence rate.
 
 ## 4. Files
 
-- `hw_backend.py` — cloud connection + token handling (`get_processor("qpu:ascella")`)
-- `phase_export.py` — extracts the fixed random `t_*` phases from the simulated
-  `QuantumLayer` so the identical circuit runs on hardware
-- `hw_features.py` — sampling → unbunched histogram → `LexGrouping` features;
-  every job cached in `cache/` so re-runs never re-bill shots
-- `compare_sim_local.py` — offline equivalence check (merlin vs perceval SLOS)
-- `run_probe.py` — the §4 cost probe; appends to `run_log.csv`
-- `run_hw_subset.py` — (to build after probe) validation-subset driver
-- `compare_sim_hw.py` — (to build after probe) sim-vs-HW paper figure
+- `run_reservoir_hw.py` — **the current runner.** Executes the recurrent model from
+  `src/temporal_qrc.py` and reports hardware, simulation and classical-only readouts on
+  identical timesteps.
+- `hw_backend.py` — token resolution and `RemoteProcessor` construction with a raised RPC
+  read timeout (perceval's 10 s default is exceeded by the cloud API under load, both while
+  polling and inside the constructor).
+- `hw_features.py` — chunked, cached job submission; histogramming into the unbunched
+  subspace.
+- `compare_sim_local.py` — exact-probability and sampling-convergence gate.
+- `run_hw_subset.py`, `run_hw_native.py`, `run_probe.py`, `phase_export.py`,
+  `smoke_test.py`, `compare_sim_hw.py` — the earlier pipeline, built around
+  `src/multi_qrc.py`. Kept so the Belenos probe reproduces; not the current path.
+- `cache/`, `results/`, `run_log.csv` — job cache and measurements.
 
 ## 5. Verified conventions (don't rediscover these)
 
-Established against perceval 1.1.0 / merlin 0.3.1, checked by `compare_sim_local.py`:
+Established against perceval 1.1.0 / merlin 0.3.1, checked by `compare_sim_local.py` and
+`tests/test_photonic_core.py`:
 
-- merlin's flat `t` parameter tensor is ordered exactly like
-  `circuit.get_parameters()` filtered to `t*` names.
-- merlin applies input values **directly as phases in radians** (scale 1.0 —
-  no π or 2π factor). Encoded windows are in [0,1] from the robust scaler,
-  so phases span only [0,1] rad by design.
-- `QuantumLayer.output_keys` is the unbunched Fock-state order of the output
-  probability vector; the hardware histogram uses the same order.
-- A trailing phase shifter on an output mode has no effect on probabilities —
-  input PS placement mid-circuit is what makes the encoding act.
+- merlin's flat `t` parameter tensor is ordered exactly like `circuit.get_parameters()`
+  filtered to `t*` names.
+- merlin applies input values **directly as phases in radians** (scale 1.0 — no π or 2π
+  factor).
+- `QuantumLayer.output_keys` is the unbunched Fock-state order of the output probability
+  vector; the hardware histogram uses the same order.
+- A trailing phase shifter on an output mode has no effect on probabilities — mid-circuit
+  placement is what makes the encoding act.
+- The amplitude for output pattern `S` is `perm(U[S, T])` with `T` the input modes: rows
+  indexed by occupied **output** modes, columns by input modes. `U[S, T]` and `U[T, S]` are
+  not transposes of each other unless `U` is symmetric. Getting this backwards produces a
+  plausible-looking but wrong distribution; it cost a debugging session.
 
 ## 6. Gotchas
 
-- **Platform names**: `qpu:ascella` for hardware, `sim:slos` for the cloud
-  simulator. Check availability in the dashboard first — Ascella has maintenance
-  windows, and 2026 tier/quota numbers must be verified (PLAN.md §5).
-- **Post-selection**: `min_detected_photons_filter(n_photons)` keeps only
-  coincidence events; loss shows up as a low `unbunched_counts / shots_requested`
-  ratio in the log, which is exactly what the probe measures.
-- **All timesteps in one job**: `hw_features.sample_batch` uses Sampler
-  iterations (`circuit_params` per step), so a 10-step probe is 1 queued job,
-  not 10.
-- **Caching**: job results are keyed by (platform, phases, inputs, shots). Delete
+- **Platform names**: `qpu:ascella`, `qpu:belenos`, `sim:slos`. Check status
+  programmatically — `RemoteProcessor(name, token)._rpc_handler.fetch_platform_details()`
+  returns `status` and `bookable`.
+- **The 5-minute cap is real and silent.** Job `96baa2b6-…` was cancelled at 307 s having
+  completed 4 % of its iterations. `sample_batch(chunk_size=...)` splits the batch into
+  independently-cached jobs, and a job returning fewer iterations than requested now raises
+  instead of caching a truncated result.
+- **`max_shots_per_call` must be large.** It defaulted to `10 × shots`, which starves the
+  post-selection that follows. Use ~1e7.
+- **Use two photons.** n-fold coincidence rate falls as `transmittance^n`. On Ascella that is
+  4.8e4/s at n=2 against 1.2e3/s at n=3. The earlier three-photon probe returned ~48 counts
+  from 1000 requested shots across 56 Fock bins, and its features correlated only 0.18–0.48
+  with simulation. That was sampling noise, not a calibration fault.
+- **Post-selection**: `min_detected_photons_filter(n_photons)` keeps only coincidence events;
+  loss shows up as a low `unbunched_counts / shots_requested` ratio.
+- **Caching**: results are keyed by (platform, circuit unitary, inputs, shots). Delete
   `hardware/cache/` only if you intentionally want to re-spend shots.
+- **Closed-loop feedback cannot be batched.** Step *t*'s phases depend on step *t−1*'s
+  measurement, so the two protocols in `run_reservoir_hw.py` exist: `replay` (feedback
+  simulated, trajectory replayed on chip) and `openloop` (fully on-device, weaker model).
+  Report both and describe the `replay` caveat explicitly.
