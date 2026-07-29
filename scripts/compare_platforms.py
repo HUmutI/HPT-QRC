@@ -130,9 +130,26 @@ def main() -> None:
           f"{mean_ref:.4f} +/- {std_ref:.4f}")
     for platform, s in report.items():
         sigma = (s["tvd_mean"] - mean_ref) / std_ref if std_ref > 0 else float("nan")
-        verdict = ("consistent with sampling alone" if sigma < 3
-                   else "applies noise beyond sampling")
-        print(f"  {platform:<14} {sigma:+6.1f} sigma  ->  {verdict}")
+        print(f"  {platform:<14} TVD {s['tvd_mean']:.4f}  {sigma:+6.1f} sigma vs perfect sampler")
+
+    # Every platform sits somewhat above the ideal-sampler null, because post-selection
+    # discards events and the effective sample size is therefore below the requested shot
+    # count. That offset is common to all of them, so the device-model question is settled by
+    # the excess over the sampling-only platform, not by the absolute sigma.
+    if "sim:slos" in report:
+        baseline = report["sim:slos"]["tvd_mean"]
+        print(f"\nsim:slos is the sampling-only platform (TVD {baseline:.4f}). Its own offset "
+              f"above the ideal null\nis expected: post-selection lowers the effective sample "
+              f"size below the requested shots.")
+        for platform, s in report.items():
+            if platform == "sim:slos":
+                continue
+            excess = s["tvd_mean"] - baseline
+            sigma = excess / std_ref if std_ref > 0 else float("nan")
+            verdict = ("applies a device model beyond sampling" if sigma > 3
+                       else "consistent with sampling alone")
+            print(f"  {platform:<14} excess over sim:slos {excess:+.4f} "
+                  f"({sigma:+.0f} sigma)  ->  {verdict}")
 
     out = ROOT / "hardware" / "results" / "platform_comparison.json"
     out.write_text(json.dumps(

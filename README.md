@@ -292,11 +292,15 @@ calculation (`scripts/compare_platforms.py`) gives:
 | `sim:slos` | 0.0211 | +5σ |
 | `sim:ascella` | 0.0288 | +26σ |
 
-`sim:ascella` does apply device noise, and the amount is small: it moves the distribution
-0.0077 further from exact than a sampling-only platform, on top of a sampling error of
-0.019 at this shot count. That is the same conclusion Section 3 reaches from Perceval's
-`NoiseModel` — device imperfection is a minor perturbation next to finite sampling —
-arrived at independently through Quandela's own emulator.
+Both platforms sit slightly above the ideal-sampler null, which is expected: post-selection
+discards events, so the effective sample size is below the requested shot count. That offset
+is common to both, so the device-model question is settled by the **excess over `sim:slos`**:
+`sim:ascella` is 0.0077 further from exact, a 21σ separation.
+
+So `sim:ascella` does apply device noise, and the amount is small — 0.008 of displacement on
+top of 0.019 of sampling error. That is the same conclusion Section 3 reaches from Perceval's
+`NoiseModel` — device imperfection is a minor perturbation next to finite sampling — arrived
+at independently through Quandela's own emulator.
 
 Note that the NRMSE ordering in the table above is *not* evidence either way: `sim:ascella`
 scored better than the noiseless `sim:slos`, which is seed-to-seed scatter in a downstream

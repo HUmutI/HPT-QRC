@@ -3,6 +3,10 @@
   "shots": 20000,
   "modes": 12,
   "photons": 2,
+  "sampling_reference": {
+    "mean": 0.019250080096856245,
+    "std": 0.0003717557775329559
+  },
   "results": {
     "sim:slos": {
       "tvd_mean": 0.02109957007534771,
