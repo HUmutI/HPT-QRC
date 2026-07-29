@@ -1,0 +1,17 @@
+{
+  "dataset": "santa_fe",
+  "model": "poly",
+  "trials": 100,
+  "params": {
+    "window": 15,
+    "degree": 3
+  },
+  "raw_params": {
+    "window": 15,
+    "degree": 3
+  },
+  "ridge_alpha": 10.0,
+  "val_nrmse": 0.04312892893503989,
+  "test_nrmse": 0.09459316692605492,
+  "feature_dim": 815
+}

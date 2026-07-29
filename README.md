@@ -267,7 +267,56 @@ a direct consequence of the same scaling.
 
 ---
 
-## 4. Would photonics ever beat simulating it?
+## 4. Is it the interference, or a random nonlinear map? (It is the map.)
+
+The sharpest objection to any photonic reservoir is that a classical random feature map does
+the same job. Random Fourier features come close to this model on several tasks, so the
+question is not whether a random nonlinear map helps — it plainly does — but whether the
+*quantum interference* contributes anything.
+
+Partial distinguishability answers it cleanly, because it interpolates exactly between the two
+hypotheses at otherwise identical circuit, phases, shots and readout:
+
+- `indistinguishability = 0` — photons behave as classical distinguishable particles; the
+  distribution is the permanent of `|U|²`, a positive matrix. A classical stochastic map.
+- `indistinguishability = 1` — fully indistinguishable bosons; the distribution is
+  `|perm(U)|²`, with interference between the `n!` photon assignments.
+
+Run in the infinite-shot limit so sampling cannot mask the effect, paired across seeds, with an
+effect required to clear both p < 0.05 and half a seed standard deviation
+(`experiments/quantumness.py`):
+
+| Task | n | V=0 | V=1 | gain | p | verdict |
+|---|---|---|---|---|---|---|
+| channel_eq | 2 | 0.1726 | 0.1728 | 0.999 | 0.571 | no detectable effect |
+| channel_eq | 3 | 0.1725 | 0.1737 | 0.993 | 0.541 | no detectable effect |
+| narma10 | 2 | 0.2465 | 0.2373 | 1.039 | 0.886 | no detectable effect |
+| narma10 | 3 | 0.2225 | 0.2198 | 1.012 | 0.280 | no detectable effect |
+| parity_d3 | 2 | 0.7506 | 0.7901 | 0.950 | 0.324 | no detectable effect |
+| parity_d3 | 3 | 0.3140 | 0.3835 | 0.819 | 0.166 | no detectable effect |
+| henon | 2 | 0.8811 | 0.8830 | 0.998 | 0.571 | no detectable effect |
+| henon | 3 | 0.8811 | 0.8849 | 0.996 | 0.034 | interference *hurts* |
+
+**Seven of eight configurations show no detectable effect**, gains scatter in both directions
+(0.819–1.039), and the single significant case has interference making things marginally
+worse. We therefore state plainly: **this architecture is a classical random nonlinear feature
+map realised in optics.** The interferometer and Fock measurement supply a useful
+high-dimensional map; the indistinguishability of the photons is not what makes it work.
+
+One distinction matters and is visible in the table. On the parity task, **photon number**
+helps a great deal — n=3 reaches 0.314 against n=2's 0.751 — while indistinguishability does
+nothing. The resource being exploited is **Fock-space dimension**, `C(m,n)`, not interference.
+
+Two consequences, one scientific and one practical:
+
+- It explains Section 3. Insensitivity to Hong–Ou–Mandel visibility there and absence of an
+  interference effect here are the same fact seen twice.
+- **It lowers the hardware bar substantially.** If indistinguishability is irrelevant, the
+  source does not need to be indistinguishable, and HOM visibility — usually the headline
+  figure of merit for a single-photon source — is not the specification to optimise for this
+  application. Transmittance is (see Section 5).
+
+## 5. Would photonics ever beat simulating it?
 
 The obvious objection to any photonic reservoir at these scales is that a laptop simulates it
 faster. `experiments/crossover.py` answers that quantitatively rather than dodging it.
@@ -292,7 +341,7 @@ simulation is so cheap in that regime that no device could beat it.
 This is why we make no computational-advantage claim anywhere, and why the useful framing for
 this class of model is loss reduction rather than photon count for its own sake.
 
-## 5. Cloud execution
+## 6. Cloud execution
 
 The full cloud path — chunked submission, threshold-detector sampling, coincidence
 post-selection, cached job results — has been exercised end to end on Quandela's cloud
@@ -348,7 +397,7 @@ Note also that the lift at 8000 shots is only 1.00–1.08, consistent with the s
 result that ~3×10⁴ coincidences per timestep are needed before the reservoir is clearly worth
 using.
 
-## 6. QPU status
+## 7. QPU status
 
 **Both `qpu:ascella` and `qpu:belenos` have reported `status: maintenance` throughout this
 work, so no result in this repository is a QPU measurement.** What exists:
@@ -378,7 +427,7 @@ where the reservoir gives a 1.46× improvement over the classical control.
 
 ---
 
-## 7. Layout
+## 8. Layout
 
 ```
 src/
@@ -408,7 +457,7 @@ be built once and each timestep costs a few small matrix products plus a batch o
 permanents. It computes the same distribution — the test suite checks it against both MerLin
 and Perceval's SLOS backend to 1e-10.
 
-## 8. Reproducing
+## 9. Reproducing
 
 ```bash
 conda create -n quandela python=3.11 && conda activate quandela
@@ -425,10 +474,13 @@ Hardware runs need a Quandela token in `PCVL_CLOUD_TOKEN` (see `hardware/README.
 should be rehearsed with `--local` first; every cloud job is cached, so a re-run never
 re-spends shots.
 
-## 9. What we do not claim
+## 10. What we do not claim
 
-- No quantum advantage. The comparison is against classical feature maps on classical data,
-  and the photonic model is simulated.
+- **No quantum advantage, and no claim that interference contributes.** Section 4 tests that
+  directly and finds no detectable effect on seven of eight configurations. The architecture is
+  a classical random nonlinear feature map realised in optics.
+- No computational advantage. Section 5 shows there is no crossover with classical simulation
+  at any photon number on current hardware.
 - No claim on S&P 500 realised volatility, where it does not win and no model is
   statistically distinguishable from any other.
 - No hardware claim until a QPU leaves maintenance and the run in section 4 completes.

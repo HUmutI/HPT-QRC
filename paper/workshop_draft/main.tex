@@ -73,8 +73,15 @@ threshold detectors, we find accuracy essentially unchanged by photon distinguis
 (flat for Hong--Ou--Mandel visibility from $0.50$ to $1.00$) and by multi-photon emission
 ($+0.8\%$ for $g^{(2)}(0)$ from $0$ to $0.30$), while finite sampling dominates. Since
 $n$-fold coincidence rate falls as $\eta^{n}$ in the transmittance $\eta$, this inverts the
-usual design instinct: photon number, not photon quality, is the binding constraint. We make
-no claim of quantum advantage, and all results reported here are simulated.
+usual design instinct: photon number, not photon quality, is the binding constraint. Testing
+that directly, we find no detectable benefit from photon indistinguishability on seven of eight
+task and photon-number configurations, so we conclude that the architecture is a classical
+random nonlinear feature map realised in optics and that the exploited resource is Fock-space
+dimension rather than interference. Comparing measured classical throughput against measured
+device rates, no crossover with simulation exists at any photon number on current hardware; a
+crossover at twelve photons in twenty-four modes would require roughly a fourfold improvement
+in transmittance. We make no claim of quantum advantage, and all results reported here are
+simulated.
 \end{abstract}
 
 \section{Introduction}\label{sec:intro}
@@ -114,6 +121,14 @@ This paper addresses both. Our contributions:
         insensitive to distinguishability and multi-photon emission but strongly limited by
         coincidence count, yielding a concrete feasibility threshold
         (Section~\ref{sec:noise}).
+  \item \textbf{A direct test of whether interference contributes}, by interpolating between
+        distinguishable and indistinguishable photons at otherwise identical settings. It does
+        not, on seven of eight configurations, so we characterise the architecture as a
+        classical random nonlinear feature map realised in optics and identify Fock-space
+        dimension as the exploited resource (Section~\ref{sec:quantumness}).
+  \item \textbf{A crossover analysis} against the measured cost of simulating the same map,
+        which finds no crossover on current hardware and quantifies the transmittance a
+        crossover would require (Section~\ref{sec:crossover}).
 \end{itemize}
 
 We also report, in Section~\ref{sec:limitations}, that an earlier windowed version of this
@@ -413,6 +428,59 @@ $\sim\!48$ counts from 1000 requested shots spread over 56 Fock bins, and its fe
 correlated only $0.18$--$0.48$ with simulation. That was sampling noise, not a calibration
 fault.
 
+\section{Is it the interference, or a random nonlinear map?}\label{sec:quantumness}
+
+Random Fourier features come close to this model on several tasks, so the question that decides
+whether ``photonic'' is load-bearing is not whether a random nonlinear map helps --- it plainly
+does --- but whether the \emph{interference} contributes. Partial distinguishability answers it
+cleanly, because it interpolates exactly between the two hypotheses at otherwise identical
+circuit, phases, shot count and readout. At $\mathcal{I} = 0$ the photons are classical
+distinguishable particles and the distribution is the permanent of $|U|^2$, a positive matrix
+and a classical stochastic feature map. At $\mathcal{I} = 1$ they are indistinguishable bosons
+and the distribution is $|\mathrm{perm}(U)|^2$, with interference among the $n!$ assignments.
+
+We evaluate in the infinite-shot limit so sampling cannot mask the effect, pair observations
+across seeds (a seed fixes both the circuit draw and the data), and require an effect to clear
+both $p < 0.05$ and half a seed standard deviation before calling it an effect.
+
+\begin{table}[H]\centering
+  \small
+  \begin{tabular}{lrrrrrl}
+    \toprule
+    Task & $n$ & $\mathcal{I}{=}0$ & $\mathcal{I}{=}1$ & ratio & $p$ & verdict \\
+    \midrule
+    channel-eq & 2 & 0.1726 & 0.1728 & 0.999 & 0.571 & no detectable effect \\
+    channel-eq & 3 & 0.1725 & 0.1737 & 0.993 & 0.541 & no detectable effect \\
+    NARMA-10   & 2 & 0.2465 & 0.2373 & 1.039 & 0.886 & no detectable effect \\
+    NARMA-10   & 3 & 0.2225 & 0.2198 & 1.012 & 0.280 & no detectable effect \\
+    parity     & 2 & 0.7506 & 0.7901 & 0.950 & 0.324 & no detectable effect \\
+    parity     & 3 & 0.3140 & 0.3835 & 0.819 & 0.166 & no detectable effect \\
+    Henon      & 2 & 0.8811 & 0.8830 & 0.998 & 0.571 & no detectable effect \\
+    Henon      & 3 & 0.8811 & 0.8849 & 0.996 & 0.034 & interference \emph{hurts} \\
+    \bottomrule
+  \end{tabular}
+  \caption{Effect of photon indistinguishability, median NRMSE over 3 seeds. Seven of eight
+           configurations show no detectable effect; ratios scatter in both directions and the
+           one significant case is adverse.}
+  \label{tab:quantumness}
+\end{table}
+
+We therefore state plainly that \textbf{this architecture is a classical random nonlinear
+feature map realised in optics}. The interferometer and Fock measurement supply a useful
+high-dimensional map; the indistinguishability of the photons is not what makes it work.
+
+One distinction in Table~\ref{tab:quantumness} matters. On the parity task \emph{photon number}
+helps substantially --- $n=3$ reaches $0.314$ against $n=2$'s $0.751$ --- while
+indistinguishability does not. The resource being exploited is Fock-space dimension
+$\binom{m}{n}$, not interference.
+
+Two consequences follow. Scientifically, this explains Section~\ref{sec:noise}: insensitivity
+to Hong--Ou--Mandel visibility there and the absence of an interference effect here are the same
+fact observed twice. Practically, it lowers the hardware requirement, because a source for this
+application need not be indistinguishable --- and HOM visibility, normally the headline figure
+of merit for a single-photon source, is not the specification to optimise. Transmittance is
+(Section~\ref{sec:crossover}).
+
 \section{When would photonics beat simulating it?}\label{sec:crossover}
 
 The obvious objection to a photonic reservoir at these scales is that a laptop simulates it
@@ -501,6 +569,15 @@ follows consumes it.
 \textbf{Everything here is simulated.} We claim no quantum advantage. The comparison is between
 feature maps on classical data, and a passive interferometer is a classically simulable device
 at these photon numbers by construction.
+
+\textbf{Interference does not contribute.} Section~\ref{sec:quantumness} tests this directly
+and finds no detectable effect on seven of eight configurations. Readers should treat this as a
+result about the architecture rather than a caveat: what the optics supplies is a
+high-dimensional random nonlinear map, and the useful resource is Fock-space dimension.
+
+\textbf{No computational crossover.} Section~\ref{sec:crossover} shows the device is at best
+$1.6\times10^{3}$ times slower than simulating it on one core, at any photon number, on current
+hardware.
 
 \textbf{A negative result on the financial task.} On S\&P~500 realised volatility the model
 does not win and nothing is statistically distinguishable. We include the task because it was
