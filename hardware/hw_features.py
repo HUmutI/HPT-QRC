@@ -143,11 +143,29 @@ def _run_job(make_sampler, shots: int, key: str, poll_s: float = 5.0):
 
 def sample_batch(processor, spec: dict, X_win: np.ndarray, shots: int,
                  platform: str, max_shots_per_call: int = None,
-                 use_cache: bool = True) -> dict:
+                 use_cache: bool = True, chunk_size: int = None) -> dict:
     """Run all timesteps in X_win as one multi-iteration job. Returns a dict with
     per-timestep p_hat, features, and job metadata. Results are cached to disk so
     a re-run never re-bills shots.
+
+    chunk_size: split the batch into sequential jobs of at most this many
+    timesteps. REQUIRED on tier-capped platforms — Explorer kills any job at
+    5 minutes (~14 steps at 1000 shots), Academic/Pro at 30 minutes. Each chunk
+    caches independently, so an interrupted run resumes where it stopped.
     """
+    X_win = np.atleast_2d(X_win)
+    if chunk_size and len(X_win) > chunk_size:
+        merged = {"platform": platform, "shots_requested": shots,
+                  "wall_time_s": 0.0, "n_timesteps": len(X_win), "steps": []}
+        n_chunks = (len(X_win) + chunk_size - 1) // chunk_size
+        for ci in range(n_chunks):
+            chunk = X_win[ci * chunk_size:(ci + 1) * chunk_size]
+            print(f"[hw] chunk {ci + 1}/{n_chunks} ({len(chunk)} steps)", flush=True)
+            out = sample_batch(processor, spec, chunk, shots, platform,
+                               max_shots_per_call, use_cache)
+            merged["wall_time_s"] += out["wall_time_s"]
+            merged["steps"].extend(out["steps"])
+        return merged
     CACHE_DIR.mkdir(exist_ok=True)
     key = _job_key(platform, spec, X_win, shots)
     cache_file = CACHE_DIR / f"job_{key}.json"
@@ -172,8 +190,17 @@ def sample_batch(processor, spec: dict, X_win: np.ndarray, shots: int,
     job_result = _run_job(make_sampler, shots, key)
     wall = time.time() - t0
 
+    n_expected = len(np.atleast_2d(X_win))
+    n_got = len(job_result["results_list"])
+    if n_got != n_expected:
+        raise RuntimeError(
+            f"Partial result: {n_got}/{n_expected} iterations returned — the job "
+            "was likely killed by the tier's max-job-duration cap (Explorer: 5 min). "
+            "Re-run with a smaller chunk_size. Result NOT cached."
+        )
+
     out = {"platform": platform, "shots_requested": shots, "wall_time_s": wall,
-           "n_timesteps": len(np.atleast_2d(X_win)), "steps": []}
+           "n_timesteps": n_expected, "steps": []}
     for res in job_result["results_list"]:
         p_hat, meta = counts_to_phat(res["results"], spec)
         feats = phat_to_features(p_hat, spec)
