@@ -269,15 +269,26 @@ correlation is 0.999 (worst case 0.994) across 600 timesteps. The earlier three-
 on the Belenos QPU managed only 0.18–0.48, because at `transmittance³` it collected ~48
 counts per step across 56 Fock bins.
 
-**It does not** demonstrate robustness to device noise. `sim:ascella` scored *better* than
-the noiseless `sim:slos` at the same shot count, which it cannot do if it were adding noise;
-the two agree to within sampling scatter. Combined with the platform returning exactly the
-requested count at zero drop rate, the conclusion is that these "emulators" apply sampling
-but no device model this experiment can detect — `sim:ascella` in fact self-describes as
-"Arcturus simulator". `scripts/compare_platforms.py` re-tests this directly by sending
-identical phase settings to each platform. **All noise evidence in Section 3 therefore rests
-on Perceval's `NoiseModel`**, which is Quandela's own implementation of the device physics,
-not on these platforms.
+**It does** independently corroborate the noise result. Sending 30 identical phase settings
+to each platform at 20 000 shots and measuring total variation against an exact local
+calculation (`scripts/compare_platforms.py`) gives:
+
+| Platform | TVD vs exact | vs perfect sampler |
+|---|---|---|
+| perfect sampler (multinomial, 20 000 shots) | 0.0193 ± 0.0004 | — |
+| `sim:slos` | 0.0211 | +5σ |
+| `sim:ascella` | 0.0288 | +26σ |
+
+`sim:ascella` does apply device noise, and the amount is small: it moves the distribution
+0.0077 further from exact than a sampling-only platform, on top of a sampling error of
+0.019 at this shot count. That is the same conclusion Section 3 reaches from Perceval's
+`NoiseModel` — device imperfection is a minor perturbation next to finite sampling —
+arrived at independently through Quandela's own emulator.
+
+Note that the NRMSE ordering in the table above is *not* evidence either way: `sim:ascella`
+scored better than the noiseless `sim:slos`, which is seed-to-seed scatter in a downstream
+regression, not a statement about the distributions. The distribution comparison is the
+measurement that settles it.
 
 Note also that the lift at 8000 shots is only 1.00–1.08, consistent with the shot-convergence
 result that ~3×10⁴ coincidences per timestep are needed before the reservoir is clearly worth

@@ -401,14 +401,19 @@ of the two-photon decision: the earlier three-photon probe on the Belenos QPU re
 $0.18$--$0.48$, because at $\eta^{3}$ it collected $\sim\!48$ counts per step across 56 Fock
 bins.
 
-We caution against over-reading the cloud \emph{emulator} platforms. Running the identical
-configuration on \texttt{sim:ascella} and on the noiseless \texttt{sim:slos} at the same shot
-count gave NRMSE $0.393$ and $0.421$ respectively --- the nominal device emulator scored
-\emph{better}, which it cannot do if it were adding noise. Together with the platform
-returning exactly the requested number of accepted samples at zero measured drop rate, we
-conclude these platforms apply sampling but no device model detectable by this experiment.
-Every noise result in Section~\ref{sec:noise} therefore comes from Perceval's device model,
-not from them.
+Quandela's cloud emulator platforms also corroborate Section~\ref{sec:noise} independently.
+Submitting 30 identical phase settings to each platform at $2\!\times\!10^{4}$ shots and
+measuring total variation against an exact local calculation gives $0.0211$ for the noiseless
+\texttt{sim:slos} and $0.0288$ for \texttt{sim:ascella}, against $0.0193 \pm 0.0004$ for a
+perfect multinomial sampler at that shot count --- a $+26\sigma$ excess for the emulator. The
+device model is therefore real but small: it displaces the distribution by $0.008$ on top of a
+sampling error of $0.019$. That is the same ordering Perceval's device model gives, reached
+independently through Quandela's own emulator.
+
+We note that the downstream NRMSE ordering is not evidence on this point in either direction:
+\texttt{sim:ascella} scored better than the noiseless \texttt{sim:slos} in the 600-step run,
+which is seed-to-seed scatter in a regression rather than a statement about the underlying
+distributions. Only the distribution comparison settles it.
 
 Because a closed feedback loop cannot be batched into a single cloud job
 (Section~\ref{sec:free-feedback}), two protocols are provided. In \emph{replay}, the recurrence

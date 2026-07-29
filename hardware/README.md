@@ -81,9 +81,19 @@ Established against perceval 1.1.0 / merlin 0.3.1, checked by `compare_sim_local
 
 ## 6. Gotchas
 
-- **Platform names**: `qpu:ascella`, `qpu:belenos`, `sim:slos`. Check status
-  programmatically — `RemoteProcessor(name, token)._rpc_handler.fetch_platform_details()`
-  returns `status` and `bookable`.
+- **Platform names**: `qpu:ascella`, `qpu:belenos`, `sim:slos`, plus the emulators
+  `sim:ascella` and `sim:belenos`. Check status programmatically —
+  `RemoteProcessor(name, token)._rpc_handler.fetch_platform_details()` returns `status` and
+  `bookable`. `sim:clifford` now reports `decommissioned`, so the field is maintained.
+- **The emulators do not appear to emulate noise.** At equal shot count `sim:ascella` scored
+  *better* than the noiseless `sim:slos` on an identical 600-step configuration, and it
+  self-describes as "Arcturus simulator". Treat them as cloud sampling simulators, not device
+  models. `scripts/compare_platforms.py` re-tests this by sending one shared phase batch to
+  every platform and measuring each against an exact local calculation.
+- **`sim:belenos` is roughly 20× slower than `sim:ascella`.** A 50-step chunk reached only
+  20 % after 206 s, extrapolating to hours per run. Budget for it or avoid it; a job that
+  overruns blocks the queue, since the free tier allows one at a time. Cancel with
+  `POST /api/job/cancel/<id>`.
 - **The 5-minute cap is real and silent.** Job `96baa2b6-…` was cancelled at 307 s having
   completed 4 % of its iterations. `sample_batch(chunk_size=...)` splits the batch into
   independently-cached jobs, and a job returning fewer iterations than requested now raises

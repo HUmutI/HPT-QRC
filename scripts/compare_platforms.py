@@ -77,6 +77,23 @@ def stats(sampled: np.ndarray, exact: np.ndarray) -> dict:
     }
 
 
+def sampling_reference(exact: np.ndarray, shots: int, trials: int = 200,
+                       seed: int = 99) -> tuple[float, float]:
+    """Total variation a *perfect* sampler would show at this shot count.
+
+    This is the reference the platforms must be judged against. Comparing one platform to
+    another cannot separate a device model from run-to-run sampling scatter, but the
+    multinomial distribution of a finite sample around the exact distribution is known, so
+    simulating it gives a calibrated null with a standard deviation to quote sigmas against.
+    """
+    rng = np.random.default_rng(seed)
+    values = []
+    for _ in range(trials):
+        drawn = np.array([rng.multinomial(shots, p) / shots for p in exact])
+        values.append(0.5 * np.abs(drawn - exact).sum(axis=1).mean())
+    return float(np.mean(values)), float(np.std(values))
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--platforms", nargs="+",
@@ -108,22 +125,20 @@ def main() -> None:
         print(f"  {platform:<14} TVD vs exact: mean {s['tvd_mean']:.4f} max {s['tvd_max']:.4f}"
               f"   corr: mean {s['corr_mean']:.4f} min {s['corr_min']:.4f}")
 
-    if "sim:slos" in report:
-        baseline = report["sim:slos"]["tvd_mean"]
-        print(f"\nsim:slos is the sampling-only reference (TVD {baseline:.4f} at this shot "
-              f"count).")
-        for platform, s in report.items():
-            if platform == "sim:slos":
-                continue
-            excess = s["tvd_mean"] - baseline
-            verdict = ("applies a device model beyond sampling" if excess > 0.5 * baseline
-                       else "indistinguishable from sampling alone")
-            print(f"  {platform:<14} excess TVD {excess:+.4f}  ->  {verdict}")
+    mean_ref, std_ref = sampling_reference(exact, args.shots)
+    print(f"\nperfect sampler at {args.shots} shots would give TVD "
+          f"{mean_ref:.4f} +/- {std_ref:.4f}")
+    for platform, s in report.items():
+        sigma = (s["tvd_mean"] - mean_ref) / std_ref if std_ref > 0 else float("nan")
+        verdict = ("consistent with sampling alone" if sigma < 3
+                   else "applies noise beyond sampling")
+        print(f"  {platform:<14} {sigma:+6.1f} sigma  ->  {verdict}")
 
     out = ROOT / "hardware" / "results" / "platform_comparison.json"
     out.write_text(json.dumps(
         {"steps": args.steps, "shots": args.shots, "modes": args.modes,
-         "photons": args.photons, "results": report}, indent=2))
+         "photons": args.photons, "sampling_reference": {"mean": mean_ref, "std": std_ref},
+         "results": report}, indent=2))
     print(f"\nwrote {out}")
 
 
