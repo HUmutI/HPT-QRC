@@ -119,3 +119,39 @@ Belenos & 4 & \num{2.71e+01} & 18\,min \\
 \end{tabular}
 }
 
+\newcommand{\PaperTableQuantumness}{%
+\begin{tabular}{lrrrrrl}
+\toprule
+Task & $n$ & $\mathcal{I}{=}0$ & $\mathcal{I}{=}1$ & ratio & $p$ & verdict \\
+\midrule
+Channel eq. & 2 & 0.1726 & 0.1728 & 0.999 & 0.571 & no detectable effect \\
+Channel eq. & 3 & 0.1725 & 0.1737 & 0.993 & 0.541 & no detectable effect \\
+H\'enon ($h{=}4$) & 2 & 0.8811 & 0.8830 & 0.998 & 0.571 & no detectable effect \\
+H\'enon ($h{=}4$) & 3 & 0.8811 & 0.8849 & 0.996 & 0.034 & \emph{hurts} \\
+NARMA-10 & 2 & 0.2465 & 0.2373 & 1.039 & 0.886 & no detectable effect \\
+NARMA-10 & 3 & 0.2225 & 0.2198 & 1.012 & 0.280 & no detectable effect \\
+Parity ($d{=}3$) & 2 & 0.7506 & 0.7901 & 0.950 & 0.324 & no detectable effect \\
+Parity ($d{=}3$) & 3 & 0.3140 & 0.3835 & 0.819 & 0.166 & no detectable effect \\
+\bottomrule
+\end{tabular}
+}
+
+\newcommand{\PaperTableCrossover}{%
+\begin{tabular}{lrrrrr}
+\toprule
+Platform & $n$ & Fock dim. & classical & device & $t$ needed \\
+\midrule
+Ascella & 2 & 276 & 0.39\,ms & \num{6.30e-01}\,s & 0.978 \\
+Ascella & 3 & 2024 & 0.87\,ms & \num{2.58e+01}\,s & 0.754 \\
+Ascella & 4 & 10626 & 14.28\,ms & \num{1.06e+03}\,s & 0.403 \\
+Ascella & 5 & 42504 & 347.99\,ms & \num{4.34e+04}\,s & 0.255 \\
+Ascella & 6 & 134596 & 7925.87\,ms & \num{1.78e+06}\,s & 0.190 \\
+Belenos & 2 & 276 & 0.39\,ms & \num{2.59e+00}\,s & 3.936 \\
+Belenos & 3 & 2024 & 0.87\,ms & \num{5.36e+01}\,s & 1.909 \\
+Belenos & 4 & 10626 & 14.28\,ms & \num{1.11e+03}\,s & 0.808 \\
+Belenos & 5 & 42504 & 347.99\,ms & \num{2.29e+04}\,s & 0.445 \\
+Belenos & 6 & 134596 & 7925.87\,ms & \num{4.72e+05}\,s & 0.302 \\
+\bottomrule
+\end{tabular}
+}
+

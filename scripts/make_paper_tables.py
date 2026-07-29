@@ -41,6 +41,10 @@ DATASET_LABEL = {
     "mackey_glass_h17": "Mackey-Glass ($h{=}17$)",
     "lorenz63": "Lorenz-63 ($h{=}20$)",
     "sp500_rv": "S\\&P 500 RV",
+    "santa_fe": "Santa Fe laser",
+    "channel_eq": "Channel eq.",
+    "parity_d3": "Parity ($d{=}3$)",
+    "henon": "H\\'enon ($h{=}4$)",
 }
 
 
@@ -148,6 +152,57 @@ def table_capacity() -> str:
     return _macro("PaperTableCapacity", "\n".join(lines))
 
 
+def table_quantumness() -> str:
+    """Interference effect, with the paired test, generated rather than typed."""
+    path = RESULTS / "quantumness" / "indistinguishability.csv"
+    if not path.exists():
+        return ""
+    import numpy as np
+    from scipy import stats as sstats
+
+    frame = pd.read_csv(path)
+    lines = ["\\begin{tabular}{lrrrrrl}", "\\toprule",
+             "Task & $n$ & $\\mathcal{I}{=}0$ & $\\mathcal{I}{=}1$ & ratio & $p$ & verdict \\\\",
+             "\\midrule"]
+    for (dataset, n_photons), group in frame.groupby(["dataset", "n_photons"]):
+        a = group[group.visibility == 0.0].sort_values("seed")["nrmse"].to_numpy()
+        b = group[group.visibility == 1.0].sort_values("seed")["nrmse"].to_numpy()
+        if len(a) != len(b) or len(a) < 2:
+            continue
+        diff = a - b
+        spread = float(np.std(a, ddof=1))
+        _, p_value = sstats.ttest_rel(a, b)
+        detectable = p_value < 0.05 and abs(diff.mean()) > 0.5 * spread
+        verdict = ("helps" if diff.mean() > 0 else "\\emph{hurts}") if detectable \
+            else "no detectable effect"
+        lines.append(
+            f"{DATASET_LABEL.get(dataset, dataset)} & {int(n_photons)} & "
+            f"{np.median(a):.4f} & {np.median(b):.4f} & {np.median(a) / np.median(b):.3f} & "
+            f"{p_value:.3f} & {verdict} \\\\"
+        )
+    lines += ["\\bottomrule", "\\end{tabular}"]
+    return _macro("PaperTableQuantumness", "\n".join(lines))
+
+
+def table_crossover() -> str:
+    path = RESULTS / "crossover" / "crossover.csv"
+    if not path.exists():
+        return ""
+    frame = pd.read_csv(path)
+    lines = ["\\begin{tabular}{lrrrrr}", "\\toprule",
+             "Platform & $n$ & Fock dim. & classical & device & $t$ needed \\\\",
+             "\\midrule"]
+    for platform, group in frame.groupby("platform"):
+        for _, row in group[group.n_photons <= 6].iterrows():
+            lines.append(
+                f"{platform.capitalize()} & {int(row.n_photons)} & {int(row.fock_dim)} & "
+                f"{row.classical_s * 1e3:.2f}\\,ms & \\num{{{row.device_s:.2e}}}\\,s & "
+                f"{row.required_transmittance:.3f} \\\\"
+            )
+    lines += ["\\bottomrule", "\\end{tabular}"]
+    return _macro("PaperTableCrossover", "\n".join(lines))
+
+
 def table_memory() -> str:
     path = RESULTS / "capacity" / "memory_ipc.csv"
     if not path.exists():
@@ -232,7 +287,7 @@ def main() -> None:
     )
     body = "".join(
         [table_benchmarks(), table_dm(), table_capacity(), table_memory(),
-         table_noise(), table_rates()]
+         table_noise(), table_rates(), table_quantumness(), table_crossover()]
     )
     Path(args.out).write_text(header + body)
     macros = [line.split("{")[1].split("}")[0] for line in body.splitlines()
