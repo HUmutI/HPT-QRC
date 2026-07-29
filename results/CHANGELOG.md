@@ -1,60 +1,45 @@
-# Results Changelog
+# Results changelog
 
-All historical results are preserved in versioned subdirectories.
+## v3 (current) — recurrent model, standard protocols
 
----
+**All v1/v2 numbers are superseded and should not be quoted.** They were produced under a
+protocol that is not comparable to the reservoir-computing literature, against an echo state
+network with no input-scaling parameter, and with a single ridge penalty shared across
+models of very different feature counts.
 
-## v2 — window=10, photon_list=[2,3,4] (Current)
-**Date:** 2026-05-03  
-**Config:** window=10, photon_list=[2,3,4] (heterogeneous photon ensemble)  
-**Files:** `results/v2_window10_hetero/`
+What changed:
 
-### What changed from v1:
-- `window` increased from 5 → 10
-- `n_photons=3` (homogeneous) replaced with `photon_list=[2,3,4]` (heterogeneous)
+- **Recurrence.** The model has a state that persists across timesteps
+  (`src/temporal_qrc.py`). Removing it doubles the error on both NARMA tasks.
+- **Standard protocol.** NARMA is driven by its exogenous input, as in the literature. The
+  previous autoregressive variant is kept as `narma10_autoregressive` and clearly labelled.
+- **NRMSE** (RMSE ÷ std) as the headline metric, so numbers can be placed against published
+  results directly.
+- **Per-model ridge penalty selection** on a validation slice (`src/rc_protocol.py`).
+- **Fixed ESN baseline.** With input scaling it reaches 0.183 on NARMA-10, matching the
+  literature's ≈0.185.
+- **Classical control in every table** — ridge on a window of the raw drive.
+- **Matched-capacity study** (`results/capacity/`), because the tuned photonic configuration
+  uses more features than the baselines.
+- **Noise study** at measured Ascella/Belenos operating points via Perceval's `NoiseModel`
+  with threshold detectors (`results/noise/`).
 
-### Key results (5 seeds, mean ± std):
+Headline (5 seeds, NRMSE): photonic 0.0912 on NARMA-10 and 0.2262 on NARMA-20, both with
+DM-HAC p < 0.001 against every baseline; a tie with the ESN on Mackey-Glass (p = 0.41); and
+third of six on S&P 500 RV where nothing is statistically distinguishable.
 
-| Dataset | Model | MSE | QLIKE |
-|---|---|---|---|
-| NARMA10 | **HPT-QRC-X** | **0.000398 ± 0.000082** ← NEW BEST | **0.352 ± 0.138** ← NEW BEST |
-| NARMA10 | HARX | 0.003816 ± 0.000473 | 2.410 ± 0.245 |
-| Mackey-Glass | **HPT-QRC-X** | **0.000001 ± 0.000000** | **0.0001 ± 0.0000** |
-| S&P 500 | HARX | **0.009863 ± 0** | **0.833 ± 0** |
-| S&P 500 | HPT-QRC | 0.013516 ± 0.000968 | 1.142 ± 0.090 |
+### Retracted
 
-### Notable finding:
-**HPT-QRC-X on NARMA10 improved from 0.004427 → 0.000398 (11× improvement!)**.  
-The wider window (10 steps) gives the exogenous signal much richer temporal context.  
-S&P 500 performance degraded slightly — the larger window may be overfitting on the small financial dataset (164 test samples). This is expected.
+- The "50× linear memory capacity vs ESN" claim. Measured linear memory capacity is ~11 for
+  the photonic reservoir against 27–30 for an ESN — it has *less* linear memory, and wins
+  through nonlinear capacity per feature instead (0.85 vs 0.43–0.62).
+- Any claim that the previous windowed model beat classical baselines. On NARMA-10 under its
+  own protocol, a plain ridge on the raw window scored 5.24e-3 against its 5.38e-3.
+- The mixed-configuration recommendation (v2 for NARMA/MG, v1 for S&P 500). Reporting a
+  different configuration per dataset because it scored better there is not defensible; one
+  tuning procedure now runs per dataset for every model alike.
 
----
+## v2 — window=10, photon_list=[2,3,4] (superseded)
+## v1 — window=5, homogeneous n=3 (superseded)
 
-## v1 — window=5, n_photons=3 (Baseline)
-**Date:** 2026-05-03  
-**Config:** window=5, n_photons=3 (homogeneous), n_reservoirs=3  
-**Files:** `results/v1_window5_homo/`
-
-### Key results (5 seeds, mean ± std):
-
-| Dataset | Model | MSE | QLIKE |
-|---|---|---|---|
-| NARMA10 | HPT-QRC-X | 0.004427 ± 0.000355 | 2.770 ± 0.381 |
-| NARMA10 | HARX | **0.003816 ± 0.000473** | **2.410 ± 0.245** |
-| Mackey-Glass | **HPT-QRC-X** | **0.000001 ± 0.000000** | **0.0001 ± 0.0000** |
-| S&P 500 | HARX | **0.009863 ± 0** | **0.833 ± 0** |
-| S&P 500 | HPT-QRC | 0.011022 ± 0.000067 | 0.925 ± 0.006 |
-
----
-
-## Recommendation for Paper
-
-| Dataset | Report | Version |
-|---|---|---|
-| NARMA10 | Use **v2** results (HPT-QRC-X: 0.000398) | v2 |
-| Mackey-Glass | Use **v2** results (identical) | v2 |
-| S&P 500 | Use **v1** HPT-QRC results (0.011022) — v2 window=10 overfits | v1 |
-| VIX | Use `results/vix_benchmark.csv` (HPT-QRC beats all) | v1 config |
-
-**For S&P 500**: use window=5 for HPT-QRC (set it explicitly in that benchmark call).  
-The paper should discuss this as a finding: *"Optimal window size is task-dependent — larger windows improve synthetic chaotic benchmarks but can overfit small real-world financial datasets."*
+Archived under `results/v1_window5_homo/` and `results/v2_window10_hetero/` for provenance.

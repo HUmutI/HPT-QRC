@@ -1,127 +1,87 @@
-# Hardware Execution Plan — HPT-QRC on Quandela Ascella
+# Hardware execution plan — Quandela QPU
 
-Status: **planning** (no HW code built yet). Strategy: run a cheap cost-probe first,
-read the real shot/latency numbers off Ascella, then decide final scope.
+**Status: implemented and rehearsed; blocked on platform availability.**
+Both `qpu:ascella` and `qpu:belenos` have reported `status: maintenance` throughout this
+work. Nothing in `results/` is a QPU measurement.
 
----
+This file replaces the original Ascella-only plan, which was written before any hardware
+code existed and before the coincidence-rate problem was measured.
 
-## 1. Why this is not a drop-in
+## 1. What the earlier attempt taught us
 
-The simulated pipeline (`src/multi_qrc.py`) uses `merlin.QuantumLayer` with
-`ComputationSpace.UNBUNCHED`, which returns the **exact Fock probability vector**
-computed by SLOS. Real hardware returns **samples (shots)**, not probabilities,
-plus loss, partial photon distinguishability, and dark counts.
+A three-photon, eight-mode configuration was run on **Belenos** (not Ascella, despite what
+the older docs said):
 
-So the hardware path replaces *only* the feature-extraction step:
+| Observation | Value |
+|---|---|
+| Requested shots per timestep | 1 000 |
+| Raw counts returned | 39–63 |
+| Counts surviving unbunched post-selection | 21–36, spread over 56 Fock bins |
+| `physical_perf` | 3.9e-5 – 6.2e-5 |
+| Correlation of hardware features vs simulation | **0.18 – 0.48** |
 
-```
-simulated:  data --phase encode--> QuantumLayer (exact p-vector) --LexGrouping--> features
-hardware:   data --phase encode--> RemoteProcessor sample(N shots) --histogram--> p_hat --LexGrouping--> features
-```
+The features were dominated by sampling noise. This is not a calibration problem — it is the
+`transmittance^n` scaling of n-fold coincidences, and the fix is fewer photons, not more
+shots.
 
-The Ridge readout, scaler, HAR context, dataset loaders — all unchanged.
+A second job (`96baa2b6-da73-41c8-aa12-beb9cd39650a`) was **cancelled by the platform at
+307 s having completed 4 %** of its iterations: the free tier's 5-minute per-job cap.
 
----
+## 2. Design consequences
 
-## 2. Chip fit (already OK)
+| Choice | Reason |
+|---|---|
+| **2 photons**, not 3 | Coincidence rate rises by `1/transmittance` ≈ 40×. Ascella: 4.8e4/s at n=2 vs 1.2e3/s at n=3. |
+| **Ascella preferred** over Belenos | 80 MHz vs 4.94 MHz clock; g² 1.95 % vs 18.2 %. |
+| 10–12 modes | Enough Fock bins for a useful state, few enough for good per-bin statistics. |
+| depth 1 | Loss compounds with depth, and depth bought no accuracy in simulation. |
+| `max_shots_per_call` ≈ 1e7 | The old default of `10 × shots` starved the post-selection it then performed. |
+| Chunked submission | The 5-minute cap. Each chunk caches independently so an interrupted run resumes. |
 
-| | Model needs | Ascella has |
-|---|---|---|
-| Modes | 8 (1 input + 7 memory) | 12 |
-| Photons | ≤ 4 (`photon_list=[2,3,4]`) | up to 6 usable |
+The noise study (`experiments/noise_study.py`) shows indistinguishability and g² barely
+matter for this model, while shots dominate — so the budget should be spent entirely on
+coincidence rate.
 
-Architecture fits. No mode/photon reduction required for the chip itself.
+## 3. Shot budget
 
-**But circuit depth is a risk:** `window=10` + virtual depth ≤3 stacks up to ~13
-8-mode rectangle interferometers (~28 beamsplitters each). Deep circuit → compounding
-photon loss → low coincidence rate → more shots per usable sample. The cost probe
-must measure the real coincidence/loss rate before committing.
+Target 3×10⁴ coincidences per timestep, where simulation shows the reservoir still beats its
+classical control.
 
----
-
-## 3. Shot-budget math (why full reproduction is off the table)
-
-Full benchmark, simulated, per dataset ≈ 1000 timesteps. Each timestep is a distinct
-data encoding = a distinct circuit job. Reservoir count = `len(photon_list) × n_virtual_nodes`
-= 3 × 3 = **9** circuits.
-
-| Scope | Circuit configs | Shots/config | Total shots | Verdict |
+| Platform | n | Rate | Time per timestep | 600 timesteps |
 |---|---|---|---|---|
-| Full: 3 datasets × 5 seeds × 9 reservoirs × ~1000 steps | ~1.35e5 | ~1e4 | **~1.3e9** | infeasible on any tier |
-| One dataset, 1 seed, 9 reservoirs, ~1000 steps | ~9e3 | ~1e4 | **~9e7** | likely exceeds Academic quota |
-| **Validation subset:** 1 dataset, champion 1 reservoir, ~200 test steps | ~200 | ~1e3 | **~2e5** | affordable, defensible |
+| Ascella | 2 | 4.8e4/s | 0.63 s | ~6 min |
+| Belenos | 2 | 1.2e4/s | 2.6 s | ~26 min |
+| Ascella | 3 | 1.2e3/s | 26 s | ~4.3 h |
 
-The subset is the target. It demonstrates *the feature map survives real shot noise* —
-which is the actual scientific claim a referee cares about — without reproducing every cell.
+At two photons this fits comfortably inside a booked free slot. At three it does not.
 
----
+## 4. Protocols
 
-## 4. Cost probe (do this FIRST)
+Closed-loop feedback cannot be batched into one cloud job, since step *t*'s phases depend on
+step *t−1*'s measurement. Both of these are run and both are reported:
 
-Goal: measure real per-job latency, shot consumption, coincidence rate, and loss on
-Ascella with **one tiny run**, then extrapolate the true budget.
+- **`replay`** — the recurrence runs in simulation to produce the phase trajectory, which is
+  replayed on hardware as one batched job; the readout is trained on hardware-measured
+  features. The chip's feature map is measured faithfully, but **the feedback path is
+  simulated** and must be described that way.
+- **`openloop`** — feedback disabled; every timestep independent, so the run is genuinely
+  end-to-end on hardware. Weaker model, stronger claim.
 
-Probe spec:
-- 1 reservoir (single photon count, e.g. `[3]`, virtual depth 1 → shallow)
-- 10 timesteps from NARMA10
-- 1000 shots/step
-- → 10 jobs, ~1e4 shots total — trivial quota cost
+## 5. Run order
 
-Record into `hardware/run_log.csv`:
-- wall-clock per job (includes cloud queue time)
-- shots requested vs valid coincidences returned (→ loss factor)
-- empirical Fock dist vs simulated Fock dist (→ fidelity / correlation)
-- total credits/shots consumed (read off Quandela dashboard before/after)
+```bash
+python -m pytest tests/ -q                                   # core must match MerLin
+python hardware/compare_sim_local.py                         # zero-cost gate
+python hardware/run_reservoir_hw.py --local --steps 600       # free rehearsal
+python hardware/run_reservoir_hw.py --platform sim:slos --steps 100   # cloud rehearsal
+python hardware/run_reservoir_hw.py --platform qpu:ascella --steps 600 --shots 30000
+```
 
-From those numbers: extrapolate cost + time for the full validation subset, then green-light it.
+Start with a 10-step probe on the QPU to measure the actual coincidence rate before
+committing the full run; the extrapolation in section 3 assumes the published transmittance.
 
----
+## 6. Account limits
 
-## 5. Account recommendation
-
-**Use Academic, not Explorer.** Reasoning:
-- Explorer (free) quota is sized for tutorials, not 1e5+ shot research runs.
-- Academic gives larger quota + is the correct provenance to cite in a paper.
-
-⚠️ **Verify current 2026 quotas yourself** — Quandela revises tiers; do not trust old
-numbers. Check: monthly shot/credit cap, max shots/job, Ascella vs Belenos availability,
-and queue priority. Confirm the cost-probe fits the free tier so you can test the
-pipeline before spending Academic credits.
-
-Apply for Academic here: cloud.quandela.com (academic program / contact form).
-
----
-
-## 6. Code-change checklist (build after probe)
-
-Planned `hardware/` contents:
-
-- [ ] `hw_backend.py` — wrap `pcvl.RemoteProcessor("qpu:ascella", token)`; token from
-      `QUANDELA_TOKEN` env var (never hardcode/commit).
-- [ ] `phase_export.py` — read the fixed random reservoir phases (`t_*` params) out of a
-      built `QuantumLayer` so the exact same circuit is programmed on HW. The `t` phases are
-      seeded-random and never trained (`layer.eval()`), so they must be extracted, not re-sampled.
-- [ ] `hw_features.py` — per timestep: set `input*` phases from encoded data, set `t_*` phases
-      from `phase_export`, run `pcvl.algorithm.Sampler` for N shots, histogram into the
-      UNBUNCHED Fock subspace, then apply the **same `LexGrouping(output_size, lex_out)`**
-      mapping the sim uses so feature dims match.
-- [ ] `run_probe.py` — the §4 cost probe; writes `run_log.csv`.
-- [ ] `run_hw_subset.py` — §3 validation subset driver; **caches every job result to disk**
-      (JSON per (reservoir, step)) so a re-run never re-bills shots.
-- [ ] `compare_sim_hw.py` — sim vs HW Fock-dist correlation plot + forecast MSE on HW
-      features vs sim features on the same test window. This is the paper figure.
-
-Reuse existing assets:
-- `src/noise_models.py` already simulates shot noise + indistinguishability — use it to
-  predict the HW result *before* spending shots, and to validate the probe matches expectation.
-- `src/data_loader.py`, the Ridge readout, and scaler are untouched.
-
----
-
-## 7. Open decisions (resolve after probe)
-
-- Final dataset for the subset: NARMA10 (clean synthetic, easiest to interpret) vs
-  S&P 500 RV (the headline financial result — stronger for the paper if budget allows).
-- Champion config on HW: single `[3]` reservoir (cheapest) vs the full `[2,3,4]` ensemble
-  (matches the headline number). Depends on probe loss/cost.
-- Whether to reduce `window`/virtual-depth to cut circuit depth and recover coincidence rate.
+Free tier: 200 credits/month, **5 minutes per job**, one queued job at a time, bookable free
+QPU slots (`bookable: true` on both platforms). Shots are the billing unit — a shot is any
+detected event containing at least one photon.

@@ -1,0 +1,37 @@
+{
+  "dataset": "lorenz63",
+  "model": "photonic",
+  "trials": 150,
+  "params": {
+    "n_modes": 16,
+    "photon_list": [
+      2,
+      3,
+      4
+    ],
+    "reservoirs_per_photon": 4,
+    "depth": 2,
+    "leak": 0.01675686520722691,
+    "g_in": 0.08873572267239488,
+    "g_fb": 0.053334285387323266,
+    "encode_window": 18,
+    "window": 36,
+    "feedback": false
+  },
+  "raw_params": {
+    "n_modes": 16,
+    "photon_list": "[2,3,4]",
+    "reservoirs_per_photon": 4,
+    "depth": 2,
+    "leak": 0.01675686520722691,
+    "g_in": 0.08873572267239488,
+    "g_fb": 0.053334285387323266,
+    "encode_window": 18,
+    "window": 36,
+    "feedback": false
+  },
+  "ridge_alpha": 1e-09,
+  "val_nrmse": 1.6335068803599247e-08,
+  "test_nrmse": 1.5259725642892055e-07,
+  "feature_dim": 10036
+}

@@ -1,101 +1,54 @@
-# HPT-QRC Codebase — AI Agent Instructions
+# Working in this repository
 
-## Project Identity
-**Hybrid Photonic Temporal Quantum Reservoir Computing (HPT-QRC)** — EPFL Quantum Hackathon 2026 winning submission, now extended into an academic paper benchmarking framework. The repo has two distinct phases:
-- **Phase 1 (Hackathon):** `train_final.py`, `final_model.py`, `final_model_3d_vis.py` — swaption surface forecasting with PCA + Perceval QRC + Ridge or PennyLane Hybrid QNN.
-- **Phase 2 (Academic):** `narma_experiment/` — multi-dataset benchmarking (NARMA10, Mackey-Glass, S&P 500 RV, VIX) with full statistical validation.
+A recurrent linear-optical reservoir computer for time-series forecasting, benchmarked
+against classical feature maps. Simulation only unless a file says otherwise.
 
-**Active work is in `narma_experiment/`.** Phase 1 files are reference/archive only.
+## Layout
 
----
+- `src/photonic_core.py` — exact boson-sampling probabilities. Matches MerLin to 1e-16 and
+  is ~310× faster by exploiting the layered circuit structure. **Do not change the physics
+  here without running `tests/test_photonic_core.py`** — every result depends on it.
+- `src/temporal_qrc.py` — the model. State feeds back into the phase encoding; only the
+  ridge readout is trained.
+- `src/rc_protocol.py` — the shared split, ridge-penalty selection and metrics. Every model
+  goes through this. Do not fit a readout anywhere else.
+- `src/tasks.py` — benchmark registry. `narma*` are input-driven (standard protocol);
+  `narma10_autoregressive` is the older, easier variant kept only for reproducibility.
+- `src/baselines_rc.py` — baselines, all with the same interface.
+- `src/noise.py` — hardware specs and the Perceval noise backend.
+- `src/multi_qrc.py` — the previous windowed model. Kept so old numbers reproduce. Not the
+  current model; do not extend it.
+- `hardware/` — QPU execution path.
 
-## Architecture (HPT-QRC)
+## Rules that exist for a reason
 
-```
-Time Series → Sliding Window (size=10)
-    → Phase Encoding into fixed Perceval photonic circuit (Mach-Zehnder + PS)
-    → Multi-photon Fock state feature extraction via MerLin QuantumLayer + LexGrouping
-    → Heterogeneous ensemble: photon_list=[2,3,4] (3 reservoir families × 3 virtual depths = 9 layers)
-    → [Quantum Fock features] ++ [HAR classical context (optional)]
-    → Ridge regression readout (closed-form, no gradient descent)
-    → Forecast
-```
+- **Never fix the ridge penalty across models.** It is selected per model on a validation
+  slice. A shared penalty silently favours whichever feature count it happens to suit; the
+  previous version of this code did that and the comparison was not meaningful.
+- **Never tune one model against untuned baselines.** Every model gets the same Optuna trial
+  budget in `experiments/tune_temporal.py`.
+- **The classical control belongs in every table.** Ridge on a window of the raw drive is
+  the model the previous architecture never actually beat. If a change makes the quantum
+  features look good, check the control first.
+- **Report feature dimension alongside NRMSE**, and cite `experiments/matched_capacity.py`
+  for any claim that the photonic map wins. It uses more features than the baselines.
+- **Scalers fit on training rows only.** `tests/test_protocol_and_model.py` enforces this
+  and causality; if you add a feature map, add it to those tests.
+- **Noise goes through Perceval, not our own approximation.** `src/photonic_core.py` is
+  exact only in the noiseless case.
 
-The **reservoirs are fixed** (no gradient flows through them). Only the Ridge readout is fitted. This is the defining property — no barren plateaus, sub-millisecond inference.
+## Claims not to make
 
-**Core class:** `narma_experiment/multi_qrc.py` → `HPT_QRC_Multi`
-- `photon_list=[2,3,4]` enables the heterogeneous ensemble (each photon count = different Fock-space dimensionality and multi-photon interference statistics)
-- `use_har_context=True` appends HAR(1,5,22) classical features → "HPT-QRC-X" variant (best performing)
-- `n_virtual_nodes` controls circuit depth layers; combined with `photon_list` determines total feature dimension
+No quantum advantage. No hardware claim while the QPUs are in maintenance. No "beats X"
+without the matched-dimension column and the DM-HAC p-value. The S&P 500 result is a
+non-result and is reported that way.
 
-**Key hyperparameters (current best v2):**
-```python
-HPT_QRC_Multi(window=10, photon_list=[2, 3, 4], n_virtual_nodes=3,
-              lex_out=10, ridge_alpha=1e-4, use_har_context=True)
-```
-For S&P 500 RV specifically: `window=3` is optimal (financial memory topology differs from synthetic chaos).
+Retracted earlier claims — do not reintroduce them: the "50× memory capacity vs ESN"
+figure (measured memory capacity is ~11 vs the ESN's 27–30, i.e. the reservoir has *less*
+linear memory), and any statement that the previous windowed model beat classical baselines.
 
----
+## Environment
 
-## Critical Dependencies
-- **`perceval-quandela`** — photonic circuit simulation (SLOS backend, permanent evaluation)
-- **`merlinquantum`** — `QuantumLayer`, `ComputationSpace.UNBUNCHED`, `LexGrouping`; wraps Perceval for PyTorch integration
-- **`pennylane`** — used only in Phase 1 (`train_final.py`) for variational Hybrid QNN
-- Python 3.11 + conda env `quandela`
-
-```bash
-conda create -n quandela python=3.11
-conda activate quandela
-pip install -r requirements.txt
-pip install yfinance   # for VIX dataset
-```
-
----
-
-## Developer Workflows
-
-### Run Full Benchmark Suite (Phase 2)
-```bash
-cd narma_experiment/
-
-python multi_seed_benchmark.py   # 5 seeds, mean±std — publication-ready
-python memory_capacity.py        # Jaeger MC: HPT-QRC=4.0 vs ESN=0.08
-python ablation_study.py         # photons / reservoirs / window / ensemble type
-python efficiency_benchmark.py   # compute cost table
-python train_narma.py            # single-seed + DM test tables + overlay plots
-python tune_sp500_window.py      # window sweep for financial data
-```
-
-Results land in `narma_experiment/results/`. Heatmaps in `results/dm_heatmaps/`.
-
-### Phase 1 (Hackathon) — Swaption Surface
-```bash
-python train_final.py            # trains ClassicalLSTM + HybridQNN, saves to logs/
-python final_model.py            # Perceval QRC pipeline, predicts swaption surface
-```
-Expects data under `CHALLENGE RESOURCES/DATASETS/` (not in repo).
-
----
-
-## Project-Specific Conventions
-
-- **"HPT-QRC" vs "HPT-QRC-X":** base model has no classical context; `-X` appends HAR features (`use_har_context=True`). Always distinguish in result tables.
-- **Metrics:** always report both **MSE** and **QLIKE** (volatility-appropriate loss). DM test p-values are required for paper claims.
-- **"Quantum advantage" is forbidden language.** Use "photonic feature extractor" or "expressivity via Fock-space dimensionality." See `claude_deepsearch.md §5`.
-- **Reproducibility:** all reservoir builds use `torch.manual_seed(42 + r_idx * 1000)` for determinism across seeds.
-- **Preprocessing in `HPT_QRC_Multi`:** uses Winsorize → IQR scale → Min-max [0,1] (fitted on training data only). Never apply raw normalization to Perceval inputs.
-- **Concurrent paper:** arXiv:2603.10707 (Amanov & Azamov) shares the same core architecture. Any paper contributions must be positioned relative to it — see `claude_deepsearch.md §2`.
-
----
-
-## Key Files
-| File | Purpose |
-|---|---|
-| `narma_experiment/multi_qrc.py` | Core `HPT_QRC_Multi` class — edit here for architecture changes |
-| `narma_experiment/multi_seed_benchmark.py` | Main benchmark runner (5 seeds) |
-| `narma_experiment/train_narma.py` | Single-seed + DM significance tests |
-| `narma_experiment/ablation_study.py` | Ablation across photons/window/reservoirs |
-| `narma_experiment/esn_baseline.py` | Classical ESN comparator |
-| `walkthrough.md` | Up-to-date results summary and paper TODO |
-| `claude_deepsearch.md` | Academic positioning, related work, claims to avoid |
-| `narma_experiment/results/` | All CSVs and figures — do not delete |
+`conda activate quandela` (Python 3.11, perceval-quandela 1.1.0, merlinquantum 0.3.1).
+The hardware conventions were verified against those versions specifically.
+Run `python -m pytest tests/ -q` before committing anything that touches `src/`.

@@ -169,14 +169,16 @@ def fig_noise(dataset: str = "narma10") -> None:
             for value, name, color in [(0.8636, "Ascella", "#eb6834"),
                                        (0.827, "Belenos", "#1baf7a")]:
                 ax.axvline(value, color=color, linewidth=1.2, alpha=0.8)
-                ax.annotate(name, (value, ax.get_ylim()[1]), rotation=90, fontsize=8,
-                            color=color, va="top", ha="right")
+                # Anchored low: the reference lines carry labels along the top edge.
+                ax.annotate(name, (value, 0.04), xycoords=("data", "axes fraction"),
+                            rotation=90, fontsize=8, color=color, va="bottom", ha="right")
         if sweep == "g2":
             for value, name, color in [(0.0195, "Ascella", "#eb6834"),
                                        (0.182, "Belenos", "#1baf7a")]:
                 ax.axvline(value, color=color, linewidth=1.2, alpha=0.8)
-                ax.annotate(name, (value, ax.get_ylim()[1]), rotation=90, fontsize=8,
-                            color=color, va="top", ha="right")
+                # Anchored low: the reference lines carry labels along the top edge.
+                ax.annotate(name, (value, 0.04), xycoords=("data", "axes fraction"),
+                            rotation=90, fontsize=8, color=color, va="bottom", ha="right")
 
         if logx:
             ax.set_xscale("log")

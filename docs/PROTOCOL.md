@@ -152,4 +152,61 @@ All metrics are reported as **median ± IQR across walk-forward folds** for RV/V
 
 ## Deviation log
 
-(Add `DEVIATION YYYY-MM-DD:` blocks here when the protocol changes.)
+**DEVIATION 2026-07-29 — protocol v2.0. The v1.0 protocol above is superseded.**
+
+Auditing the v1.0 results found that the model under test did not beat a plain ridge on a
+window of the raw series, and that the benchmark protocol was not comparable to published
+numbers. Both are addressed by changes large enough that v1.0 results cannot be carried
+forward. Everything below is a deliberate, documented break from the pre-registration.
+
+1. **Model changed.** The windowed feature map is replaced by a recurrent reservoir with
+   state feedback (`src/temporal_qrc.py`). The v1.0 model had no state; its measured linear
+   memory capacity equalled its window length. The old model is retained as
+   `src/multi_qrc.py` so v1/v2 numbers reproduce.
+
+2. **Task protocol changed.** NARMA is now driven by its exogenous input, the standard
+   reservoir-computing protocol. v1.0 fed the model the target's own history, which is a
+   materially easier task and makes the numbers incomparable to the literature. The old
+   variant is retained as `narma10_autoregressive`.
+
+3. **Primary metric changed** to NRMSE (RMSE ÷ std of target), the metric the reservoir
+   literature reports, so results can be placed against published values directly. The
+   §5 QLIKE inconsistency (summed in some scripts, averaged in others, so cross-file numbers
+   were not comparable) is resolved by not using QLIKE as a headline metric; it remains
+   available in `src/dm_mcs.py` for the volatility task.
+
+4. **Ridge penalty is now selected per model** on a validation slice rather than fixed at
+   `1e-4`. A shared penalty favours whichever feature count it happens to suit, across
+   models whose dimensions differ by an order of magnitude.
+
+5. **Baseline corrected.** The v1.0 ESN had no input-scaling parameter. With one it reaches
+   NRMSE 0.183 on NARMA-10, matching the literature's ≈0.185. Several v1.0 comparisons were
+   therefore against a misconfigured opponent.
+
+6. **Datasets added:** NARMA-5, NARMA-20, Lorenz-63. Lorenz at horizon 1 was dropped as a
+   benchmark — a tuned ESN and a plain ridge both score ~1e-4, so it discriminates nothing;
+   horizon 20 is used instead. S&P 500 RV is **retained despite being the dataset where the
+   model does not win**, per §9.
+
+7. **Ablation added:** feedback on/off at otherwise identical configuration, and a
+   matched-capacity sweep (`experiments/matched_capacity.py`) reporting NRMSE against
+   feature dimension for every model family. The latter is required for any claim about the
+   photonic feature map, since the tuned configuration uses more features than the baselines.
+
+8. **Noise study added** (not in v1.0): Perceval `NoiseModel` with threshold detectors at
+   the Ascella and Belenos operating points read from the cloud API.
+
+Deviations from v1.0 that remain, and are not fixed:
+
+- **Optuna budget is 150 trials, not the pre-registered 100** — raised, applied equally to
+  every model including all baselines.
+- **Hansen MCS uses B = 5000** as pre-registered. Note the MCS retains almost every model on
+  every task here; with 200–600 test points it has little power, so DM-HAC is the informative
+  test and both are reported.
+- **`R²_OS` and the Patton log-RV bias correction are still not implemented.** They were
+  specified in §5 and are still missing. Any S&P 500 claim should be read with that in mind —
+  though as no model is distinguishable there, no claim is made.
+- **Artifacts promised in §8 (`dataset_hashes.txt`, `optuna_logs/`, `run_manifest.json`,
+  `walk_forward_folds_*.json`) do not exist.** Seeds are fixed and datasets are generated
+  deterministically from them, so runs are reproducible, but the manifest files were never
+  produced.

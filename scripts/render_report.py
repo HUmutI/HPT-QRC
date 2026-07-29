@@ -1,116 +1,158 @@
-import pandas as pd
-import os
+"""Render the current results into a single markdown report.
 
-repo_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
-res_dir = os.path.join(repo_dir, "results")
+Replaces an earlier version that wrote to a hard-coded absolute path under a defunct tool
+session directory and embedded literal hackathon-era numbers (including an "ESN NRMSE
+29.7064", produced by a broken normalisation) in a template string. Everything here is read
+from the result CSVs.
 
-datasets = [
-    ("NARMA10", "NARMA10"),
-    ("S&P 500 Realized Volatility", "SP500_Realized_Volatility"),
-    ("Mackey-Glass", "Mackey_Glass")
-]
+Usage::
 
-# Read original text context pieces
-intro_text = """# NARMA10 Benchmark Results
-
-As requested, I adapted your winning Hybrid Photonic Temporal QRC (HPT-QRC) architecture to validate its performance on the standard 1D NARMA10 dataset. The implementation mirrors your Quandela submission setup (8 modes: 1 input + 7 dedicated memory modes) to process the raw scalar sequence over an autoregressive 5-step rolling window.
-
-## Initial Performance Metrics
-
-| Model | NRMSE | MSE | MAE |
-| :--- | :---: | :---: | :---: |
-| **Classical ESN** | `29.7064` | `8.8425` | `0.7376` |
-| **🥇 HPT-QRC** | **`0.8441`** | **`0.0071`** | **`0.0669`** |
-
-*The Hybrid Photonic Temporal QRC dramatically surpasses the standard ESN baseline, successfully maintaining temporal stability matching the capabilities documented in the recent Li et al. (2024) realizing volatility forecasting paper without suffering from classic linear attenuation artifacts.*
-
-## Initial Visual Evaluation
-
-### 1D Time Series Prediction Tracking
-![NARMA10 Benchmark Timeseries](/Users/umut/.gemini/antigravity/brain/d711a64c-e033-4ad1-b9db-9f1be963090d/narma10_benchmark_timeseries.png)
-*(Displays the immediate 200 steps of the blind future evaluation sequence)*
-
----
-
-# Extended Volatility Benchmarks (MSE & QLIKE)
-
-Following the Li et al. (2024) research paper format, an extended benchmark suite was executed encompassing classical stochastic, autoregressive, and deep learning approaches alongside the Hybrid Photonic Temporal architectures. The evaluation was run against the standard NARMA10 subset, alongside the empirical **S&P 500 Realized Volatility** series referenced from the literature (`Data.CSV`). Model variants infused with Exogenous Fama-French markers are denoted by `X`. **Crucially, the QLIKE metrics are calculated using the raw unnormalized test sums to identically mirror the scale in Li et al.**
-
+    python scripts/render_report.py                 # -> results/REPORT.md
+    python scripts/render_report.py --out foo.md
 """
 
-walkthrough_str = intro_text
-log_str = "============================================================\n"
-log_str += "EXTENDED BENCHMARK LOG\n"
-log_str += "============================================================\n\n"
+from __future__ import annotations
 
-for title, prefix in datasets:
-    walkthrough_str += f"## {title} Dataset\n\n"
-    
-    # Load Main Benchmark CSV
-    csv_path = os.path.join(res_dir, f"{prefix}_benchmark.csv")
-    if os.path.exists(csv_path):
-        df_bench = pd.read_csv(csv_path)
-        
-        walkthrough_str += "| Model | MSE | QLIKE Loss |\n"
-        walkthrough_str += "| :--- | :---: | :---: |\n"
-        
-        log_str += f"\n--- {title} Primary Metrics ---\n"
-        log_str += "Model\tMSE\tQLIKE\n"
-        
-        for _, row in df_bench.iterrows():
-            model = row['Model']
-            if "HPT" in model:
-                model_str = f"**{model} 🥇**"
-            else:
-                model_str = model
-            walkthrough_str += f"| {model_str} | `{row['MSE']:.4f}` | `{row['QLIKE']:.4f}` |\n"
-            log_str += f"{row['Model']}\t{row['MSE']:.4f}\t{row['QLIKE']:.4f}\n"
+import argparse
+import json
+from pathlib import Path
 
-        walkthrough_str += f"\n### {title} Testing Overlay\n"
-        walkthrough_str += f"![{title} Prediction Overlay](/Users/umut/.gemini/antigravity/brain/d711a64c-e033-4ad1-b9db-9f1be963090d/{prefix}_overlay.png)\n\n"
+import pandas as pd
 
-# Add DM Tables
-walkthrough_str += "\n## Diebold-Mariano Matrix Artifacts\n"
-log_str += "\n--- Diebold-Mariano Matrices ---\nSee walkthrough.md for full tabular DM grids.\n"
+ROOT = Path(__file__).resolve().parents[1]
+RESULTS = ROOT / "results"
 
-dm_formats = []
-for crit, name in [
-    ("MSE", "S&P 500"), ("QLIKE", "S&P 500"), 
-    ("MSE", "NARMA10"), ("QLIKE", "NARMA10"),
-    ("MSE", "Mackey-Glass"), ("QLIKE", "Mackey-Glass")
-]:
-    if "S&P" in name:
-        file_prefix = "SP500_Realized_Volatility"
-    elif "Mackey" in name:
-        file_prefix = "Mackey_Glass"
-    else:
-        file_prefix = "NARMA10"
-        
-    try:
-        df_dm = pd.read_csv(os.path.join(res_dir, f"{file_prefix}_DM_{crit}.csv"), index_col=0)
-        walkthrough_str += f"\n### Diebold-Mariano Test ({name} - {crit})\n"
-        cols = ["Model"] + list(df_dm.columns)
-        walkthrough_str += "| " + " | ".join(cols) + " |\n"
-        walkthrough_str += "|" + "|".join(["---"] * len(cols)) + "|\n"
-        
-        for idx, row in df_dm.iterrows():
-            vals = []
-            for v in row:
-                if pd.isna(v):
-                    vals.append("")
-                elif isinstance(v, float):
-                    vals.append(f"{v:.3f}")
-                else:
-                    vals.append(str(v))
-            walkthrough_str += f"| **{idx}** | " + " | ".join([f"`{v}`" if v else "" for v in vals]) + " |\n"
-    except Exception as e:
-         pass
-         
+LABEL = {
+    "photonic": "Photonic (recurrent)",
+    "photonic_no_feedback": "Photonic (no feedback)",
+    "esn": "Echo state network",
+    "rff": "Random Fourier features",
+    "poly": "Polynomial window",
+    "classical_control": "Linear window (control)",
+}
 
-# Overwrite Walkthrough
-with open("/Users/umut/.gemini/antigravity/brain/d711a64c-e033-4ad1-b9db-9f1be963090d/walkthrough.md", "w") as f:
-    f.write(walkthrough_str)
-    
-# Overwrite Log
-with open(os.path.join(res_dir, "benchmark_log.txt"), "w") as f:
-    f.write(log_str)
+
+def _fmt(value: float) -> str:
+    if pd.isna(value):
+        return "—"
+    return f"{value:.4f}" if abs(value) >= 1e-3 else f"{value:.2e}"
+
+
+def section_benchmarks() -> str:
+    path = RESULTS / "benchmarks" / "all_raw.csv"
+    if not path.exists():
+        return "## Benchmarks\n\n_No benchmark results found._\n"
+    frame = pd.read_csv(path)
+    out = ["## Benchmarks", "", "NRMSE, mean ± std over seeds. Lower is better.", ""]
+
+    datasets = list(dict.fromkeys(frame.dataset))
+    out += ["| Model | " + " | ".join(datasets) + " |", "|" + "---|" * (len(datasets) + 1)]
+    for model in LABEL:
+        if model not in set(frame.model):
+            continue
+        cells = []
+        for dataset in datasets:
+            sub = frame[(frame.dataset == dataset) & (frame.model == model)]["nrmse"]
+            cells.append(f"{_fmt(sub.mean())} ± {_fmt(sub.std())}" if len(sub) else "—")
+        out.append(f"| {LABEL[model]} | " + " | ".join(cells) + " |")
+    out.append("")
+
+    for dataset in datasets:
+        stats_path = RESULTS / "benchmarks" / f"{dataset}_stats.json"
+        if not stats_path.exists():
+            continue
+        dm = json.loads(stats_path.read_text()).get("dm_vs_photonic", {})
+        if dm:
+            pairs = ", ".join(f"{LABEL.get(k, k)} p={v['p_value']:.4f}" for k, v in dm.items())
+            out.append(f"- **{dataset}** — Diebold-Mariano vs photonic: {pairs}")
+    out.append("")
+    return "\n".join(out)
+
+
+def section_capacity() -> str:
+    path = RESULTS / "capacity" / "capacity_narma10.csv"
+    if not path.exists():
+        return ""
+    grouped = (
+        pd.read_csv(path)
+        .groupby(["family", "setting"])
+        .agg(dim=("feature_dim", "mean"), nrmse=("nrmse", "mean"))
+        .reset_index()
+    )
+    matched = grouped[(grouped.dim >= 500) & (grouped.dim <= 1500)].sort_values("nrmse")
+    out = ["## Matched capacity (NARMA-10)", "",
+           "The tuned photonic configuration uses more features than the baselines, so this",
+           "compares every family in a common dimension range.", "",
+           "| Model | dim | NRMSE |", "|---|---|---|"]
+    for _, row in matched.iterrows():
+        out.append(f"| {LABEL.get(row.family, row.family)} | {int(row.dim)} | {_fmt(row.nrmse)} |")
+    out.append("")
+    return "\n".join(out)
+
+
+def section_memory() -> str:
+    path = RESULTS / "capacity" / "memory_ipc.csv"
+    if not path.exists():
+        return ""
+    frame = pd.read_csv(path).groupby("system").mean(numeric_only=True)
+    out = ["## Memory and information processing capacity", "",
+           "| System | dim | Linear MC | IPC total | IPC per feature |",
+           "|---|---|---|---|---|"]
+    for name, row in frame.sort_values("ipc_per_feature", ascending=False).iterrows():
+        out.append(
+            f"| {name} | {int(row.feature_dim)} | {row.linear_mc:.1f} | "
+            f"{row.ipc_total:.1f} | {row.ipc_per_feature:.2f} |"
+        )
+    out.append("")
+    return "\n".join(out)
+
+
+def section_noise() -> str:
+    path = RESULTS / "noise" / "noise_narma10_all.csv"
+    if not path.exists():
+        return ""
+    frame = pd.read_csv(path)
+    out = ["## Noise robustness", ""]
+    for _, row in frame[frame.sweep == "reference"].iterrows():
+        out.append(f"- {row.spec}: NRMSE {_fmt(row.nrmse)}")
+    out.append("")
+
+    for sweep, column, title in [("shots", "shots", "Coincidences per timestep"),
+                                 ("indist", "indist", "Indistinguishability"),
+                                 ("g2", "g2", "g2(0)")]:
+        sub = frame[frame.sweep == sweep]
+        if sub.empty or column not in sub.columns:
+            continue
+        stats = sub.groupby(column)["nrmse"].agg(["mean", "std"]).reset_index()
+        out += [f"### {title}", "", f"| {title} | NRMSE |", "|---|---|"]
+        for _, row in stats.iterrows():
+            value = "∞" if sweep == "shots" and row[column] == 0 else f"{row[column]:g}"
+            spread = f" ± {row['std']:.4f}" if pd.notna(row["std"]) else ""
+            out.append(f"| {value} | {row['mean']:.4f}{spread} |")
+        out.append("")
+    return "\n".join(out)
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", default=str(RESULTS / "REPORT.md"))
+    args = ap.parse_args()
+
+    parts = [
+        "# Results report",
+        "",
+        "Generated from the result CSVs by `scripts/render_report.py`. See `README.md` for",
+        "interpretation and caveats.",
+        "",
+        section_benchmarks(),
+        section_capacity(),
+        section_memory(),
+        section_noise(),
+    ]
+    text = "\n".join(p for p in parts if p)
+    Path(args.out).write_text(text)
+    print(f"wrote {args.out} ({len(text.splitlines())} lines)")
+
+
+if __name__ == "__main__":
+    main()

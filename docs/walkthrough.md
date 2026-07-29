@@ -1,212 +1,123 @@
-# HPT-QRC: Complete Research Walkthrough
+# Research log
 
-**Hybrid Photonic Temporal Quantum Reservoir Computing**
-*Last updated: 2026-05-12 | Current config: v2 (window=10, photon_list=[2,3,4])*
+Decisions, findings and open items. Results tables live in `README.md` and
+`results/REPORT.md`; this file records *why* things are the way they are.
 
-> ⚠️ **Scope.** Quantum-feature results in this walkthrough are produced by classical simulation of linear-optical Fock-state probabilities via Perceval's SLOS backend; they are not hardware measurements. Hardware execution on Quandela Ascella/Belenos is the planned journal extension. "Linear-optical (simulated)" is the accurate descriptor; "photonic" is used loosely in figure captions only and is being phased out.
-
-> 📄 **Concurrent and independent work.** A nearly identical architecture for swaption-surface reconstruction was independently proposed by Amanov & Azamov (arXiv:2603.10707, March 2026). The direct prior on quantum-reservoir realised-volatility forecasting is Li, Mukhopadhyay, Bayat & Habibnia (arXiv:2505.13933, 2025/2026) using a transverse-field Ising QRC. This work differs by (i) a temporal sliding-window formulation, (ii) cross-domain benchmarking across NARMA-10 / Mackey-Glass / S&P 500 RV / VIX, (iii) Diebold–Mariano with Newey–West HAC variance and Hansen Model Confidence Set on MSE and QLIKE, (iv) a Random Fourier Features + Ridge baseline of matched feature dimension, and (v) a planned Quandela hardware execution.
-
----
-
-## 1. Project Overview
-
-HPT-QRC uses **fixed, untrained linear-optical circuits** (simulated via Perceval SLOS) as high-dimensional nonlinear feature extractors for time-series forecasting. Only a Ridge regression readout is trained — no gradient descent, no barren-plateau pathology by construction.
-
-**Current best config (v2):** `window=10, photon_list=[2,3,4]` (heterogeneous photon ensemble).
+Superseded v1/v2 content has been removed rather than annotated — those results are
+retracted (see `results/CHANGELOG.md`), and leaving them beside current numbers invites
+mixing the two.
 
 ---
 
-## 2. Main Results — v2 (window=10, hetero photons, 5 seeds mean ± std)
+## 2026-07-29 — audit of the windowed model
 
-### NARMA10 — Nonlinear Synthetic Task
+Ran a diagnostic sweep on the then-current model (`src/multi_qrc.py`) before extending it.
+Four findings, in order of how much they mattered.
 
-| Model                      | MSE (mean ± std)                      | QLIKE (mean ± std)              |
-| :------------------------- | :------------------------------------- | :------------------------------- |
-| AR(1)                      | 0.006427 ± 0.000921                   | 4.33 ± 0.52                     |
-| HAR                        | 0.006199 ± 0.001067                   | 4.19 ± 0.53                     |
-| RC (ESN)                   | 0.005944 ± 0.000913                   | 4.05 ± 0.45                     |
-| Classical-Ridge (ablation) | 0.006870 ± 0.000923                   | 4.60 ± 0.39                     |
-| HPT-QRC                    | 0.005752 ± 0.000928                   | 3.82 ± 0.43                     |
-| HARX                       | 0.003816 ± 0.000473                   | 2.41 ± 0.24                     |
-| **HPT-QRC-X**        | **0.000398 ± 0.000082 ← BEST** | **0.352 ± 0.138 ← BEST** |
+**The quantum features were not doing anything.** On NARMA-10 under the repository's own
+protocol, ridge on the raw window scored MSE `5.2405e-3`; the model scored `5.38e-3`. A
+sweep over encoding gain (0.58–8π rad), circuit depth (1–13 interferometers), photon number
+(2–3), mode count (8–24) and feature standardisation produced a best of `5.2314e-3` — a
+0.17 % difference from the control, i.e. nothing.
 
-> On NARMA-10, HPT-QRC-X achieves ~9.6× lower MSE and ~6.8× lower QLIKE than HARX. Significance is confirmed by the Diebold–Mariano test with Newey–West HAC variance (p < 0.01; see `results/NARMA10_DM_MSE.csv`). NARMA-10 is a strongly nonlinear synthetic benchmark; the ratio collapses on real financial data — see §RV and §VIX for honest reporting against HAR/HARX, and the RFF+Ridge column for the matched-dimension classical comparator.
+Mechanism: NARMA-10 outputs span [0.20, 0.78], and the encoding applied them directly as
+phases in radians, so the input modulated only 0.58 rad of the available 2π. Measured
+consequence: quantum-feature standard deviation was 16× smaller than the raw-window block
+concatenated beside it, so a single ridge penalty across both blocks effectively discarded
+the quantum half. `_fit_scaler`/`_apply_scaler` existed in the class but were never called
+from `fit`/`predict`.
 
-### Mackey-Glass — 17-Step-Ahead (Memory Task)
+**The protocol was not literature-comparable.** `fit(y_train)` predicted `y[t+1]` from a
+window of `y`. The standard NARMA benchmark drives with the exogenous input `u` and never
+shows the model the target's history. Under the standard protocol the same code scored
+NRMSE 0.433 against a linear control's 0.435 — while published ESN results are ≈0.185.
 
-| Model                      | MSE (mean ± std)           | QLIKE (mean ± std)                |
-| :------------------------- | :-------------------------- | :--------------------------------- |
-| AR(3)                      | 7e-6 ± 0                   | 0.0011 ± 0.0001                   |
-| HARX                       | 9.2e-5 ± 5e-6              | 0.0146 ± 0.0007                   |
-| Classical-Ridge (ablation) | 1.6e-3 ± 7.5e-5            | 0.273 ± 0.023                     |
-| HPT-QRC                    | 1e-6 ± 0                   | 0.0001 ± 0.0000                   |
-| **HPT-QRC-X**        | **1e-6 ± 0 ← BEST** | **0.0001 ± 0.0000 ← BEST** |
+**No recurrence.** `results/mc_scores.csv` recorded linear memory capacity of exactly 5.0 at
+window 5 — the signature of a windowed map with no state.
 
-### S&P 500 — Realized Volatility
+**The ESN baseline was misconfigured.** It had no input-scaling parameter. Adding one and
+sweeping gave NRMSE 0.176, matching the literature. The v1/v2 comparisons were therefore
+against an opponent roughly 3× weaker than a correct ESN.
 
-We performed an explicit ablation on the optimal window size for S&P 500, since financial datasets have different memory topologies compared to synthetic chaos:
+Conclusion: the architecture needed a state, the protocol needed replacing, and the
+baselines needed fixing before any claim could be made.
 
-| Window Size |          QRC MSE          | QRC-X MSE |
-| :---------: | :------------------------: | :-------: |
-|      1      |          0.011666          | 0.016335 |
-|      2      |          0.011192          | 0.015451 |
-| **3** | **0.010727** ← BEST | 0.018455 |
-|      5      |          0.010836          | 0.018025 |
-|      7      |          0.011248          | 0.014790 |
-|     10     |          0.013857          | 0.013774 |
+## Rebuild decisions
 
-> **Conclusion**: Window=3 is the optimal temporal lag for the base HPT-QRC model on S&P 500, outperforming the default Window=10 used in synthetic tasks.
+**Feedback into the encoding, not an optical memory.** State is fed back through
+`W_fb s_{t-1}` added to the encoding phases, with the leaky integration in classical
+post-processing. Chosen specifically so the recurrent model costs the *same shot budget* as
+the windowed one on hardware: each timestep is still one circuit configuration and one batch
+of samples. Nothing here needs fast feed-forward or an optical delay line.
 
-### VIX — Generalizability Test (6,288 samples)
+**An input window inside the encoding (`encode_window`).** Initially the encoding saw only
+`u_t` and performance plateaued around NRMSE 0.32. NARMA-10's target contains the product
+`u_t · u_{t-9}`, which the optics cannot form unless both lags appear in the same encoding.
+Setting `encode_window` to the task's own order moved NRMSE to 0.279 in one step. That is a
+real, interpretable dependence and deserves an ablation figure.
 
-| Model             | MSE                        | QLIKE                   |
-| :---------------- | :------------------------- | :---------------------- |
-| AR(3)             | 0.006039                   | 3.987                   |
-| HAR               | 0.006040                   | 4.006                   |
-| Classical-Ridge   | 0.006130                   | 4.081                   |
-| **HPT-QRC** | **0.005977 ← BEST** | **3.965 ← BEST** |
+**A fast exact core (`src/photonic_core.py`).** MerLin's `QuantumLayer` costs ~7 ms per
+forward pass *regardless of batch size* — the cost is fixed overhead, not the permanent. A
+recurrent reservoir steps one timestep at a time, so that overhead would have set the budget
+for the whole programme (~7 s per 1000-step sequence per reservoir, times seeds, times
+Optuna trials). These circuits are layered, so the fixed blocks compose once and each step
+costs a few small matrix products plus a batch of permanents: 0.022 ms, 310× faster, and
+agreeing with MerLin to 1e-16.
 
-> On VIX, HPT-QRC achieves the lowest MSE and QLIKE among the classical baselines shown; differences from AR(3) and HAR are small in absolute terms and we report DM HAC and Hansen MCS p-values to characterise statistical significance rather than make a "wins" claim. We do *not* interpret this as a quantum advantage; we interpret it as parity-to-modest-improvement consistent with the strong baselines (HAR/HARX) on this regime, in line with Branco et al. (2024) "HARd to Beat" findings on RV.
+One bug worth recording: the first version indexed the submatrix as `U[input_modes, pattern]`
+instead of `U[pattern, input_modes]`. Those are *not* transposes of each other unless `U` is
+symmetric, so the permanent differed. Caught by cross-checking against Perceval's SLOS
+backend; `tests/test_photonic_core.py` now pins it.
 
----
+**Ridge penalty selected per model.** A fixed penalty shared across models whose feature
+counts differ by an order of magnitude is not a comparison. Adding validation-based selection
+changed the ordering materially: before it the photonic model lost to the control; after it,
+at α ≈ 30, it won.
 
-## 3. Diebold-Mariano Statistical Significance (Heatmaps)
+## What the noise study says
 
-To rigorously prove that the performance gains are statistically significant (and not just variance), we use the Diebold-Mariano (DM) test.
-*(Green values < 0 indicate the Row Model significantly outperforms the Column Model)*
+Device imperfections barely register. Sweeping indistinguishability from V = 0.5 to 1.0
+moves NRMSE between 0.2468 and 0.2486; sweeping g²(0) from 0 to 0.30 moves it 0.2479 →
+0.2498. Running the full Ascella and Belenos models — every source at once, with threshold
+detectors — gives 0.2483 and 0.2465 against a noiseless 0.2479.
 
-![NARMA10 DM Heatmap](narma_experiment/results/dm_heatmaps/NARMA10_DM_MSE_heatmap.png)
-![Mackey Glass DM Heatmap](narma_experiment/results/dm_heatmaps/Mackey_Glass_DM_MSE_heatmap.png)
+Shot count is the whole story: 0.411 at 1 000 coincidences per timestep, 0.380 at 10 000,
+0.343 at 30 000, 0.275 in the infinite-shot limit.
 
-> **Conclusion**: The DM tests confirm that the HPT-QRC-X architecture's outperformance over the baselines on NARMA10 and Mackey-Glass is extremely statistically significant.
+The interpretation is mechanical rather than surprising. A reservoir is a random feature map
+and the readout is refitted on whatever the device produces, so a slightly perturbed map is
+still a perfectly good map. Sampling noise is different in kind: it corrupts every feature
+independently at every timestep and no readout can absorb it.
 
----
+That yields a design rule that inverts the usual instinct — optimise for coincidence rate,
+not photon quality — and a concrete threshold, since rate falls as `transmittance^n`.
 
-## 4. Memory Capacity & Information Processing Capacity
+## Open items
 
-The earlier MC table compared an HPT-QRC with multi-hundred-feature output against a fixed-size 100-unit ESN. This is not a fair characterisation of classical ESN scaling: Jaeger MC is bounded by the linearly independent reservoir nodes, so a small ESN trivially under-reports. We therefore replace that table with:
+- **Hardware.** Both QPUs have been in `maintenance` throughout.
+  `hardware/run_reservoir_hw.py` is written and rehearsed locally and against the cloud
+  simulator. Protocol caveat: closed-loop feedback cannot be batched into one cloud job, so
+  the `replay` protocol simulates the feedback path and replays the resulting phase
+  trajectory on the chip. The `openloop` variant is fully on-device but is the weaker model.
+  Both must be reported.
+- **`R²_OS` and the Patton log-RV bias correction** are specified in `docs/PROTOCOL.md` §5
+  and still unimplemented. Only relevant to S&P 500, where no model is distinguishable.
+- **Walk-forward CV** has not been re-run under the new protocol. The v2 result (photonic 7th
+  of 8) is retracted along with the rest of v2, so current S&P 500 evidence is the
+  fixed-split result only.
+- **Santa Fe laser** was planned as an additional standard photonic-RC benchmark and has not
+  been added; the dataset is not vendored here.
+- **MCS has little power at these sample sizes.** With 200–600 test points it retains almost
+  every model on every task. DM-HAC is the informative test, and the paper should say so
+  rather than present the MCS as if it were discriminating.
 
-1. A **tuned ESN sweep** at `res_size ∈ {50, 100, 200, 500, 1000, 2000}` with grid search over leak rate ∈ {0.1, 0.3, 0.5, 0.9} and spectral radius ∈ {0.6, 0.9, 1.1} per size.
-2. **Matched total feature dimension** comparison between HPT-QRC photon configurations and ESN sizes.
-3. **Information Processing Capacity (IPC; Dambre et al., Sci. Rep. 2012)** at degrees 1–4 in addition to the linear MC. The IPC plane (linear capacity vs nonlinear-sum capacity) characterises the memory–nonlinearity trade-off in a way that linear MC alone cannot.
+## Positioning
 
-See `memory_capacity.py` and `results/ipc_plane.png` for the protocol and the figure. The headline "50×" claim is withdrawn.
+Defensible claims: a recurrent linear-optical reservoir beats tuned classical feature maps on
+NARMA-10 and NARMA-20 at matched feature dimension, with DM-HAC p < 0.001; recurrence
+accounts for roughly half the error; and accuracy is essentially unaffected by device
+imperfections at measured Ascella/Belenos levels while being strongly limited by coincidence
+count, which gives both a design rule and a feasibility threshold.
 
----
-
-## 5. Ablation Study (NARMA10, 3 seeds)
-
-| Dimension    | Config                           | MSE                |
-| :----------- | :------------------------------- | :----------------- |
-| n_photons    | 1                                | 0.007052           |
-|              | 3 ✅ default                     | 0.007139           |
-|              | 4                                | 0.007189           |
-| n_reservoirs | 1                                | 0.007024           |
-|              | 3 ✅ default                     | 0.007139           |
-|              | 5                                | 0.007244           |
-| window       | 5 ✅ (v1)                        | 0.007139           |
-|              | **10 ✅ (v2)**             | **0.006586** |
-|              | 15                               | 0.007498           |
-| Ensemble     | Homo [3,3,3]                     | 0.007139           |
-|              | **Hetero [2,3,4] ✅ (v2)** | **0.007124** |
-
----
-
-## 6. Computational Efficiency
-
-| Model             | Training Time    | Gradient Descent?                       |
-| :---------------- | :--------------- | :-------------------------------------- |
-| AR(3)             | 0.6 ms           | No                                      |
-| HAR               | 2.4 ms           | No                                      |
-| LSTM              | 685 ms           | Yes (100 epochs)                        |
-| **HPT-QRC** | **914 ms** | **No — single closed-form pass** |
-
----
-
-## 7. Results History
-
-| Version                | Config                         | Location                    |
-| :--------------------- | :----------------------------- | :-------------------------- |
-| v1 (baseline)          | window=5, n_photons=3          | results/v1_window5_homo/    |
-| **v2 (current)** | window=10, photon_list=[2,3,4] | results/v2_window10_hetero/ |
-
-Full changelog: `results/CHANGELOG.md`
-
----
-
-## 8. Supplementary Analyses
-
-These analyses sit alongside the main benchmark and are not load-bearing for any "quantum advantage" claim. They characterise specific properties of the linear-optical feature map and the training paradigm; we report them as evidence about *what kind of system this is*, not about superiority.
-
-### 8.1 Training-Compute Comparison (FLOPs vs. LSTM)
-
-LSTM with BPTT over 100 epochs requires substantially more training-time FLOPs than a single closed-form Ridge solve over the HPT-QRC feature matrix. We report the ratio as a property of the *training paradigm* (one-shot Ridge vs. iterative gradient descent), not as a quantum-advantage statement. A classical Random Fourier Features + Ridge model has the same property — the FLOPs comparison is between *closed-form-readout systems and gradient-descent models*, and the linear-optical reservoir is one such system. The relevant additional question is the **inference-time** compute on simulated SLOS versus a (future) Quandela hardware run; this is documented in the planned "Hardware execution" section once the run is available.
-
-![FLOPs Comparison](narma_experiment/results/advanced/flops_comparison.png)
-
-### 8.2 Online Adaptation via Recursive Least Squares
-
-The Ridge readout admits an exact online RLS form, which we provide as an alternative to the static fit. This is again a property of the **closed-form linear readout**, shared with RFF+Ridge, ESN, and any random-features-plus-RLS system. We document it for reproducibility and for the latency analysis in the hardware section; we do not claim it as a quantum-specific feature.
-
-![Online RLS Learning](narma_experiment/results/advanced/online_rls_learning.png)
-
-### 8.3 Feature-Matrix Conditioning (PCA Comparison)
-
-PCA spectra on training feature matrices show that the linear-optical Fock-feature representation and the classical ESN representation differ in their cumulative explained-variance curves and condition numbers. We report this as evidence about the structure of the feature map under a fixed encoding, not as a proof of better representation: in particular this comparison does not control for matched dimension or a tuned ESN sweep, so we will re-run it in the matched-dim setting alongside the IPC plane and report both consistently. A matched RFF+Ridge baseline is the right comparator and is now included.
-
-![PCA Independence](narma_experiment/results/advanced/pca_independence.png)
-
----
-
-## 9. Scripts
-
-```bash
-conda activate quandela
-python multi_seed_benchmark.py   # main results (5 seeds)
-python memory_capacity.py        # MC analysis
-python ablation_study.py         # ablation table
-python efficiency_benchmark.py   # timing
-python train_narma.py            # single-seed + DM tables + plots
-python plot_dm_heatmaps.py       # Heatmap figures
-python tune_sp500_window.py      # S&P 500 explicit window tuning
-python pca_independence.py       # PCA linear independence analysis
-python online_rls.py             # RLS streaming analysis
-python flops_energy_calc.py      # FLOPs efficiency analysis
-```
-
----
-
-## 10. Paper TODO
-
-Done:
-- [x] Multiple seeds (5) with mean ± std
-- [x] Linear Memory Capacity analysis (Jaeger 2001)
-- [x] Full ablation table (photons, reservoirs, window, ensemble)
-- [x] DM test CSVs generated (in `results/`)
-- [x] Heterogeneous photon ensemble [2, 3, 4]
-- [x] Second financial dataset (VIX)
-- [x] Computational-efficiency table
-- [x] DM heatmap figures
-- [x] S&P 500 window-size ablation
-- [x] Repository hygiene pass: claim cleanup, concurrent-work paragraphs, scope statement
-
-In progress (Tier-A workshop / Tier-B journal upgrade per `/Users/umut/.claude/plans/in-the-epfl-anti-folder-jiggly-flurry.md`):
-- [ ] **Random Fourier Features + Ridge** baseline at matched feature dimension (`rff_baseline.py`)
-- [ ] **Walk-forward CV** for S&P 500 RV and VIX (`walk_forward_runner.py`)
-- [ ] **Newey–West HAC** DM and **Hansen Model Confidence Set** (`dm_mcs.py`)
-- [ ] **Information Processing Capacity** (Dambre 2012) + tuned ESN sweep (50–2000)
-- [ ] **Matched-dim photon-ensemble ablation** (isolating photon-number axis from mode-count axis)
-- [ ] **Shot noise & indistinguishability** sim (`noise_models.py`)
-- [ ] **Echo-state-property check** (`esp_check.py`)
-- [ ] Optuna-tuned LSTM / ESN / RFF (equal compute budget)
-- [ ] Pre-registered protocol locked in `narma_experiment/PROTOCOL.md`
-
-Pending hardware quota:
-- [ ] Quandela cloud adapter (`quandela_runner.py`)
-- [ ] Sim-vs-hardware concordance figure
-- [ ] Hardware latency benchmark on walk-forward window
-
-Writing:
-- [ ] Workshop paper LaTeX (QTML 2026 / NeurIPS ML4PS or QML)
-- [ ] Journal extension (Quantum Machine Intelligence / Quantum Sci. & Tech. / PR Applied) post-hardware
+Claims to avoid: anything about quantum advantage, anything about S&P 500, and anything about
+hardware until a chip is available.
