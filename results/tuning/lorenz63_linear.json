@@ -1,0 +1,15 @@
+{
+  "dataset": "lorenz63",
+  "model": "linear",
+  "trials": 150,
+  "params": {
+    "window": 40
+  },
+  "raw_params": {
+    "window": 40
+  },
+  "ridge_alpha": 1e-09,
+  "val_nrmse": 0.00013328549987515998,
+  "test_nrmse": 0.00012900877184936262,
+  "feature_dim": 40
+}

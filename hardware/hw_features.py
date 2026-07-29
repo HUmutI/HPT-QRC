@@ -27,7 +27,13 @@ def build_hw_circuit(spec: dict) -> pcvl.Circuit:
 
     input* parameters stay free — they are set per timestep through Sampler
     iterations (circuit_params), so many timesteps share one cloud job.
+
+    A spec may instead carry a ready-built circuit under "circuit"; the recurrent
+    model in src/temporal_qrc.py supplies one that way, since its fixed layers are
+    Haar-random unitaries rather than the parameterised mesh rebuild_circuit knows.
     """
+    if spec.get("circuit") is not None:
+        return spec["circuit"]
     circ, _ = rebuild_circuit(spec)
     t_phases = spec["t_phases"]
     for p in circ.get_parameters():
@@ -70,16 +76,47 @@ def counts_to_phat(results, spec: dict) -> tuple[np.ndarray, dict]:
 
 
 def phat_to_features(p_hat: np.ndarray, spec: dict) -> np.ndarray:
-    """Apply the identical LexGrouping mapping the simulation uses."""
+    """Apply the identical LexGrouping mapping the simulation uses.
+
+    Specs without "lex_out" (the recurrent model, which feeds raw probabilities to its
+    readout) get the distribution back unchanged.
+    """
+    if not spec.get("lex_out"):
+        return np.asarray(p_hat, dtype=float)
     lg = LexGrouping(len(spec["output_keys"]), spec["lex_out"])
     with torch.no_grad():
         return lg(torch.tensor(p_hat, dtype=torch.float32).unsqueeze(0)).numpy().ravel()
 
 
+def _circuit_fingerprint(spec: dict):
+    """Whatever pins the circuit down, for cache keying.
+
+    The parameterised mesh is identified by its exported t phases; a pre-built circuit is
+    identified by its unitary, so two different Haar draws never collide in the cache.
+    """
+    if spec.get("t_phases") is not None:
+        return spec["t_phases"]
+    circuit = spec.get("circuit")
+    if circuit is None:
+        raise KeyError("spec needs either 't_phases' or 'circuit'")
+    saved = [(p.name, p.defined and float(p) or None) for p in circuit.get_parameters()]
+    for param in circuit.get_parameters():
+        if not param.defined:
+            param.set_value(0.0)
+    unitary = np.asarray(circuit.compute_unitary(), dtype=complex)
+    for name, value in saved:
+        if value is None:
+            for param in circuit.get_parameters():
+                if param.name == name:
+                    param.reset()
+    return [float(v) for v in np.round(np.concatenate([unitary.real.ravel(),
+                                                       unitary.imag.ravel()]), 12)]
+
+
 def _job_key(platform: str, spec: dict, X_win: np.ndarray, shots: int) -> str:
     payload = json.dumps({
         "platform": platform,
-        "t": spec["t_phases"],
+        "t": _circuit_fingerprint(spec),
         "x": np.asarray(X_win).round(12).tolist(),
         "shots": shots,
         "input_state": spec["input_state"],

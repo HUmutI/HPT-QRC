@@ -1,0 +1,36 @@
+{
+  "dataset": "narma10",
+  "model": "photonic",
+  "trials": 150,
+  "params": {
+    "n_modes": 16,
+    "photon_list": [
+      2,
+      3
+    ],
+    "reservoirs_per_photon": 8,
+    "depth": 3,
+    "leak": 0.17993799179289077,
+    "g_in": 0.023250733010600707,
+    "g_fb": 0.06458752843288909,
+    "encode_window": 18,
+    "window": 21,
+    "feedback": true
+  },
+  "raw_params": {
+    "n_modes": 16,
+    "photon_list": "[2,3]",
+    "reservoirs_per_photon": 8,
+    "depth": 3,
+    "leak": 0.17993799179289077,
+    "g_in": 0.023250733010600707,
+    "g_fb": 0.06458752843288909,
+    "encode_window": 18,
+    "window": 21,
+    "feedback": true
+  },
+  "ridge_alpha": 1.0,
+  "val_nrmse": 0.06146630704764343,
+  "test_nrmse": 0.08248713404825828,
+  "feature_dim": 5461
+}

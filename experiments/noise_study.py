@@ -62,16 +62,29 @@ FALLBACK_CONFIG = dict(
 )
 
 
-def load_config(dataset: str) -> dict:
-    """Use the tuned configuration when the search has produced one."""
+def load_config(dataset: str, use_tuned: bool = False) -> dict:
+    """Configuration for the noise sweep.
+
+    Defaults to :data:`FALLBACK_CONFIG` on purpose. The point of this study is what a real
+    device would do, and the accuracy-tuned configuration is not runnable on one: it uses a
+    large mode count and a wide ensemble, and at three or more photons the coincidence rate
+    falls as ``transmittance ** n`` to the point where the shots are unaffordable. Two
+    photons in twelve modes is the regime a QPU can actually deliver, so that is what gets
+    stressed here.
+
+    ``use_tuned`` loads the accuracy-tuned configuration instead, for the ablation that
+    shows the two regimes respond to noise the same way.
+    """
+    if not use_tuned:
+        return dict(FALLBACK_CONFIG)
     path = ROOT / "results" / "tuning" / f"{dataset}_photonic.json"
     if not path.exists():
         return dict(FALLBACK_CONFIG)
     params = json.loads(path.read_text())["params"]
     params.pop("feedback", None)
     params["photon_list"] = tuple(params["photon_list"])
-    # Keep the sweep affordable: Perceval in a recurrent loop costs ~5-40 ms per step per
-    # reservoir, so a tuned ensemble of 8 would make the grid take days.
+    # Perceval in a recurrent loop costs ~5-40 ms per step per reservoir, so a wide
+    # ensemble would make the grid take days.
     params["reservoirs_per_photon"] = min(int(params.get("reservoirs_per_photon", 2)), 2)
     return params
 
@@ -105,11 +118,13 @@ def main() -> None:
     ap.add_argument("--sweep", default="all",
                     choices=["all", "shots", "indist", "g2", "hardware", "joint", "rate"])
     ap.add_argument("--seeds", type=int, default=3)
+    ap.add_argument("--use-tuned", action="store_true",
+                    help="use the accuracy-tuned config instead of the hardware-viable one")
     args = ap.parse_args()
 
     RESULTS.mkdir(parents=True, exist_ok=True)
     u, y, split = load_task(args.dataset)
-    config = load_config(args.dataset)
+    config = load_config(args.dataset, use_tuned=args.use_tuned)
     seeds = list(range(42, 42 + args.seeds))
     print(f"dataset={args.dataset}  config={config}", flush=True)
 

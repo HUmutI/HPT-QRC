@@ -1,0 +1,15 @@
+{
+  "dataset": "mackey_glass_h17",
+  "model": "linear",
+  "trials": 150,
+  "params": {
+    "window": 60
+  },
+  "raw_params": {
+    "window": 60
+  },
+  "ridge_alpha": 1e-09,
+  "val_nrmse": 0.49976892430902775,
+  "test_nrmse": 0.5344078004470851,
+  "feature_dim": 60
+}

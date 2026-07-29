@@ -1,0 +1,23 @@
+{
+  "dataset": "sp500_rv",
+  "model": "esn",
+  "trials": 150,
+  "params": {
+    "res_size": 500,
+    "leak": 0.9147728874695253,
+    "spectral_radius": 0.3313861455839482,
+    "input_scaling": 0.2867564353871994,
+    "sparsity": 0.49824889953724916
+  },
+  "raw_params": {
+    "res_size": 500,
+    "leak": 0.9147728874695253,
+    "spectral_radius": 0.3313861455839482,
+    "input_scaling": 0.2867564353871994,
+    "sparsity": 0.49824889953724916
+  },
+  "ridge_alpha": 0.03162277660168379,
+  "val_nrmse": 0.7771179098346652,
+  "test_nrmse": 0.6849765343603262,
+  "feature_dim": 501
+}

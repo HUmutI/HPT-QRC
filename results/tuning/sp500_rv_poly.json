@@ -1,0 +1,17 @@
+{
+  "dataset": "sp500_rv",
+  "model": "poly",
+  "trials": 150,
+  "params": {
+    "window": 9,
+    "degree": 2
+  },
+  "raw_params": {
+    "window": 9,
+    "degree": 2
+  },
+  "ridge_alpha": 31.622776601683793,
+  "val_nrmse": 0.8021424009798139,
+  "test_nrmse": 0.7045278271346979,
+  "feature_dim": 54
+}

@@ -1,0 +1,23 @@
+{
+  "dataset": "mackey_glass_h17",
+  "model": "esn",
+  "trials": 150,
+  "params": {
+    "res_size": 1000,
+    "leak": 0.24318878755855197,
+    "spectral_radius": 0.4999600205855531,
+    "input_scaling": 1.410991973214965,
+    "sparsity": 0.6344362628001992
+  },
+  "raw_params": {
+    "res_size": 1000,
+    "leak": 0.24318878755855197,
+    "spectral_radius": 0.4999600205855531,
+    "input_scaling": 1.410991973214965,
+    "sparsity": 0.6344362628001992
+  },
+  "ridge_alpha": 3.1622776601683795e-05,
+  "val_nrmse": 0.00039965876758709697,
+  "test_nrmse": 0.0003733100218702904,
+  "feature_dim": 1001
+}
