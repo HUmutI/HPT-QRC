@@ -1,3 +1,9 @@
+> **Historical document, 2026-05.** This memo analysed the *previous* windowed
+> architecture and its v1/v2 results, both of which were retracted on 2026-07-29 (see
+> `results/CHANGELOG.md`). Its positioning advice largely still applies, but every number,
+> file path and claim it discusses refers to code that has since been replaced. Read
+> `README.md` and `docs/walkthrough.md` for the current state.
+
 # Brutally Honest Academic Analysis of HPT‑QRC: Hybrid Photonic Temporal Quantum Reservoir Computing for Swaption Forecasting
 
 ## TL;DR

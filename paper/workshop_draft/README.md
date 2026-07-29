@@ -1,8 +1,8 @@
 # Workshop draft
 
-**`main.tex` still contains numbers from the retracted v1/v2 results.** Do not compile and
-circulate it until its tables are replaced. See `results/CHANGELOG.md` for what was retracted
-and why.
+`main.tex` was rewritten against the current results on 2026-07-29. It compiles clean (11
+pages, no undefined references) and every table and figure is generated, not typed. See
+`results/CHANGELOG.md` for what the previous version claimed and why it was retracted.
 
 ## Tables are generated, not typed
 
@@ -60,11 +60,11 @@ Writes to `results/figures/`: `capacity_narma10.png`, `noise_narma10.png`, `benc
 - The Model Confidence Set has little power at these sample sizes (200–600 test points) and
   retains almost every model on every task. Do not present it as though it discriminates.
 
-## Required corrections to the current draft
+## Standing rules for edits
 
-- The abstract's numbers, all result tables, and the memory-capacity section are from the
-  retracted results.
-- Remove any surviving "50× memory capacity" claim. Measured linear memory capacity is ~11
+- Never reintroduce the "50× memory capacity" claim. Measured linear memory capacity is ~11
   for the photonic reservoir against 27–30 for an ESN — it has *less* linear memory and wins
   through nonlinear capacity per feature instead.
-- The figure paths reference the pre-reorganisation `narma_experiment/` directory.
+- Never type a result number into `main.tex`. Regenerate the tables.
+- If a result changes, rerun `scripts/make_paper_tables.py` and
+  `experiments/make_figures.py` before recompiling.
