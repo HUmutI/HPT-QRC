@@ -45,6 +45,17 @@ POLY_WINDOWS = [(5, 2), (10, 2), (20, 2), (10, 3), (14, 3)]
 LAG_WINDOWS = [5, 10, 20, 40, 60, 80]
 
 
+MAX_FEATURE_DIM = 30_000
+
+
+def photonic_dim(base: dict, ensemble: int) -> int:
+    """Feature dimension a given ensemble width would produce."""
+    from math import comb
+
+    per_set = sum(comb(base["n_modes"], n) for n in base["photon_list"])
+    return per_set * ensemble + base.get("window", 0)
+
+
 def photonic(u, split, seed, ensemble, base):
     cfg = dict(base)
     cfg["reservoirs_per_photon"] = ensemble
@@ -92,9 +103,21 @@ def main() -> None:
         data_seed = None if args.dataset in {"sp500_rv", "vix"} else seed
         u, y, split = load_task(args.dataset, seed=data_seed)
 
+        # Some tuned configurations are already very wide -- the Lorenz-63 winner uses 24
+        # modes with photons {2,3,4}, i.e. 12926 features per reservoir set, so an ensemble
+        # of 32 would ask for over 400k features. Cap the sweep by dimension rather than by
+        # ensemble width, and report what was dropped instead of silently truncating.
+        widths = [k for k in PHOTONIC_ENSEMBLE if photonic_dim(base, k) <= MAX_FEATURE_DIM]
+        if not widths:
+            widths = [1]
+        dropped = [k for k in PHOTONIC_ENSEMBLE if k not in widths]
+        if dropped and seed == seeds[0]:
+            print(f"  (skipping photonic ensembles {dropped}: would exceed "
+                  f"{MAX_FEATURE_DIM} features)", flush=True)
+
         jobs = (
             [("photonic", k, lambda k=k: photonic(u, split, seed, k, base))
-             for k in PHOTONIC_ENSEMBLE]
+             for k in widths]
             + [("esn", k, lambda k=k: esn_features(u, split.n_train, res_size=k, seed=seed,
                                                    **esn_base))
                for k in ESN_SIZES]
