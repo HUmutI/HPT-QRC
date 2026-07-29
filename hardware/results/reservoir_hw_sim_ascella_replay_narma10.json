@@ -1,0 +1,69 @@
+{
+  "platform": "sim:ascella",
+  "protocol": "replay",
+  "dataset": "narma10",
+  "steps": 20,
+  "shots": 3000,
+  "modes": 12,
+  "photons": 2,
+  "reservoirs": 1,
+  "nrmse": {
+    "hardware": 1.7621456600719747,
+    "simulation": 2.294718943726092,
+    "classical_only": 1.7942943889889391
+  },
+  "quantum_lift_vs_classical": 1.0182440814317537,
+  "hardware_vs_simulation_ratio": 0.7679135019518593,
+  "feature_correlation_mean": 0.9979948373144364,
+  "feature_correlation_min": 0.9911377336269995,
+  "wall_time_s": 35.311113119125366,
+  "meta": [
+    {
+      "wall_time_s": 29.391569137573242,
+      "drop_rate": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "raw_counts": [
+        3000,
+        3000,
+        3000,
+        3000,
+        3000,
+        3000,
+        3000,
+        3000,
+        3000,
+        3000,
+        3000,
+        3000,
+        3000,
+        3000,
+        3000,
+        3000,
+        3000,
+        3000,
+        3000,
+        3000
+      ]
+    }
+  ]
+}

@@ -41,11 +41,10 @@ Joni Dambre, David Verstraeten, Benjamin Schrauwen, and Serge Massar.
 \newblock Information processing capacity of dynamical systems.
 \newblock \emph{Scientific Reports}, 2:\penalty0 514, 2012.
 
-\bibitem[Fujii and Nakajima(2017)]{fujii2017qrc}
-Keisuke Fujii and Kohei Nakajima.
-\newblock Harnessing disordered-ensemble quantum dynamics for machine learning.
-\newblock \emph{Physical Review Applied}, 8\penalty0 (2):\penalty0 024030,
-  2017.
+\bibitem[Diebold and Mariano(1995)]{diebold1995dm}
+Francis~X. Diebold and Roberto~S. Mariano.
+\newblock Comparing predictive accuracy.
+\newblock \emph{Journal of Business \& Economic Statistics}, 1995.
 
 \bibitem[Garc{\'\i}a-Beni et~al.(2023)]{garciabeni2023scalable}
 Jorge Garc{\'\i}a-Beni et~al.
@@ -100,12 +99,6 @@ Whitney~K. Newey and Kenneth~D. West.
   autocorrelation consistent covariance matrix.
 \newblock \emph{Econometrica}, 55\penalty0 (3):\penalty0 703--708, 1987.
 
-\bibitem[Patton(2011)]{patton2011volatility}
-Andrew~J. Patton.
-\newblock Volatility forecast comparison using imperfect volatility proxies.
-\newblock \emph{Journal of Econometrics}, 160\penalty0 (1):\penalty0 246--256,
-  2011.
-
 \bibitem[Politis and Romano(1994)]{politis1994stationary}
 Dimitris~N. Politis and Joseph~P. Romano.
 \newblock The stationary bootstrap.
@@ -116,5 +109,11 @@ Dimitris~N. Politis and Joseph~P. Romano.
 Ali Rahimi and Benjamin Recht.
 \newblock Random features for large-scale kernel machines.
 \newblock In \emph{Advances in Neural Information Processing Systems}, 2007.
+
+\bibitem[Tichy(2014)]{tichy2014distinguishability}
+Malte~C. Tichy.
+\newblock Interference of identical particles from entanglement to
+  boson-sampling.
+\newblock \emph{Journal of Physics B}, 2014.
 
 \end{thebibliography}
