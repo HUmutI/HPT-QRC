@@ -107,14 +107,42 @@ def main() -> None:
                               values="nrmse", aggfunc="median")
     print(pivot.to_string(float_format=lambda v: f"{v:.4f}"))
 
-    print("\n=== interference gain: NRMSE(V=0) / NRMSE(V=1) ===")
-    print("    > 1 means indistinguishable photons help; ~1 means interference is irrelevant")
-    for (dataset, n_photons), row in pivot.iterrows():
-        if 0.0 in row and 1.0 in row and row[1.0] > 0:
-            gain = row[0.0] / row[1.0]
-            verdict = "interference helps" if gain > 1.05 else (
-                "interference hurts" if gain < 0.95 else "no effect")
-            print(f"  {dataset:<11} n={n_photons}  {gain:6.3f}x   {verdict}")
+    print("\n=== interference effect: V=0 (classical particles) vs V=1 (interference) ===")
+    print("    Paired across seeds, since a seed fixes both the circuit and the data.")
+    print("    An effect smaller than the seed spread is not an effect.\n")
+    print(f"    {'task':<12}{'n':>2}  {'V=0':>8} {'V=1':>8} {'gain':>7} {'paired d':>9} "
+          f"{'seed sd':>8} {'p':>7}  verdict")
+
+    from scipy import stats as sstats
+
+    verdicts = []
+    for (dataset, n_photons), _ in pivot.iterrows():
+        sub = frame[(frame.dataset == dataset) & (frame.n_photons == n_photons)]
+        a = sub[sub.visibility == 0.0].sort_values("seed")["nrmse"].to_numpy()
+        b = sub[sub.visibility == 1.0].sort_values("seed")["nrmse"].to_numpy()
+        if len(a) != len(b) or len(a) < 2:
+            continue
+        diff = a - b                                   # positive means V=1 is better
+        gain = float(np.median(a) / np.median(b))
+        spread = float(np.std(a, ddof=1))
+        _, p_value = sstats.ttest_rel(a, b)
+        # An effect must be both statistically detectable and larger than seed-to-seed noise
+        # to be worth claiming.
+        detectable = p_value < 0.05 and abs(np.mean(diff)) > 0.5 * spread
+        verdict = ("interference helps" if detectable and np.mean(diff) > 0 else
+                   "interference hurts" if detectable else "no detectable effect")
+        verdicts.append(verdict)
+        print(f"    {dataset:<12}{n_photons:>2}  {np.median(a):>8.4f} {np.median(b):>8.4f} "
+              f"{gain:>7.3f} {np.mean(diff):>+9.4f} {spread:>8.4f} {p_value:>7.3f}  {verdict}")
+
+    if verdicts and all(v == "no detectable effect" for v in verdicts):
+        print("\n    No task shows a detectable interference effect. The honest reading is that"
+              "\n    this architecture is a classical random feature map realised in optics:"
+              "\n    the interferometer and Fock measurement supply a high-dimensional"
+              "\n    nonlinear map, but the indistinguishability of the photons is not what"
+              "\n    makes it work. This is the same fact as the insensitivity to"
+              "\n    Hong-Ou-Mandel visibility in the noise study, seen from the other side,"
+              "\n    and it lowers the hardware bar: a source need not be indistinguishable.")
     print(f"\nwrote {out}")
 
 
