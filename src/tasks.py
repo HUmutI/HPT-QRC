@@ -144,11 +144,15 @@ def temporal_parity(n: int = 3000, delay: int = 3, order: int = 3, seed: int = 4
     a multi-photon interference pattern can represent and a smooth kernel struggles with.
     """
     rng = np.random.default_rng(seed)
-    bits = rng.choice([-1.0, 1.0], size=n + delay + order)
+    pad = delay + order
+    stream = rng.choice([-1.0, 1.0], size=n + pad)
+    # The target must depend only on bits at or before the current input. Indexing forward
+    # from t would make it a function of bits the model has not seen, which renders the task
+    # unsolvable rather than hard -- every model then scores NRMSE ~1.
     target = np.array(
-        [np.prod(bits[t + delay - order + 1 : t + delay + 1]) for t in range(n)]
+        [np.prod([stream[pad + t - delay - i] for i in range(order)]) for t in range(n)]
     )
-    return bits[:n].reshape(-1, 1), target
+    return stream[pad:].reshape(-1, 1), target
 
 
 def santa_fe(n: int | None = None, horizon: int = 1):

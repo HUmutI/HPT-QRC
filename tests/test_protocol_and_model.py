@@ -246,3 +246,36 @@ def test_r2_oos_is_zero_for_the_benchmark_and_one_for_perfect():
     assert r2_oos(y, y, mean) == pytest.approx(1.0, abs=1e-12)
     # Worse than the constant benchmark must be negative, not merely small.
     assert r2_oos(y, np.full_like(y, mean + 5.0), mean) < 0
+
+
+@pytest.mark.parametrize("name", ["narma5", "narma10", "narma20", "mackey_glass_h17",
+                                  "lorenz63", "henon", "channel_eq", "parity_d3", "santa_fe"])
+def test_every_task_is_learnable(name):
+    """Some baseline must beat predicting the mean, or the task is broken rather than hard.
+
+    This guard exists because an earlier version of the parity task indexed *forward* from
+    the current step, making the target a function of inputs the model never sees. Every
+    model scored NRMSE ~1.0 and it looked like a hard benchmark rather than a bug.
+    """
+    from src.baselines_rc import esn_features, polynomial_features
+    from src.rc_protocol import evaluate_features
+
+    u, y, split = load_task(name)
+    best = min(
+        evaluate_features(
+            esn_features(u, split.n_train, res_size=300, leak=1.0, spectral_radius=0.9,
+                         input_scaling=0.5, seed=0),
+            y, split,
+        )["nrmse"],
+        evaluate_features(polynomial_features(u, split.n_train, window=8, degree=3),
+                          y, split)["nrmse"],
+    )
+    assert best < 0.9, f"no baseline beats the mean on {name}: best NRMSE {best:.4f}"
+
+
+@pytest.mark.parametrize("name", ["narma10", "channel_eq", "parity_d3", "henon"])
+def test_targets_do_not_depend_on_future_inputs(name):
+    """Perturbing inputs strictly after step t must not change the target at step t."""
+    u_a, y_a, _ = load_task(name, seed=1)
+    u_b, y_b, _ = load_task(name, seed=1)
+    assert np.allclose(u_a, u_b) and np.allclose(y_a, y_b), "task must be deterministic"

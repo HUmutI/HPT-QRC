@@ -1,0 +1,23 @@
+{
+  "dataset": "channel_eq",
+  "model": "esn",
+  "trials": 100,
+  "params": {
+    "res_size": 1000,
+    "leak": 0.903718527109936,
+    "spectral_radius": 0.16467564698803652,
+    "input_scaling": 2.602092675672737,
+    "sparsity": 0.5100095870792323
+  },
+  "raw_params": {
+    "res_size": 1000,
+    "leak": 0.903718527109936,
+    "spectral_radius": 0.16467564698803652,
+    "input_scaling": 2.602092675672737,
+    "sparsity": 0.5100095870792323
+  },
+  "ridge_alpha": 1e-05,
+  "val_nrmse": 0.09775582379843431,
+  "test_nrmse": 0.10258855629827099,
+  "feature_dim": 1001
+}
