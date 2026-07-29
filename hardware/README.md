@@ -1,8 +1,13 @@
 # Hardware — Quandela QPU execution
 
-**Status: no result in this repository is a QPU measurement.** Both `qpu:ascella` and
-`qpu:belenos` have reported `status: maintenance` throughout the current work. The code here
-is implemented and rehearsed locally and against the cloud simulator.
+**Status: one real QPU job is queued.** `qpu:belenos`, job
+`38587a22-d3a8-4d61-b28e-54611ec5e492`, 120 timesteps at 20 000 shots, 2 photons in 10 modes.
+Harvest with `python hardware/fetch_qpu_run.py`.
+
+**Do not trust the platform status field.** Both QPUs report `status: maintenance` while the API
+accepts submissions and queues them. Attempting a submission is the only reliable test. Jobs
+then sit in `waiting` for a long time (2 h 16 m for the 2026-07-07 smoke test), so the real
+constraint is queue latency.
 
 Note that every earlier run in this directory used **Belenos**, not Ascella, despite what
 older versions of these docs said. Ascella is the preferred target when it returns: 80 MHz
@@ -90,6 +95,12 @@ Established against perceval 1.1.0 / merlin 0.3.1, checked by `compare_sim_local
   self-describes as "Arcturus simulator". Treat them as cloud sampling simulators, not device
   models. `scripts/compare_platforms.py` re-tests this by sending one shared phase batch to
   every platform and measuring each against an exact local calculation.
+- **The free tier allows one waiting job at a time.** A second submission returns HTTP 400 with
+  no useful message. Queue Ascella only after the Belenos job clears.
+- **Use `submit_qpu_run.py` + `fetch_qpu_run.py` for QPU work, not `run_reservoir_hw.py`.** The
+  latter submits a chunk, polls, then submits the next, which loses everything if the machine
+  sleeps during a multi-hour queue. The former submits one job sized to the five-minute cap,
+  stores what is needed to rebuild the readout, and exits.
 - **`sim:belenos` is roughly 20× slower than `sim:ascella`.** A 50-step chunk reached only
   20 % after 206 s, extrapolating to hours per run. Budget for it or avoid it; a job that
   overruns blocks the queue, since the free tier allows one at a time. Cancel with

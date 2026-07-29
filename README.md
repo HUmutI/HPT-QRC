@@ -8,9 +8,10 @@
 > **Scope.** Accuracy results are produced by exact classical simulation of linear-optical
 > Fock probabilities. Noise results are produced by Perceval's `NoiseModel` at the operating
 > points measured on Quandela's Ascella and Belenos processors. Neither is a hardware
-> measurement. A hardware run is implemented and rehearsed (`hardware/run_reservoir_hw.py`)
-> but both QPUs have been in `maintenance` throughout this work; the section below states
-> exactly what is and is not measured on a chip.
+> measurement. **A real QPU job is queued** (`qpu:belenos`, 120 timesteps, 2 photons) — see
+> Section 7 for its id and how to harvest it. Note that the platform status field reports
+> `maintenance` while the API still accepts submissions, so it is not a reliable availability
+> signal.
 
 > **Concurrent and independent work.** A closely related architecture for swaption-surface
 > reconstruction was independently proposed by Amanov & Azamov (arXiv:2603.10707);
@@ -415,33 +416,56 @@ using.
 
 ## 7. QPU status
 
-**Both `qpu:ascella` and `qpu:belenos` have reported `status: maintenance` throughout this
-work, so no result in this repository is a QPU measurement.** What exists:
+**A real QPU job is queued.** `qpu:belenos`, job `38587a22-d3a8-4d61-b28e-54611ec5e492`,
+submitted 2026-07-29: 120 timesteps, 20 000 coincidences per step, 2 photons in 10 modes, one
+reservoir. Recover the result at any time, from any machine with the token:
 
-- A validated smoke test and a 10-step, 1000-shot probe on `qpu:belenos` from an earlier
-  three-photon configuration (`hardware/run_log.csv`), which is what established the
-  coincidence-rate problem.
-- `hardware/run_reservoir_hw.py`, which runs the current model on a QPU and reports
-  hardware, simulation and classical-only readouts on identical timesteps. Rehearsed locally
-  and against the cloud simulator.
-- Job `96baa2b6-…` was cancelled by the platform at 307 s having completed 4 % of its
-  iterations — the free tier's 5-minute cap. Submission is now chunked and each chunk is
-  cached independently, so an interrupted run resumes without re-billing shots.
+```bash
+python hardware/fetch_qpu_run.py            # harvest anything that has finished
+python hardware/fetch_qpu_run.py --watch    # poll until it resolves
+```
+
+**Platform status is not a reliable availability signal.** `fetch_platform_details()` reports
+`maintenance` for both QPUs, yet the API accepts submissions and queues them. We only
+discovered this by attempting a submission; the status field should not be trusted either way.
+Jobs sit in `waiting` for a long time — the 2026-07-07 smoke test waited 2 h 16 m — so the
+practical constraint is queue latency, not availability.
+
+Because the free tier permits **one waiting job at a time**, a parallel Ascella submission was
+rejected with HTTP 400. Ascella is the better target (80 MHz vs 4.94 MHz, g² 1.95 % vs 18.2 %)
+and should be tried once the Belenos job clears.
+
+`hardware/submit_qpu_run.py` exists because of a hard practical constraint: the normal driver
+submits a chunk, polls until it returns, then submits the next, which loses everything if the
+machine sleeps during a multi-hour queue. It instead submits **one** job sized to the tier's
+five-minute execution cap, stores everything needed to reconstruct the readout, and exits.
+
+### Prior QPU data
+
+Two jobs ran on `qpu:belenos` on 2026-07-07/08 under the superseded three-photon model:
+
+| | Result |
+|---|---|
+| Smoke test, 1 step, 1 shot | Completed after a 2 h 16 m queue. Proved the full path. |
+| Probe, 10 steps, 1000 shots | 39–63 raw counts per step; features correlated 0.18–0.48 with simulation |
+| Third job | Cancelled by the platform at 307 s having completed 4 % — the five-minute cap |
+
+**That data established the coincidence-rate problem and drove the three-to-two photon
+redesign, but it is not an accuracy result**: ten timesteps cannot support a readout, and at
+~48 counts across 56 Fock bins the measured features are mostly sampling noise. The queued job
+above is sized to fix both.
+
+### Protocols
 
 Because closed-loop feedback cannot be batched into a single cloud job, two protocols are
-provided and both will be reported:
+provided and both are reported:
 
-- `replay` — the recurrence is run in simulation to produce the phase trajectory, which is
-  then replayed on hardware as one batched job. The chip evaluates the same circuit settings
-  the closed-loop system would have visited, and the readout is trained on hardware-measured
+- `replay` — the recurrence is run in simulation to produce the phase trajectory, which is then
+  replayed on hardware as one batched job, with the readout trained on hardware-measured
   features. **The feedback path itself is simulated**, and any write-up must say so.
-- `openloop` — feedback disabled, every timestep independent. Genuinely end-to-end on
-  hardware with no simulation in the loop; a weaker model but a stronger claim.
-
-Local calibration puts the viable operating point at 600 timesteps, 12 modes, 2 reservoirs,
-where the reservoir gives a 1.46× improvement over the classical control.
-
----
+- `openloop` — feedback disabled, every timestep independent. Genuinely end-to-end on the
+  device. On the cloud emulators this was both the stronger claim and the better result
+  (lift 1.22 against replay's 1.08).
 
 ## 8. Layout
 
