@@ -267,7 +267,32 @@ a direct consequence of the same scaling.
 
 ---
 
-## 4. Cloud execution
+## 4. Would photonics ever beat simulating it?
+
+The obvious objection to any photonic reservoir at these scales is that a laptop simulates it
+faster. `experiments/crossover.py` answers that quantitatively rather than dodging it.
+Classical simulation cost grows combinatorially in photon number; the device's cost grows as
+`1/transmittance^n`. Which grows faster decides the question.
+
+Using the measured throughput of this implementation (7.3×10⁷ complex MACs/s, single core)
+against the measured platform specs, at the 3×10⁴-coincidence threshold from Section 3:
+
+| Platform | Closest the device gets | Transmittance needed for a crossover |
+|---|---|---|
+| Ascella (t = 2.44 %) | 1.6×10³ slower, at n=2 | ≥ 0.105 at n=12 in 24 modes (**4× better**) |
+| Belenos (t = 4.84 %) | 6.6×10³ slower, at n=2 | ≥ 0.132 at n=12 (**3× better**) |
+
+**There is no crossover at any photon number on current hardware**, and we say so plainly.
+But the requirement is now a number rather than a hope. Note the required transmittance
+*falls* with photon number — 0.978 at n=2 down to 0.105 at n=12 — because classical cost
+outgrows the rate penalty. High photon number is where optics could win, if loss drops far
+enough to reach it. At n=2 and n=3 on Belenos the required transmittance exceeds 1, meaning
+simulation is so cheap in that regime that no device could beat it.
+
+This is why we make no computational-advantage claim anywhere, and why the useful framing for
+this class of model is loss reduction rather than photon count for its own sake.
+
+## 5. Cloud execution
 
 The full cloud path — chunked submission, threshold-detector sampling, coincidence
 post-selection, cached job results — has been exercised end to end on Quandela's cloud
@@ -323,7 +348,7 @@ Note also that the lift at 8000 shots is only 1.00–1.08, consistent with the s
 result that ~3×10⁴ coincidences per timestep are needed before the reservoir is clearly worth
 using.
 
-## 5. QPU status
+## 6. QPU status
 
 **Both `qpu:ascella` and `qpu:belenos` have reported `status: maintenance` throughout this
 work, so no result in this repository is a QPU measurement.** What exists:
@@ -353,7 +378,7 @@ where the reservoir gives a 1.46× improvement over the classical control.
 
 ---
 
-## 6. Layout
+## 7. Layout
 
 ```
 src/
@@ -383,7 +408,7 @@ be built once and each timestep costs a few small matrix products plus a batch o
 permanents. It computes the same distribution — the test suite checks it against both MerLin
 and Perceval's SLOS backend to 1e-10.
 
-## 7. Reproducing
+## 8. Reproducing
 
 ```bash
 conda create -n quandela python=3.11 && conda activate quandela
@@ -400,7 +425,7 @@ Hardware runs need a Quandela token in `PCVL_CLOUD_TOKEN` (see `hardware/README.
 should be rehearsed with `--local` first; every cloud job is cached, so a re-run never
 re-spends shots.
 
-## 8. What we do not claim
+## 9. What we do not claim
 
 - No quantum advantage. The comparison is against classical feature maps on classical data,
   and the photonic model is simulated.
