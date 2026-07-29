@@ -20,7 +20,8 @@ import numpy as np
 from sklearn.linear_model import Ridge
 from sklearn.preprocessing import StandardScaler
 
-__all__ = ["ALPHA_GRID", "nrmse", "mse", "Split", "fit_readout", "evaluate_features"]
+__all__ = ["ALPHA_GRID", "nrmse", "mse", "mae", "r2_oos", "Split", "fit_readout",
+           "evaluate_features"]
 
 # Spans under-regularised to heavily-regularised; reservoir readouts routinely need the
 # high end when the feature count approaches the number of training rows.
@@ -38,6 +39,27 @@ def mse(y_true, y_pred) -> float:
     y_true = np.asarray(y_true, dtype=float).ravel()
     y_pred = np.asarray(y_pred, dtype=float).ravel()
     return float(np.mean((y_true - y_pred) ** 2))
+
+
+def mae(y_true, y_pred) -> float:
+    y_true = np.asarray(y_true, dtype=float).ravel()
+    y_pred = np.asarray(y_pred, dtype=float).ravel()
+    return float(np.mean(np.abs(y_true - y_pred)))
+
+
+def r2_oos(y_true, y_pred, benchmark: float) -> float:
+    """Campbell-Thompson out-of-sample R^2 against a constant benchmark.
+
+    ``1 - MSE(model) / MSE(benchmark)``, where the benchmark predicts ``benchmark`` (the
+    training-set mean) at every step. Negative values mean the model is worse than assuming
+    the target never moves from its historical average, which is the honest reference point
+    for a forecasting claim and is not visible in NRMSE alone.
+    """
+    y_true = np.asarray(y_true, dtype=float).ravel()
+    denominator = np.mean((y_true - benchmark) ** 2)
+    if denominator <= 0:
+        return float("nan")
+    return float(1.0 - mse(y_true, y_pred) / denominator)
 
 
 class Split:
@@ -136,10 +158,15 @@ def fit_readout(features: np.ndarray, y: np.ndarray, split: Split, standardize: 
 def evaluate_features(features: np.ndarray, y: np.ndarray, split: Split) -> dict:
     """Run the protocol and report test metrics plus the selected penalty."""
     pred, alpha, val = fit_readout(features, y, split)
-    truth = np.asarray(y, dtype=float).ravel()[split.test_slice]
+    y = np.asarray(y, dtype=float).ravel()
+    truth = y[split.test_slice]
+    # The benchmark for R^2_oos is the training mean, computed on training rows only.
+    train_mean = float(y[split.full_train_slice].mean())
     return {
         "nrmse": nrmse(truth, pred),
         "mse": mse(truth, pred),
+        "mae": mae(truth, pred),
+        "r2_oos": r2_oos(truth, pred, train_mean),
         "alpha": alpha,
         "val_nrmse": val,
         "feature_dim": int(features.shape[1]),

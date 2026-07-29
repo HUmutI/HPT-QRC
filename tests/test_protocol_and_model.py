@@ -234,3 +234,15 @@ def test_ridge_path_matches_sklearn_when_overparameterised():
     for alpha in (1e-3, 1.0, 50.0):
         reference = Ridge(alpha=alpha, fit_intercept=True).fit(x, y).predict(x_new)
         assert np.allclose(path.predict(x_new, alpha), reference, atol=1e-7)
+
+
+def test_r2_oos_is_zero_for_the_benchmark_and_one_for_perfect():
+    from src.rc_protocol import r2_oos
+
+    rng = np.random.default_rng(3)
+    y = rng.normal(loc=2.0, size=300)
+    mean = float(y.mean())
+    assert r2_oos(y, np.full_like(y, mean), mean) == pytest.approx(0.0, abs=1e-9)
+    assert r2_oos(y, y, mean) == pytest.approx(1.0, abs=1e-12)
+    # Worse than the constant benchmark must be negative, not merely small.
+    assert r2_oos(y, np.full_like(y, mean + 5.0), mean) < 0

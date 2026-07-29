@@ -111,8 +111,8 @@ def run_dataset(dataset: str, seeds: list[int]) -> tuple[pd.DataFrame, dict]:
             preds_by_seed[seed][model] = result["predictions"]
             rows.append(
                 dict(dataset=dataset, model=model, seed=seed, nrmse=result["nrmse"],
-                     mse=result["mse"], alpha=result["alpha"],
-                     feature_dim=result["feature_dim"])
+                     mse=result["mse"], mae=result["mae"], r2_oos=result["r2_oos"],
+                     alpha=result["alpha"], feature_dim=result["feature_dim"])
             )
             print(f"  {dataset}/{model}/seed{seed}: NRMSE {result['nrmse']:.4f} "
                   f"(dim {result['feature_dim']})", flush=True)
