@@ -3,15 +3,15 @@
   "model": "poly",
   "trials": 150,
   "params": {
-    "window": 22,
+    "window": 26,
     "degree": 3
   },
   "raw_params": {
-    "window": 22,
+    "window": 26,
     "degree": 3
   },
   "ridge_alpha": 1e-09,
-  "val_nrmse": 5.94170711310741e-07,
-  "test_nrmse": 1.1482238430582499e-06,
-  "feature_dim": 2299
+  "val_nrmse": 0.2998932623146551,
+  "test_nrmse": 0.6171032620585745,
+  "feature_dim": 3653
 }

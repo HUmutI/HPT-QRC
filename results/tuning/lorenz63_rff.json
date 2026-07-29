@@ -4,16 +4,16 @@
   "trials": 150,
   "params": {
     "n_features": 1200,
-    "gamma": 0.02508675521690834,
-    "window": 15
+    "gamma": 20.27683183476257,
+    "window": 7
   },
   "raw_params": {
     "n_features": 1200,
-    "gamma": 0.02508675521690834,
-    "window": 15
+    "gamma": 20.27683183476257,
+    "window": 7
   },
-  "ridge_alpha": 1e-09,
-  "val_nrmse": 5.663431687725099e-08,
-  "test_nrmse": 1.441219404754282e-07,
+  "ridge_alpha": 10.0,
+  "val_nrmse": 0.06613438630766451,
+  "test_nrmse": 0.0841400340056026,
   "feature_dim": 1200
 }

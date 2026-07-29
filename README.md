@@ -210,6 +210,19 @@ The classical control sits at 0.348. So the reservoir needs **≳3×10⁴ coinci
 timestep to be worth using at all**, and **≳3×10⁵ to come within 4 % of its own noiseless
 limit**, beyond which it is converged.
 
+**The finding generalises.** Repeating the whole sweep on NARMA-20
+(`results/noise/noise_narma20_all.csv`) gives the same ordering — device imperfection costs a
+few percent, sampling costs tens of percent:
+
+| Sweep | Range | NRMSE |
+|---|---|---|
+| Indistinguishability | 0.50 → 1.00 | 0.5450 → 0.5276 (−3.2 %) |
+| g²(0) | 0.00 → 0.30 | 0.5276 → 0.5366 (+1.7 %) |
+| Coincidences per step | 10³ → ∞ | 0.6353 → 0.4528 (−29 %) |
+
+The dependence on indistinguishability is now visible rather than flat, but it remains an
+order of magnitude smaller than the sampling effect.
+
 A reservoir is a random feature map, and the readout is refitted on whatever the device
 actually produces — so a slightly different map is still a perfectly good map. Sampling
 noise is different in kind: it corrupts each feature independently on every timestep and
