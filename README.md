@@ -193,14 +193,22 @@ Measured operating points, read live from the Quandela cloud API:
 | Full Ascella model | all sources at once | 0.2483 vs 0.2479 noiseless |
 | Full Belenos model | all sources at once | 0.2465 vs 0.2479 noiseless |
 
-**Finite sampling is the entire story:**
+**Finite sampling is the entire story.** Pushing the sweep to 10⁶ coincidences per timestep
+(`results/noise/shot_convergence.csv`, 3 seeds) locates both thresholds:
 
 | Coincidences per timestep | NRMSE |
 |---|---|
-| 1 000 | 0.411 ± 0.044 |
-| 10 000 | 0.380 ± 0.015 |
-| 30 000 | 0.343 ± 0.030 |
+| 1 000 | 0.418 ± 0.061 |
+| 10 000 | 0.399 ± 0.026 |
+| 30 000 | 0.321 ± 0.012 |
+| 100 000 | 0.305 ± 0.028 |
+| 300 000 | 0.285 ± 0.024 |
+| 1 000 000 | 0.283 ± 0.024 |
 | ∞ | 0.275 ± 0.028 |
+
+The classical control sits at 0.348. So the reservoir needs **≳3×10⁴ coincidences per
+timestep to be worth using at all**, and **≳3×10⁵ to come within 4 % of its own noiseless
+limit**, beyond which it is converged.
 
 A reservoir is a random feature map, and the readout is refitted on whatever the device
 actually produces — so a slightly different map is still a perfectly good map. Sampling
@@ -216,8 +224,16 @@ the dominant lever:
 | Ascella | 4.8e4 /s | 1.2e3 /s | 28 /s |
 | Belenos | 1.2e4 /s | 5.6e2 /s | 27 /s |
 
-Reaching 3×10⁴ coincidences per timestep costs **0.63 s at two photons on Ascella**, 26 s at
-three photons, and about 18 minutes at four. This is why the hardware path uses two photons.
+Time per timestep to reach each threshold:
+
+| | 3×10⁴ (beats control) | 3×10⁵ (near-converged) |
+|---|---|---|
+| Ascella, 2 photons | 0.63 s | 6.3 s → 63 min for 600 steps |
+| Belenos, 2 photons | 2.6 s | 26 s → 4.3 h for 600 steps |
+| Ascella, 3 photons | 26 s | 4.3 min → 43 h for 600 steps |
+
+Two photons on Ascella is the only combination that fits a realistic session. This is why the
+hardware path uses two.
 The earlier three-photon probe in this repository returned ~48 counts from 1000 requested
 shots spread over 56 Fock bins, and its features correlated only 0.18–0.48 with simulation —
 a direct consequence of the same scaling.

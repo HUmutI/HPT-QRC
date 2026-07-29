@@ -343,9 +343,15 @@ twelve modes --- not the accuracy-tuned configuration, which no current device c
 Device imperfections are close to irrelevant. Accuracy is flat across
 Hong--Ou--Mandel visibility from $0.50$ to $1.00$ and rises only $0.8\%$ as $g^{(2)}(0)$ goes
 from $0$ to $0.30$. Running the full Ascella and Belenos models --- every source at once ---
-gives $0.2483$ and $0.2465$ against a noiseless $0.2479$. Finite sampling, by contrast,
-dominates: $0.411$ at $10^3$ coincidences per timestep against $0.275$ in the infinite-shot
-limit.
+gives $0.2483$ and $0.2465$ against a noiseless $0.2479$.
+
+Finite sampling, by contrast, dominates. Extending the sweep to $10^{6}$ coincidences per
+timestep gives NRMSE $0.418, 0.399, 0.321, 0.305, 0.285, 0.283$ at
+$10^{3}, 10^{4}, 3\!\cdot\!10^{4}, 10^{5}, 3\!\cdot\!10^{5}, 10^{6}$ respectively, against
+$0.275$ in the infinite-shot limit and $0.348$ for the classical control. Two thresholds
+follow: roughly $3\!\cdot\!10^{4}$ coincidences per timestep are needed for the reservoir to
+beat its classical control at all, and roughly $3\!\cdot\!10^{5}$ to come within $4\%$ of its
+own noiseless limit, beyond which it is converged.
 
 The asymmetry has a simple explanation. A reservoir is a random feature map, and the readout is
 refitted on whatever map the device happens to realise; a slightly perturbed map is still a
@@ -362,7 +368,9 @@ number is the dominant lever on the quantity that actually matters.
 \begin{table}[H]\centering
   \PaperTableRates
   \caption{Coincidence rate and the time required to collect $3\!\times\!10^{4}$ events per
-           timestep, at the measured operating points.}
+           timestep, at the measured operating points. Reaching the near-converged threshold
+           of $3\!\times\!10^{5}$ costs ten times as long: $6.3$\,s per timestep at two
+           photons on Ascella, against $4.3$ minutes at three.}
   \label{tab:rates}
 \end{table}
 
