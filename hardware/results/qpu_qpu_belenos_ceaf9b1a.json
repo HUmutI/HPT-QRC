@@ -1,0 +1,43 @@
+{
+  "job_id": "ceaf9b1a-3fc2-4c96-8872-bbf35c8817c6",
+  "platform": "qpu:belenos",
+  "dataset": "narma10",
+  "steps": 18,
+  "shots": 20000,
+  "modes": 10,
+  "photons": 2,
+  "seed": 42,
+  "submitted_utc": "2026-07-30T14:30:43.435204+00:00",
+  "nrmse": {
+    "hardware": 1.0001339432512224,
+    "simulation": 1.0000881431860396,
+    "classical_only": 1.0000695014782628
+  },
+  "quantum_lift_vs_classical": 0.999935566857425,
+  "hardware_vs_simulation_ratio": 1.000045796028575,
+  "feature_correlation_mean": 0.8444389687803171,
+  "feature_correlation_min": 0.7764948049595737,
+  "raw_counts_per_step": [
+    20000,
+    20000,
+    20000,
+    20000,
+    20000,
+    20000,
+    20000,
+    20000,
+    20000,
+    20000,
+    20000,
+    20000,
+    20000,
+    20000,
+    20000,
+    20000,
+    20000,
+    20000
+  ],
+  "drop_rate_mean": 0.14441388888888887,
+  "physical_perf_mean": 0.0025583697312288756,
+  "job_state": "completed"
+}

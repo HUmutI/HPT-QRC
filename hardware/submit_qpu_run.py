@@ -100,10 +100,13 @@ def main() -> None:
                             for p, v in zip(circuit.get_parameters(), row)}}
         for row in phases
     ])
-    job = sampler.sample_count.execute_async(args.shots)
-
-    record = {
-        "job_id": job.id,
+    # Quandela returns a non-2xx when it auto-adjusts the shot budget for insufficient
+    # credit, and perceval raises on that -- but the job IS created server-side. Losing the
+    # id here orphans a job that is already being paid for, so the intent is written first
+    # and the id attached after.
+    intent = {
+        "job_id": None,
+        "needs_manual_id": True,
         "platform": args.platform,
         "dataset": args.dataset,
         "steps": int(hi - lo),
@@ -125,7 +128,20 @@ def main() -> None:
         "leak": reservoir.leak,
     }
     pending = json.loads(PENDING.read_text()) if PENDING.exists() else []
-    pending.append(record)
+    pending.append(intent)
+    PENDING.write_text(json.dumps(pending, indent=2))
+
+    try:
+        job = sampler.sample_count.execute_async(args.shots)
+        intent["job_id"] = job.id
+        intent["needs_manual_id"] = False
+    except Exception as exc:
+        PENDING.write_text(json.dumps(pending, indent=2))
+        print(f"submission raised {type(exc).__name__}: {exc}")
+        print("\nThe job may still exist server-side -- Quandela returns a non-2xx when it")
+        print("auto-adjusts the shot budget. Check the dashboard for a new job id and run:")
+        print("  python hardware/attach_job_id.py <job-id>")
+        return
     PENDING.write_text(json.dumps(pending, indent=2))
 
     print(f"submitted to {args.platform}")
