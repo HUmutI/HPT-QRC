@@ -57,23 +57,29 @@ def harvest(record: dict) -> dict | None:
     from hw_backend import get_token
 
     handler = pcvl.RemoteProcessor(record["platform"], token=get_token())._rpc_handler
+    from perceval.runtime.remote_job import RemoteJob
+
     status = handler.get_job_status(record["job_id"])
     state = status.get("status")
     print(f"  {record['job_id'][:8]} on {record['platform']}: {state} "
           f"(progress {str(status.get('progress'))[:6]})")
-    if state != "completed":
+    if state == "waiting" or state == "running":
         return None
-
-    job = pcvl.RemoteJob.from_id(record["job_id"], handler) \
-        if hasattr(pcvl, "RemoteJob") else None
-    payload = job.get_results() if job is not None else handler.get_job_results(
-        record["job_id"])
+    # A job cancelled by the five-minute execution cap still returns the iterations it
+    # finished, and those are perfectly good measurements. Discarding them would throw away
+    # real QPU data over a status string.
+    payload = RemoteJob.from_id(record["job_id"], handler).get_results()
     results_list = payload["results_list"] if "results_list" in payload else payload["results"]
+    if state != "completed":
+        print(f"    (job was {state}; harvesting the {len(results_list)} completed "
+              f"iterations)")
 
     keys = record["output_keys"]
-    probs, raw, drops = [], [], []
+    probs, raw, drops, physical = [], [], [], []
     for entry in results_list:
         counts = entry["results"] if isinstance(entry, dict) and "results" in entry else entry
+        if isinstance(entry, dict) and entry.get("physical_perf") is not None:
+            physical.append(float(entry["physical_perf"]))
         p, total, drop = counts_to_probabilities(counts, keys)
         probs.append(p)
         raw.append(total)
@@ -120,10 +126,32 @@ def harvest(record: dict) -> dict | None:
         "feature_correlation_min": float(np.min(correlations)),
         "raw_counts_per_step": raw,
         "drop_rate_mean": float(np.mean(drops)),
+        "physical_perf_mean": float(np.mean(physical)) if physical else None,
+        "job_state": state,
     }
     RESULTS.mkdir(parents=True, exist_ok=True)
     out = RESULTS / f"qpu_{record['platform'].replace(':', '_')}_{record['job_id'][:8]}.json"
     out.write_text(json.dumps(report, indent=2))
+
+    # Also persist the raw per-timestep data so slices can be stitched into one trajectory
+    # later; per-slice NRMSE is not interpretable on its own at these lengths.
+    slices = RESULTS / "slices"
+    slices.mkdir(parents=True, exist_ok=True)
+    (slices / f"slice_{record.get('slice_start', 0):04d}_{record['job_id'][:8]}.json").write_text(
+        json.dumps({
+            "platform": record["platform"],
+            "job_id": record["job_id"],
+            "slice_start": record.get("slice_start", 0),
+            "shots": record["shots"],
+            "photons": record["photons"],
+            "modes": record["modes"],
+            "leak": record["leak"],
+            "hw_probs": probs.tolist(),
+            "sim_states": sim_states.tolist(),
+            "targets": targets.tolist(),
+            "input_scaled": scaled.tolist(),
+        })
+    )
 
     print(f"\n=== {record['platform']} — REAL QPU RESULT ===")
     for name, value in sorted(scores.items(), key=lambda kv: kv[1]):

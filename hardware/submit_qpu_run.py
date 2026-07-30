@@ -49,7 +49,13 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--platform", default="qpu:belenos")
     ap.add_argument("--dataset", default="narma10")
-    ap.add_argument("--steps", type=int, default=120)
+    ap.add_argument("--steps", type=int, default=120,
+                    help="total timesteps in the trajectory")
+    ap.add_argument("--slice-start", type=int, default=0,
+                    help="first timestep this job covers")
+    ap.add_argument("--slice-len", type=int, default=None,
+                    help="timesteps in this job; must fit the 5-minute execution cap. "
+                         "Measured at ~16 s/timestep at 20000 shots on Belenos, so ~18.")
     ap.add_argument("--shots", type=int, default=20_000)
     ap.add_argument("--max-shots-per-call", type=int, default=10_000_000)
     ap.add_argument("--modes", type=int, default=10)
@@ -75,7 +81,11 @@ def main() -> None:
     from run_reservoir_hw import phase_trajectory
 
     trajectories, sim_states = phase_trajectory(model, u, int(0.7 * args.steps))
-    phases = trajectories[0]
+    # The trajectory is computed over the whole series so slices concatenate into one
+    # continuous run; each job then submits only its own window.
+    lo = args.slice_start
+    hi = min(args.steps, lo + (args.slice_len or args.steps))
+    phases = trajectories[0][lo:hi]
     reservoir = model.reservoirs[0]
     circuit, input_state = reservoir.optics.to_perceval()
 
@@ -96,7 +106,10 @@ def main() -> None:
         "job_id": job.id,
         "platform": args.platform,
         "dataset": args.dataset,
-        "steps": int(args.steps),
+        "steps": int(hi - lo),
+        "slice_start": int(lo),
+        "slice_end": int(hi),
+        "total_steps": int(args.steps),
         "shots": int(args.shots),
         "modes": int(args.modes),
         "photons": int(args.photons),
@@ -106,9 +119,9 @@ def main() -> None:
         "output_keys": [[int(b) for b in
                          (1 if m in pat else 0 for m in range(args.modes))]
                         for pat in reservoir.optics.patterns],
-        "sim_states": np.asarray(sim_states[0]).tolist(),
-        "targets": np.asarray(y).ravel().tolist(),
-        "input_scaled": model.input_scaler_.transform(u).tolist(),
+        "sim_states": np.asarray(sim_states[0])[lo:hi].tolist(),
+        "targets": np.asarray(y).ravel()[lo:hi].tolist(),
+        "input_scaled": model.input_scaler_.transform(u)[lo:hi].tolist(),
         "leak": reservoir.leak,
     }
     pending = json.loads(PENDING.read_text()) if PENDING.exists() else []
@@ -117,7 +130,7 @@ def main() -> None:
 
     print(f"submitted to {args.platform}")
     print(f"  job id     : {job.id}")
-    print(f"  timesteps  : {args.steps}")
+    print(f"  timesteps  : {hi - lo}  (slice {lo}:{hi} of {args.steps})")
     print(f"  shots/step : {args.shots}")
     print(f"  config     : {args.photons} photons, {args.modes} modes, 1 reservoir")
     print(f"\nrecorded in {PENDING.name}. Safe to close the machine.")
