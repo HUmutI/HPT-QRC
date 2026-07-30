@@ -1,19 +1,19 @@
 {
   "platform": "qpu:belenos",
-  "slices": 2,
-  "total_timesteps": 41,
+  "slices": 5,
+  "total_timesteps": 107,
   "shots_per_step": 20000,
   "photons": 2,
   "modes": 10,
   "nrmse": {
-    "hardware": 0.9065538014709433,
-    "simulation": 1.368241012866999,
-    "classical_only": 1.7597094804442706
+    "hardware": 0.6754141243001004,
+    "simulation": 0.4734683968173882,
+    "classical_only": 0.38856183790970433
   },
-  "quantum_lift_vs_classical": 1.9410976795740373,
-  "hardware_vs_simulation_ratio": 0.6625687966854313,
-  "feature_correlation_mean": 0.8361669408533283,
-  "feature_correlation_min": 0.806270712214067,
-  "train_rows": 21,
+  "quantum_lift_vs_classical": 0.5752942142161337,
+  "hardware_vs_simulation_ratio": 1.4265241964198099,
+  "feature_correlation_mean": 0.8294639760983459,
+  "feature_correlation_min": 0.8024322609667429,
+  "train_rows": 56,
   "feature_dim": 65
 }
