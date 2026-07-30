@@ -37,7 +37,39 @@ def main() -> None:
         return
 
     records = [json.loads(f.read_text()) for f in files]
-    records.sort(key=lambda r: r.get("slice_start", 0))
+    records.sort(key=lambda r: (r.get("slice_start", 0), -len(r["hw_probs"])))
+
+    # Slices can overlap when a run was retried: keep, for each starting timestep, the
+    # longest measurement, and drop anything the retained slices already cover. Stacking
+    # overlapping slices would double-count timesteps and corrupt the state replay.
+    kept, covered = [], set()
+    for r in records:
+        start, n = r["slice_start"], len(r["hw_probs"])
+        # Trim the already-covered prefix rather than discarding the whole slice: a retry
+        # that overlaps by two timesteps still contributes every timestep beyond them.
+        offset = 0
+        while offset < n and (start + offset) in covered:
+            offset += 1
+        if offset >= n:
+            print(f"  skipping {r['job_id'][:8]} ({start}-{start + n - 1} fully covered)")
+            continue
+        if offset:
+            print(f"  trimming {r['job_id'][:8]}: dropping {offset} overlapping timestep(s), "
+                  f"keeping {start + offset}-{start + n - 1}")
+            for key in ("hw_probs", "sim_states", "targets", "input_scaled"):
+                r[key] = r[key][offset:]
+            r["slice_start"] = start + offset
+        kept.append(r)
+        covered |= set(range(r["slice_start"], r["slice_start"] + len(r["hw_probs"])))
+    records = kept
+    gaps = sorted(set(range(min(covered), max(covered) + 1)) - covered) if covered else []
+    if gaps:
+        print(f"  WARNING: {len(gaps)} missing timesteps in {min(covered)}-{max(covered)}; "
+              f"the state replay assumes contiguity")
+    shots = {r["shots"] for r in records}
+    if len(shots) > 1:
+        print(f"  NOTE: slices were measured at different shot counts {sorted(shots)}, so "
+              f"their\n        features carry different noise levels")
 
     hw = np.vstack([np.asarray(r["hw_probs"]) for r in records])
     sim = np.vstack([np.asarray(r["sim_states"]) for r in records])
