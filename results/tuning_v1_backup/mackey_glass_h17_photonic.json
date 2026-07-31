@@ -1,0 +1,36 @@
+{
+  "dataset": "mackey_glass_h17",
+  "model": "photonic",
+  "trials": 150,
+  "params": {
+    "n_modes": 24,
+    "photon_list": [
+      2,
+      3
+    ],
+    "reservoirs_per_photon": 4,
+    "depth": 2,
+    "leak": 0.06784350613928289,
+    "g_in": 0.2547007633226113,
+    "g_fb": 1.1325183909374448,
+    "encode_window": 16,
+    "window": 10,
+    "feedback": false
+  },
+  "raw_params": {
+    "n_modes": 24,
+    "photon_list": "[2,3]",
+    "reservoirs_per_photon": 4,
+    "depth": 2,
+    "leak": 0.06784350613928289,
+    "g_in": 0.2547007633226113,
+    "g_fb": 1.1325183909374448,
+    "encode_window": 16,
+    "window": 10,
+    "feedback": false
+  },
+  "ridge_alpha": 0.1,
+  "val_nrmse": 0.0009824917154601035,
+  "test_nrmse": 0.0004918159844915926,
+  "feature_dim": 9210
+}

@@ -1,0 +1,15 @@
+{
+  "dataset": "narma20",
+  "model": "linear",
+  "trials": 150,
+  "params": {
+    "window": 60
+  },
+  "raw_params": {
+    "window": 60
+  },
+  "ridge_alpha": 1e-09,
+  "val_nrmse": 0.3490119140886926,
+  "test_nrmse": 0.3865104616847991,
+  "feature_dim": 60
+}

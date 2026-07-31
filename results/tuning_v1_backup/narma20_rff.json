@@ -1,0 +1,19 @@
+{
+  "dataset": "narma20",
+  "model": "rff",
+  "trials": 150,
+  "params": {
+    "n_features": 1200,
+    "gamma": 0.0012972382159127174,
+    "window": 40
+  },
+  "raw_params": {
+    "n_features": 1200,
+    "gamma": 0.0012972382159127174,
+    "window": 40
+  },
+  "ridge_alpha": 316.22776601683796,
+  "val_nrmse": 0.4112360603925921,
+  "test_nrmse": 0.3965055262214089,
+  "feature_dim": 1200
+}

@@ -59,6 +59,17 @@ def _photonic_features(trial, u, split):
         "window": trial.suggest_int("window", 1, 40),
         "feedback": trial.suggest_categorical("feedback", [True, False]),
     }
+    # Extra integration timescales read off the same measured probabilities. Whether they
+    # help is task-dependent -- a fixed choice improved NARMA-20 by 12% and degraded
+    # NARMA-10 -- so the number and spacing are searched rather than assumed. Geometric
+    # about the primary leak, which is the scale the feedback loop already runs at.
+    n_scales = trial.suggest_int("n_scales", 0, 3)
+    if n_scales:
+        ratio = trial.suggest_float("scale_ratio", 0.15, 0.7)
+        params["extra_leaks"] = tuple(
+            float(np.clip(params["leak"] * ratio ** (k + 1), 1e-4, 1.0))
+            for k in range(n_scales)
+        )
     model = TemporalPhotonicQRC(washout=split.washout, seed=42, **params)
     return model.build_features(u, n_train=split.n_train), params
 
@@ -105,19 +116,37 @@ BUILDERS = {
 }
 
 
-def tune(dataset: str, model: str, trials: int, seed: int = 0) -> dict:
+def tune(dataset: str, model: str, trials: int, seed: int = 0,
+         objective_seeds: int = 1) -> dict:
     import optuna
 
     optuna.logging.set_verbosity(optuna.logging.WARNING)
     u, y, split = load_task(dataset)
     builder = BUILDERS[model]
 
+    # Selecting on a single validation split overfits it once the trial count is high: at
+    # 250 trials NARMA-20 improved validation from 0.191 to 0.163 while test degraded from
+    # 0.180 to 0.223. Averaging the objective over several data realisations is a better
+    # estimator of generalisation and still never touches the test slice.
+    realisations = []
+    if objective_seeds > 1 and dataset not in {"sp500_rv", "vix", "santa_fe"}:
+        for k in range(objective_seeds):
+            try:
+                realisations.append(load_task(dataset, seed=1000 + k))
+            except TypeError:
+                break
+    if not realisations:
+        realisations = [(u, y, split)]
+
     def objective(trial):
-        try:
-            features, _ = builder(trial, u, split)
-        except (ValueError, np.linalg.LinAlgError) as exc:
-            raise optuna.TrialPruned() from exc
-        score = _val_score(features, y, split)
+        scores = []
+        for uu, yy, sp in realisations:
+            try:
+                features, _ = builder(trial, uu, sp)
+            except (ValueError, np.linalg.LinAlgError) as exc:
+                raise optuna.TrialPruned() from exc
+            scores.append(_val_score(features, yy, sp))
+        score = float(np.mean(scores))
         return score if np.isfinite(score) else float("inf")
 
     study = optuna.create_study(
@@ -150,12 +179,15 @@ def main() -> None:
     ap.add_argument("--model", default="photonic", choices=sorted(BUILDERS) + ["all"])
     ap.add_argument("--trials", type=int, default=150)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--objective-seeds", type=int, default=1,
+                    help="average the search objective over this many data realisations; "
+                         "reduces validation overfitting at high trial counts")
     args = ap.parse_args()
 
     RESULTS.mkdir(parents=True, exist_ok=True)
     models = sorted(BUILDERS) if args.model == "all" else [args.model]
     for name in models:
-        out = tune(args.dataset, name, args.trials, args.seed)
+        out = tune(args.dataset, name, args.trials, args.seed, args.objective_seeds)
         path = RESULTS / f"{args.dataset}_{name}.json"
         path.write_text(json.dumps(out, indent=2))
         print(

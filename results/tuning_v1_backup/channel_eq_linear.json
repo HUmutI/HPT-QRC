@@ -1,0 +1,15 @@
+{
+  "dataset": "channel_eq",
+  "model": "linear",
+  "trials": 100,
+  "params": {
+    "window": 8
+  },
+  "raw_params": {
+    "window": 8
+  },
+  "ridge_alpha": 1e-09,
+  "val_nrmse": 0.1645289124074808,
+  "test_nrmse": 0.17446915658307996,
+  "feature_dim": 8
+}

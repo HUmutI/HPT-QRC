@@ -1,0 +1,36 @@
+{
+  "dataset": "channel_eq",
+  "model": "photonic",
+  "trials": 100,
+  "params": {
+    "n_modes": 24,
+    "photon_list": [
+      2,
+      3
+    ],
+    "reservoirs_per_photon": 7,
+    "depth": 2,
+    "leak": 0.2864603252489552,
+    "g_in": 1.8616331646641802,
+    "g_fb": 1.7396552366720568,
+    "encode_window": 2,
+    "window": 40,
+    "feedback": false
+  },
+  "raw_params": {
+    "n_modes": 24,
+    "photon_list": "[2,3]",
+    "reservoirs_per_photon": 7,
+    "depth": 2,
+    "leak": 0.2864603252489552,
+    "g_in": 1.8616331646641802,
+    "g_fb": 1.7396552366720568,
+    "encode_window": 2,
+    "window": 40,
+    "feedback": false
+  },
+  "ridge_alpha": 31.622776601683793,
+  "val_nrmse": 0.08333672228687926,
+  "test_nrmse": 0.08794234579727704,
+  "feature_dim": 16140
+}

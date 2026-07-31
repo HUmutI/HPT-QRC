@@ -1,0 +1,23 @@
+{
+  "dataset": "lorenz63",
+  "model": "esn",
+  "trials": 150,
+  "params": {
+    "res_size": 1000,
+    "leak": 0.4873681548630404,
+    "spectral_radius": 1.480762297857468,
+    "input_scaling": 2.629140986366104,
+    "sparsity": 0.4182590762860141
+  },
+  "raw_params": {
+    "res_size": 1000,
+    "leak": 0.4873681548630404,
+    "spectral_radius": 1.480762297857468,
+    "input_scaling": 2.629140986366104,
+    "sparsity": 0.4182590762860141
+  },
+  "ridge_alpha": 3.162277660168379e-06,
+  "val_nrmse": 0.030242630698198544,
+  "test_nrmse": 0.13585835119302883,
+  "feature_dim": 1001
+}

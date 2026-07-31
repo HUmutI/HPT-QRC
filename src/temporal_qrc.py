@@ -58,6 +58,7 @@ class PhotonicReservoir:
         g_in: float = np.pi,
         g_fb: float = np.pi,
         feedback: bool = True,
+        extra_leaks: tuple = (),
         seed: int = 42,
         noise_spec=None,
         n_samples: int | None = None,
@@ -77,6 +78,11 @@ class PhotonicReservoir:
                 seed=seed,
             )
         self.leak = float(leak)
+        # Additional integration timescales applied to the *same* measured probabilities.
+        # Memory capacity here is limited by a single exponential time constant (measured 11
+        # against an echo state network's 27-30); a bank of leak rates gives multi-scale
+        # memory. On hardware this is free: identical measurements, extra post-processing.
+        self.extra_leaks = tuple(float(x) for x in extra_leaks)
         self.g_in = float(g_in)
         self.g_fb = float(g_fb)
         self.feedback = bool(feedback)
@@ -101,7 +107,7 @@ class PhotonicReservoir:
 
     @property
     def output_size(self) -> int:
-        return self.state_size
+        return self.state_size * (1 + len(self.extra_leaks))
 
     def run(self, u: np.ndarray, state0: np.ndarray | None = None) -> np.ndarray:
         """Drive the reservoir with ``u`` of shape ``(T, input_dim)``; return states ``(T, P)``.
@@ -121,16 +127,35 @@ class PhotonicReservoir:
 
         if not self.feedback:
             # Stateless: every timestep is independent, so the whole sequence is one batch.
-            return self.optics.probabilities(drive)
+            probs = self.optics.probabilities(drive)
+            return self._integrate(probs) if self.extra_leaks else probs
 
         states = np.empty((len(u), self.state_size))
+        probs = np.empty((len(u), self.state_size))
         size = self.state_size
         for t in range(len(u)):
             phases = drive[t] + self.g_fb * (self.w_fb @ (size * state - 1.0))
             p = self.optics.probabilities(phases)
+            probs[t] = p
             state = (1.0 - self.leak) * state + self.leak * p
             states[t] = state
-        return states
+        if not self.extra_leaks:
+            return states
+        # Feedback still runs at the primary leak rate; the extra timescales are read out
+        # alongside it, so the dynamics are unchanged and only the readout widens.
+        return np.hstack([states] + [self._integrate_at(probs, r) for r in self.extra_leaks])
+
+    def _integrate_at(self, probs: np.ndarray, rate: float) -> np.ndarray:
+        """Leaky integration of an already-measured probability sequence."""
+        out = np.empty_like(probs)
+        state = np.full(probs.shape[1], 1.0 / probs.shape[1])
+        for t in range(len(probs)):
+            state = (1.0 - rate) * state + rate * probs[t]
+            out[t] = state
+        return out
+
+    def _integrate(self, probs: np.ndarray) -> np.ndarray:
+        return np.hstack([probs] + [self._integrate_at(probs, r) for r in self.extra_leaks])
 
 
 class TemporalPhotonicQRC:
@@ -168,6 +193,7 @@ class TemporalPhotonicQRC:
         g_in: float = np.pi,
         g_fb: float = np.pi,
         feedback: bool = True,
+        extra_leaks: tuple = (),
         encode_window: int = 1,
         window: int = 10,
         use_quantum: bool = True,
@@ -187,9 +213,15 @@ class TemporalPhotonicQRC:
         self.reservoirs_per_photon = int(reservoirs_per_photon)
         self.depth = int(depth)
         self.leak = float(leak)
+        # Additional integration timescales applied to the *same* measured probabilities.
+        # Memory capacity here is limited by a single exponential time constant (measured 11
+        # against an echo state network's 27-30); a bank of leak rates gives multi-scale
+        # memory. On hardware this is free: identical measurements, extra post-processing.
+        self.extra_leaks = tuple(float(x) for x in extra_leaks)
         self.g_in = float(g_in)
         self.g_fb = float(g_fb)
         self.feedback = bool(feedback)
+        self.extra_leaks = tuple(extra_leaks)
         self.encode_window = int(encode_window)
         self.window = int(window)
         self.use_quantum = bool(use_quantum)
@@ -226,6 +258,7 @@ class TemporalPhotonicQRC:
                         g_in=self.g_in,
                         g_fb=self.g_fb,
                         feedback=self.feedback,
+                        extra_leaks=self.extra_leaks,
                         seed=self.seed + 1000 * k,
                         noise_spec=self.noise_spec,
                         n_samples=self.n_samples,

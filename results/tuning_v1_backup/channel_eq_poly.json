@@ -1,0 +1,17 @@
+{
+  "dataset": "channel_eq",
+  "model": "poly",
+  "trials": 100,
+  "params": {
+    "window": 8,
+    "degree": 2
+  },
+  "raw_params": {
+    "window": 8,
+    "degree": 2
+  },
+  "ridge_alpha": 10.0,
+  "val_nrmse": 0.14751253692112304,
+  "test_nrmse": 0.15596829447751798,
+  "feature_dim": 44
+}

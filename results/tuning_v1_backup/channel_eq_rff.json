@@ -1,0 +1,19 @@
+{
+  "dataset": "channel_eq",
+  "model": "rff",
+  "trials": 100,
+  "params": {
+    "n_features": 1200,
+    "gamma": 0.009445388292171501,
+    "window": 6
+  },
+  "raw_params": {
+    "n_features": 1200,
+    "gamma": 0.009445388292171501,
+    "window": 6
+  },
+  "ridge_alpha": 0.0031622776601683794,
+  "val_nrmse": 0.14197185352427572,
+  "test_nrmse": 0.15024419697609628,
+  "feature_dim": 1200
+}

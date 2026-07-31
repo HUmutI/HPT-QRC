@@ -1,23 +1,23 @@
 {
   "dataset": "narma5",
   "model": "esn",
-  "trials": 150,
+  "trials": 250,
   "params": {
     "res_size": 1000,
-    "leak": 0.8883919656991581,
-    "spectral_radius": 0.6440163285337387,
-    "input_scaling": 0.04388891766966369,
-    "sparsity": 0.0353609563794342
+    "leak": 0.9226507352180228,
+    "spectral_radius": 0.6041965965969451,
+    "input_scaling": 0.037135006174266495,
+    "sparsity": 0.9017517564312134
   },
   "raw_params": {
     "res_size": 1000,
-    "leak": 0.8883919656991581,
-    "spectral_radius": 0.6440163285337387,
-    "input_scaling": 0.04388891766966369,
-    "sparsity": 0.0353609563794342
+    "leak": 0.9226507352180228,
+    "spectral_radius": 0.6041965965969451,
+    "input_scaling": 0.037135006174266495,
+    "sparsity": 0.9017517564312134
   },
-  "ridge_alpha": 3.1622776601683795e-09,
-  "val_nrmse": 0.010793745757601083,
-  "test_nrmse": 0.010859449419613067,
+  "ridge_alpha": 1e-09,
+  "val_nrmse": 0.010482541960548247,
+  "test_nrmse": 0.010297453615609556,
   "feature_dim": 1001
 }

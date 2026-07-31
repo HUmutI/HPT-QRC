@@ -1,0 +1,19 @@
+{
+  "dataset": "sp500_rv",
+  "model": "rff",
+  "trials": 150,
+  "params": {
+    "n_features": 300,
+    "gamma": 0.03354373550784761,
+    "window": 9
+  },
+  "raw_params": {
+    "n_features": 300,
+    "gamma": 0.03354373550784761,
+    "window": 9
+  },
+  "ridge_alpha": 316.22776601683796,
+  "val_nrmse": 0.7745626712515399,
+  "test_nrmse": 0.7274497082715566,
+  "feature_dim": 300
+}

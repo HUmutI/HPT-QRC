@@ -1,7 +1,7 @@
 {
   "dataset": "channel_eq",
   "model": "linear",
-  "trials": 100,
+  "trials": 250,
   "params": {
     "window": 8
   },

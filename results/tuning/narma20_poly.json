@@ -1,7 +1,7 @@
 {
   "dataset": "narma20",
   "model": "poly",
-  "trials": 150,
+  "trials": 250,
   "params": {
     "window": 24,
     "degree": 2
@@ -11,7 +11,7 @@
     "degree": 2
   },
   "ridge_alpha": 10.0,
-  "val_nrmse": 0.5736232017406463,
+  "val_nrmse": 0.5736232017406477,
   "test_nrmse": 0.5802184195149327,
   "feature_dim": 324
 }

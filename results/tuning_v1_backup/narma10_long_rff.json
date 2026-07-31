@@ -1,0 +1,19 @@
+{
+  "dataset": "narma10_long",
+  "model": "rff",
+  "trials": 60,
+  "params": {
+    "n_features": 1200,
+    "gamma": 0.001005999426755134,
+    "window": 26
+  },
+  "raw_params": {
+    "n_features": 1200,
+    "gamma": 0.001005999426755134,
+    "window": 26
+  },
+  "ridge_alpha": 3.1622776601683795,
+  "val_nrmse": 0.07736976265559624,
+  "test_nrmse": 0.23360354133042055,
+  "feature_dim": 1200
+}

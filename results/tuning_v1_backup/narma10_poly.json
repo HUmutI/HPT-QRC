@@ -1,0 +1,17 @@
+{
+  "dataset": "narma10",
+  "model": "poly",
+  "trials": 150,
+  "params": {
+    "window": 26,
+    "degree": 2
+  },
+  "raw_params": {
+    "window": 26,
+    "degree": 2
+  },
+  "ridge_alpha": 1e-09,
+  "val_nrmse": 0.16942023516661614,
+  "test_nrmse": 0.13668313479066144,
+  "feature_dim": 377
+}

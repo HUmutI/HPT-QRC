@@ -1,0 +1,19 @@
+{
+  "dataset": "parity_d3",
+  "model": "rff",
+  "trials": 100,
+  "params": {
+    "n_features": 1200,
+    "gamma": 0.5158989502769578,
+    "window": 6
+  },
+  "raw_params": {
+    "n_features": 1200,
+    "gamma": 0.5158989502769578,
+    "window": 6
+  },
+  "ridge_alpha": 1e-09,
+  "val_nrmse": 3.425023404233902e-14,
+  "test_nrmse": 2.845632426399482e-14,
+  "feature_dim": 1200
+}

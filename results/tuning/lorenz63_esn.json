@@ -1,7 +1,7 @@
 {
   "dataset": "lorenz63",
   "model": "esn",
-  "trials": 150,
+  "trials": 250,
   "params": {
     "res_size": 1000,
     "leak": 0.4873681548630404,
@@ -17,7 +17,7 @@
     "sparsity": 0.4182590762860141
   },
   "ridge_alpha": 3.162277660168379e-06,
-  "val_nrmse": 0.030242630698198544,
+  "val_nrmse": 0.03024263478375371,
   "test_nrmse": 0.13585835119302883,
   "feature_dim": 1001
 }

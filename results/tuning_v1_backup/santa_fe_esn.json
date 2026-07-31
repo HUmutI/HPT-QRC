@@ -1,0 +1,23 @@
+{
+  "dataset": "santa_fe",
+  "model": "esn",
+  "trials": 100,
+  "params": {
+    "res_size": 1000,
+    "leak": 0.5620497928408382,
+    "spectral_radius": 1.403705064784813,
+    "input_scaling": 1.0550470737321442,
+    "sparsity": 0.7919227365465646
+  },
+  "raw_params": {
+    "res_size": 1000,
+    "leak": 0.5620497928408382,
+    "spectral_radius": 1.403705064784813,
+    "input_scaling": 1.0550470737321442,
+    "sparsity": 0.7919227365465646
+  },
+  "ridge_alpha": 0.03162277660168379,
+  "val_nrmse": 0.022348456764715773,
+  "test_nrmse": 0.05910800067231122,
+  "feature_dim": 1001
+}

@@ -1,0 +1,19 @@
+{
+  "dataset": "henon",
+  "model": "rff",
+  "trials": 100,
+  "params": {
+    "n_features": 1200,
+    "gamma": 27.53131571132338,
+    "window": 2
+  },
+  "raw_params": {
+    "n_features": 1200,
+    "gamma": 27.53131571132338,
+    "window": 2
+  },
+  "ridge_alpha": 1e-09,
+  "val_nrmse": 0.00010570280996882061,
+  "test_nrmse": 8.065524680854737e-05,
+  "feature_dim": 1200
+}

@@ -1,0 +1,36 @@
+{
+  "dataset": "henon",
+  "model": "photonic",
+  "trials": 100,
+  "params": {
+    "n_modes": 20,
+    "photon_list": [
+      2,
+      3
+    ],
+    "reservoirs_per_photon": 5,
+    "depth": 2,
+    "leak": 0.2368089779488015,
+    "g_in": 2.661098056071011,
+    "g_fb": 0.06346376142507679,
+    "encode_window": 2,
+    "window": 21,
+    "feedback": false
+  },
+  "raw_params": {
+    "n_modes": 20,
+    "photon_list": "[2,3]",
+    "reservoirs_per_photon": 5,
+    "depth": 2,
+    "leak": 0.2368089779488015,
+    "g_in": 2.661098056071011,
+    "g_fb": 0.06346376142507679,
+    "encode_window": 2,
+    "window": 21,
+    "feedback": false
+  },
+  "ridge_alpha": 3.1622776601683795e-09,
+  "val_nrmse": 1.8671334511131832e-05,
+  "test_nrmse": 1.691531119152301e-05,
+  "feature_dim": 6671
+}

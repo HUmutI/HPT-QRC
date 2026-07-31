@@ -1,0 +1,19 @@
+{
+  "dataset": "mackey_glass_h17",
+  "model": "rff",
+  "trials": 150,
+  "params": {
+    "n_features": 300,
+    "gamma": 0.17729039070997776,
+    "window": 14
+  },
+  "raw_params": {
+    "n_features": 300,
+    "gamma": 0.17729039070997776,
+    "window": 14
+  },
+  "ridge_alpha": 0.0001,
+  "val_nrmse": 0.0016515547651590257,
+  "test_nrmse": 0.00087199133088002,
+  "feature_dim": 300
+}
