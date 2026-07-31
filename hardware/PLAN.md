@@ -1,87 +1,77 @@
-# Hardware execution plan — Quandela QPU
+# Hardware execution — plan and outcome
 
-**Status: implemented and rehearsed; blocked on platform availability.**
-Both `qpu:ascella` and `qpu:belenos` have reported `status: maintenance` throughout this
-work. Nothing in `results/` is a QPU measurement.
+**Status: complete.** 126 timesteps collected on `qpu:belenos` across eight submitted jobs.
+Results in `README.md` §7 and `hardware/results/qpu_combined.json`. This file records the
+plan, what it cost, and what the execution taught us — the operational findings are the part
+worth reading before repeating any of it.
 
-This file replaces the original Ascella-only plan, which was written before any hardware
-code existed and before the coincidence-rate problem was measured.
+## 1. What the first attempt taught us
 
-## 1. What the earlier attempt taught us
-
-A three-photon, eight-mode configuration was run on **Belenos** (not Ascella, despite what
-the older docs said):
+A three-photon, eight-mode configuration run on Belenos in July 2026:
 
 | Observation | Value |
 |---|---|
 | Requested shots per timestep | 1 000 |
 | Raw counts returned | 39–63 |
-| Counts surviving unbunched post-selection | 21–36, spread over 56 Fock bins |
-| `physical_perf` | 3.9e-5 – 6.2e-5 |
-| Correlation of hardware features vs simulation | **0.18 – 0.48** |
+| Counts surviving unbunched post-selection | 21–36, over 56 Fock bins |
+| Correlation of hardware features vs simulation | **0.18–0.48** |
 
-The features were dominated by sampling noise. This is not a calibration problem — it is the
-`transmittance^n` scaling of n-fold coincidences, and the fix is fewer photons, not more
-shots.
+Sampling noise, not calibration: the `transmittance^n` scaling of n-fold coincidences. The fix
+is fewer photons, not more shots.
 
-A second job (`96baa2b6-da73-41c8-aa12-beb9cd39650a`) was **cancelled by the platform at
-307 s having completed 4 %** of its iterations: the free tier's 5-minute per-job cap.
+## 2. Design consequences, and how they turned out
 
-## 2. Design consequences
+| Choice | Reason | Measured outcome |
+|---|---|---|
+| **2 photons**, not 3 | rate rises by `1/transmittance` | 390× more counts; correlation 0.33 → 0.805–0.844 |
+| 10 modes | enough Fock bins, good per-bin statistics | 45 bins, drop rate 0.14–0.15 |
+| depth 1 | loss compounds with depth | — |
+| `max_shots_per_call` ~2e6 | old default `10 × shots` starved post-selection | avoids the credit auto-adjustment entirely |
+| Sliced submission | 5-minute execution cap | ~20 timesteps per job |
 
-| Choice | Reason |
-|---|---|
-| **2 photons**, not 3 | Coincidence rate rises by `1/transmittance` ≈ 40×. Ascella: 4.8e4/s at n=2 vs 1.2e3/s at n=3. |
-| **Ascella preferred** over Belenos | 80 MHz vs 4.94 MHz clock; g² 1.95 % vs 18.2 %. |
-| 10–12 modes | Enough Fock bins for a useful state, few enough for good per-bin statistics. |
-| depth 1 | Loss compounds with depth, and depth bought no accuracy in simulation. |
-| `max_shots_per_call` ≈ 1e7 | The old default of `10 × shots` starved the post-selection it then performed. |
-| Chunked submission | The 5-minute cap. Each chunk caches independently so an interrupted run resumes. |
+## 3. The constraint we did not anticipate
 
-The noise study (`experiments/noise_study.py`) shows indistinguishability and g² barely
-matter for this model, while shots dominate — so the budget should be spent entirely on
-coincidence rate.
+Per-timestep wall time is **~14 s regardless of shot count** — 13.7 s at 2×10⁴ shots, 14.4 s at
+5×10³, 15.2 s at 2×10⁴. The chip is limited by thermo-optic phase-shifter settling between
+circuit configurations, not by collecting photons.
 
-## 3. Shot budget
+This inverts the tradeoff that holds in simulation. There, shots are the expensive axis and you
+buy timesteps by lowering them. On hardware, shots are nearly free in wall-clock terms and
+**timesteps are the scarce resource**: any five-minute job yields ~20 of them whatever you
+request. A reservoir needing one configuration per timestep is latency-bound by reconfiguration.
 
-Target 3×10⁴ coincidences per timestep, where simulation shows the reservoir still beats its
-classical control.
+## 4. Budget reality
 
-| Platform | n | Rate | Time per timestep | 600 timesteps |
-|---|---|---|---|---|
-| Ascella | 2 | 4.8e4/s | 0.63 s | ~6 min |
-| Belenos | 2 | 1.2e4/s | 2.6 s | ~26 min |
-| Ascella | 3 | 1.2e3/s | 26 s | ~4.3 h |
+Credits, not time, cap the shot budget. Requests were auto-reduced repeatedly (1.2e9 → 1.18e8,
+1.8e8 → 1.01e8, 4.8e8 → 8.6e7). At two photons this still delivered 4–20×10³ coincidences per
+timestep — six to eight times below the ~3×10⁴ that simulation says is needed to beat the
+classical control. **A hardware accuracy result in the winning regime is not affordable on the
+free tier**; the ask would be roughly 30× the shot budget for one 126-step run.
 
-At two photons this fits comfortably inside a booked free slot. At three it does not.
+## 5. Operational findings
 
-## 4. Protocols
+- **Platform status is not an availability signal.** Both QPUs reported `maintenance` while the
+  API accepted and queued jobs. Only attempting a submission is informative.
+- **HTTP 400 is ambiguous.** Quandela returns it both when creating a job with an auto-reduced
+  shot budget and when rejecting one. Requesting a budget *below* the granted ceiling avoids
+  the adjustment and returns a clean job id. Submitting blind on a 400 orphaned several jobs.
+- **Cancelled jobs still return data.** A job killed by the five-minute cap returns the
+  iterations it finished; discarding them throws away real measurements.
+- **Slices must share one phase trajectory.** `total_steps` sets `n_train`, which sets the input
+  scaler, which sets the encoding phases. `combine_qpu_slices.py` refuses to stitch across
+  trajectories.
+- **One queued job at a time** on the free tier; a second submission returns HTTP 400.
 
-Closed-loop feedback cannot be batched into one cloud job, since step *t*'s phases depend on
-step *t−1*'s measurement. Both of these are run and both are reported:
-
-- **`replay`** — the recurrence runs in simulation to produce the phase trajectory, which is
-  replayed on hardware as one batched job; the readout is trained on hardware-measured
-  features. The chip's feature map is measured faithfully, but **the feedback path is
-  simulated** and must be described that way.
-- **`openloop`** — feedback disabled; every timestep independent, so the run is genuinely
-  end-to-end on hardware. Weaker model, stronger claim.
-
-## 5. Run order
+## 6. Run order
 
 ```bash
 python -m pytest tests/ -q                                   # core must match MerLin
 python hardware/compare_sim_local.py                         # zero-cost gate
-python hardware/run_reservoir_hw.py --local --steps 600       # free rehearsal
-python hardware/run_reservoir_hw.py --platform sim:slos --steps 100   # cloud rehearsal
-python hardware/run_reservoir_hw.py --platform qpu:ascella --steps 600 --shots 30000
+python hardware/submit_qpu_run.py --platform qpu:belenos --steps 144 \
+       --slice-start 0 --slice-len 20 --shots 4000 --max-shots-per-call 2000000
+python hardware/fetch_qpu_run.py                             # harvest, any time, any machine
+python hardware/combine_qpu_slices.py                        # stitch and fit the readouts
 ```
 
-Start with a 10-step probe on the QPU to measure the actual coincidence rate before
-committing the full run; the extrapolation in section 3 assumes the published transmittance.
-
-## 6. Account limits
-
-Free tier: 200 credits/month, **5 minutes per job**, one queued job at a time, bookable free
-QPU slots (`bookable: true` on both platforms). Shots are the billing unit — a shot is any
-detected event containing at least one photon.
+Submit and harvest are separate because the queue runs to hours and a laptop will not stay
+awake for it. Size from the *measured* coincidence rate, not the published transmittance.

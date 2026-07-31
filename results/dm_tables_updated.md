@@ -1,3 +1,8 @@
+> **RETRACTED — v1/v2 artifact.** Produced under the autoregressive protocol and
+> against an echo state network with no input-scaling parameter. Not comparable to the
+> reservoir-computing literature and not quoted anywhere in the paper or README. Kept for
+> provenance only; see `results/CHANGELOG.md`. Current tests live in `results/advanced/`.
+
 
 ### Diebold-Mariano Test (S&P 500 - MSE)
 
@@ -94,4 +99,3 @@
 | **LSTMX** | `11.164` | `12.230` | `12.109` | `-5.373` | `-2.865` | `10.942` | `10.884` | `12.227` |  | `0.009` | `0.000` |
 | **RCX** | `3.063` | `3.122` | `3.116` | `2.090` | `0.060` | `3.064` | `3.049` | `3.122` | `2.607` |  | `0.002` |
 | **HPT-QRC-X** | `-0.427` | `9.623` | `9.178` | `-7.624` | `-3.397` | `1.099` | `-2.166` | `9.626` | `-10.947` | `-3.064` |  |
-

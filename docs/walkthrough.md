@@ -92,32 +92,89 @@ independently at every timestep and no readout can absorb it.
 That yields a design rule that inverts the usual instinct — optimise for coincidence rate,
 not photon quality — and a concrete threshold, since rate falls as `transmittance^n`.
 
+## Is it the interference?
+
+A reviewer will ask whether the quantum part matters or whether any random nonlinear map
+would do. The clean version of that question is answerable inside the model: Perceval's
+partial-distinguishability parameter interpolates between `perm(|U|²)` (I = 0, classical
+particles, no interference) and `|perm(U)|²` (I = 1, full interference), holding the circuit,
+the encoding, the state and the readout fixed. Paired across seeds, in the infinite-shot
+limit so sampling noise cannot mask the effect (`experiments/quantumness.py`).
+
+Interference contributes nothing measurable. What carries the performance is the structure of
+the feature map — the combinatorial expansion into `C(m, n)` Fock bins under a phase-encoded
+unitary — not two-photon interference. Reporting this as a null result is the honest framing
+and pre-empts the objection rather than inviting it.
+
+## When would a chip actually pay?
+
+`experiments/crossover.py` compares the cost of classically simulating the map against
+running it, and solves for the transmittance at which the device wins. The answer is a
+concrete number rather than a hand-wave, and at present hardware transmittance it is not met.
+
+## Multi-timescale integration
+
+The measured probabilities can be integrated at several leak rates at once, which costs
+nothing on hardware — it is post-processing of an already-collected sequence. Whether it
+helps is task-dependent (a fixed choice improved NARMA-20 by 12 % and degraded NARMA-10), so
+the number of extra timescales and their geometric spacing about the primary leak are
+searched rather than assumed.
+
+## Two bugs that nearly became findings
+
+**`matched_capacity.py` popped `feedback` from the tuned parameters** before sweeping the
+ensemble width. Tasks whose search chose `feedback=False` were therefore swept with the
+default `True` — a different model from the one that was tuned. The symptom was photonic
+0.2116 in the tuned run against 0.9436 in the sweep, collapsing monotonically as features
+were *added*. Taken at face value it would have been published as "the kernel-regime
+objection is confirmed". Two conclusions flipped back in the model's favour once fixed.
+
+**`temporal_parity` indexed forward from `t`**, so the target depended on inputs the model had
+not seen. Every model scored NRMSE ≈ 1.0 and it looked like a hard benchmark rather than an
+unsolvable one. `tests/test_tasks.py::test_every_task_is_learnable` now guards this.
+
+The pattern in both cases: a structurally impossible number — error rising as capacity rises;
+every model at exactly chance — is the diagnostic. Three separate bugs this project were
+caught that way, and none by inspection.
+
+**Search overfits the validation split at high trial counts.** At 250 trials NARMA-20 improved
+validation from 0.191 to 0.163 while test degraded from 0.180 to 0.223. The objective now
+averages over several data realisations, which is a better generalisation estimator and still
+never touches the test slice.
+
 ## Open items
 
-- **Hardware.** Both QPUs have been in `maintenance` throughout.
-  `hardware/run_reservoir_hw.py` is written and rehearsed locally and against the cloud
-  simulator. Protocol caveat: closed-loop feedback cannot be batched into one cloud job, so
-  the `replay` protocol simulates the feedback path and replays the resulting phase
-  trajectory on the chip. The `openloop` variant is fully on-device but is the weaker model.
-  Both must be reported.
-- **`R²_OS` and the Patton log-RV bias correction** are specified in `docs/PROTOCOL.md` §5
-  and still unimplemented. Only relevant to S&P 500, where no model is distinguishable.
+- **Hardware accuracy is shot-starved, not wrong.** 126 timesteps collected on `qpu:belenos`
+  at 2 photons / 10 modes; hardware features correlate 0.805–0.844 with simulation across
+  three shot counts, so the two-photon design is validated by measurement. But the free-tier
+  credit ceiling caps coincidences at 4–20×10³ per timestep against the ~3×10⁴ simulation
+  says is needed, and the combined run has 66 training rows against 65 features. The
+  hardware section reports the feature-level agreement and the shot-limited prediction
+  confirmed on silicon; it cannot claim an accuracy win. See `hardware/PLAN.md`.
+- **Reconfiguration, not photon collection, is the hardware bottleneck** — ~14 s per timestep
+  independent of shot count. This inverts the usual tradeoff: shots are nearly free in
+  wall-clock terms and timesteps are the scarce resource.
+- **`R²_OS` and the Patton log-RV bias correction** are specified in `docs/PROTOCOL.md` §5;
+  `r2_oos` is implemented in `src/rc_protocol.py`, the Patton correction is not. Only
+  relevant to S&P 500, where no model is distinguishable.
 - **Walk-forward CV** has not been re-run under the new protocol. The v2 result (photonic 7th
   of 8) is retracted along with the rest of v2, so current S&P 500 evidence is the
   fixed-split result only.
-- **Santa Fe laser** was planned as an additional standard photonic-RC benchmark and has not
-  been added; the dataset is not vendored here.
 - **MCS has little power at these sample sizes.** With 200–600 test points it retains almost
   every model on every task. DM-HAC is the informative test, and the paper should say so
   rather than present the MCS as if it were discriminating.
 
 ## Positioning
 
-Defensible claims: a recurrent linear-optical reservoir beats tuned classical feature maps on
-NARMA-10 and NARMA-20 at matched feature dimension, with DM-HAC p < 0.001; recurrence
-accounts for roughly half the error; and accuracy is essentially unaffected by device
-imperfections at measured Ascella/Belenos levels while being strongly limited by coincidence
-count, which gives both a design rule and a feasibility threshold.
+Defensible claims: a recurrent linear-optical reservoir beats *equally tuned* classical
+feature maps on most of the eight tasks at matched feature dimension, with DM-HAC p-values to
+back it; recurrence accounts for roughly half the error; accuracy is essentially unaffected
+by device imperfections at measured Ascella/Belenos levels while being strongly limited by
+coincidence count, which gives both a design rule and a feasibility threshold; the
+shot-limited prediction was then confirmed on Belenos, with hardware features correlating
+0.82 with simulation.
 
-Claims to avoid: anything about quantum advantage, anything about S&P 500, and anything about
-hardware until a chip is available.
+Claims to avoid: anything about quantum advantage; that interference is the mechanism (it
+measurably is not); that the model wins on Santa Fe or S&P 500 (it does not — the ESN does);
+and any hardware *accuracy* claim, since the collected run is data-starved at 66 rows against
+65 features.
