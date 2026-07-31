@@ -3,30 +3,30 @@
 % Requires siunitx for \num.
 
 \newcommand{\PaperTableBenchmarks}{%
-\begin{tabular}{lrrrrrr}
+\begin{tabular}{lrrrr}
 \toprule
-Model & NARMA-5 & NARMA-10 & NARMA-20 & Mackey-Glass ($h{=}17$) & Lorenz-63 ($h{=}20$) & S\&P 500 RV \\
+Model & Santa Fe laser & Channel eq. & Parity ($d{=}3$) & H\'enon ($h{=}4$) \\
 \midrule
-Photonic (recurrent) & 0.0152 (0.0043) & \textbf{0.0951 (0.0168)} & \textbf{0.2409 (0.0456)} & \textbf{0.0005 (0.0005)} & 0.2810 (0.1638) & 0.6993 (0.0015) \\
-Photonic (no feedback) & 0.0152 (0.0043)$^{\dagger}$ & 0.2156 (0.0322) & 0.4355 (0.1280) & 0.0005 (0.0005)$^{\dagger}$ & 0.2821 (0.1365) & 0.6993 (0.0015)$^{\dagger}$ \\
-Echo state network & \textbf{0.0109 (0.0023)} & 0.2794 (0.1108) & 0.4132 (0.1119) & 0.0005 (0.0002) & 0.3396 (0.7024) & \textbf{0.6823 (0.0014)} \\
-Random Fourier features & 0.0164 (0.0023) & 0.1759 (0.0538) & 0.4347 (0.0821) & 0.0014 (0.0016) & \textbf{0.2110 (0.5884)} & 0.7274 (0.0135) \\
-Polynomial window & 0.0158 (0.0033) & 0.1763 (0.0460) & 0.4741 (0.1844) & 0.0204 (0.0146) & 3.3614 (2.6976) & 0.7045 (0.0000) \\
-Linear window (control) & 0.3801 (0.0450) & 0.4446 (0.0904) & 0.4495 (0.0969) & 0.6176 (0.0592) & 0.9187 (0.0376) & 0.6957 (0.0000) \\
+Photonic (recurrent) & \textbf{0.0596 (0.0008)} & \textbf{0.0871 (0.0034)} & \textbf{\num{6.0e-15} (\num{4.5e-16})} & \textbf{\num{1.7e-05} (\num{5.8e-06})} \\
+Photonic (no feedback) & 0.0596 (0.0008)$^{\dagger}$ & 0.0871 (0.0034)$^{\dagger}$ & \num{6.0e-15} (\num{4.5e-16})$^{\dagger}$ & \num{1.7e-05} (\num{5.8e-06})$^{\dagger}$ \\
+Echo state network & 0.0607 (0.0070) & 0.1026 (0.0060) & 0.0006 (\num{4.5e-05}) & 0.0085 (0.0007) \\
+Random Fourier features & 0.0628 (0.0006) & 0.1488 (0.0015) & \num{3.0e-14} (\num{1.5e-15}) & \num{8.3e-05} (\num{1.7e-05}) \\
+Polynomial window & 0.0946 (0.0000) & 0.1512 (0.0058) & \num{4.6e-13} (\num{2.8e-14}) & 0.8425 (0.0105) \\
+Linear window (control) & 0.4452 (0.0000) & 0.1720 (0.0065) & 0.9999 (0.0017) & 0.9845 (0.0240) \\
 \bottomrule
 \end{tabular}
 }
 
 \newcommand{\PaperTableDM}{%
-\begin{tabular}{lrrrrrrrr}
+\begin{tabular}{lrrrrrrrrrr}
 \toprule
-Baseline vs photonic & NARMA-5 & NARMA-10 & NARMA-20 & Mackey-Glass ($h{=}17$) & Lorenz-63 ($h{=}20$) & S\&P 500 RV & Santa Fe laser & Channel eq. \\
+Baseline vs photonic & NARMA-5 & NARMA-10 & NARMA-20 & Mackey-Glass ($h{=}17$) & Lorenz-63 ($h{=}20$) & S\&P 500 RV & Santa Fe laser & Channel eq. & Parity ($d{=}3$) & H\'enon ($h{=}4$) \\
 \midrule
-Photonic (no feedback) & 1.0000 & 0.0002 & 0.0000 & 1.0000 & 0.4788 & 1.0000 & 1.0000 & 1.0000 \\
-Echo state network & 0.0572 & 0.0000 & 0.0000 & 0.4062 & 0.0248 & 0.4451 & 0.9035 & 0.0293 \\
-Random Fourier features & 0.3226 & 0.0002 & 0.0000 & 0.0004 & 0.9599 & 0.2880 & 0.1349 & 0.0000 \\
-Polynomial window & 0.1876 & 0.0001 & 0.0000 & 0.0002 & 0.0034 & 0.7888 & 0.0103 & 0.0000 \\
-Linear window (control) & 0.0000 & 0.0000 & 0.0000 & 0.0000 & 0.0000 & 0.8776 & 0.0000 & 0.0000 \\
+Photonic (no feedback) & 1.0000 & 0.0002 & 0.0000 & 1.0000 & 0.4788 & 1.0000 & 1.0000 & 1.0000 & 1.0000 & 1.0000 \\
+Echo state network & 0.0572 & 0.0000 & 0.0000 & 0.4062 & 0.0248 & 0.4451 & 0.9035 & 0.0293 & 0.0000 & 0.0005 \\
+Random Fourier features & 0.3226 & 0.0002 & 0.0000 & 0.0004 & 0.9599 & 0.2880 & 0.1349 & 0.0000 & 0.0000 & 0.0161 \\
+Polynomial window & 0.1876 & 0.0001 & 0.0000 & 0.0002 & 0.0034 & 0.7888 & 0.0103 & 0.0000 & 0.0000 & 0.0000 \\
+Linear window (control) & 0.0000 & 0.0000 & 0.0000 & 0.0000 & 0.0000 & 0.8776 & 0.0000 & 0.0000 & 0.0000 & 0.0000 \\
 \bottomrule
 \end{tabular}
 }

@@ -82,8 +82,11 @@ def main() -> None:
     tuned = Path(__file__).resolve().parents[1] / "results" / "tuning" / f"{args.dataset}_photonic.json"
     if tuned.exists():
         base = json.loads(tuned.read_text())["params"]
+        # Only the ensemble width may vary -- that is the axis being swept. Dropping any
+        # other tuned parameter silently substitutes a different model: `feedback` was
+        # being popped here, so tasks whose search chose feedback=False were swept with the
+        # default True and scored far worse than their own tuned result.
         base.pop("reservoirs_per_photon", None)
-        base.pop("feedback", None)
     else:
         base = dict(n_modes=12, photon_list=(2,), depth=1, leak=0.1, g_in=0.1, g_fb=0.3,
                     encode_window=10, window=20)
