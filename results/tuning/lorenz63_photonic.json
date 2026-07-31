@@ -1,7 +1,7 @@
 {
   "dataset": "lorenz63",
   "model": "photonic",
-  "trials": 150,
+  "trials": 250,
   "params": {
     "n_modes": 24,
     "photon_list": [
@@ -9,29 +9,30 @@
       3,
       4
     ],
-    "reservoirs_per_photon": 4,
-    "depth": 1,
-    "leak": 0.34400278487553554,
-    "g_in": 1.8366725031163436,
-    "g_fb": 0.20698924018665077,
-    "encode_window": 9,
-    "window": 19,
+    "reservoirs_per_photon": 8,
+    "depth": 2,
+    "leak": 0.23139333788076735,
+    "g_in": 2.647758205109911,
+    "g_fb": 0.1515637131722355,
+    "encode_window": 1,
+    "window": 28,
     "feedback": true
   },
   "raw_params": {
     "n_modes": 24,
     "photon_list": "[2,3,4]",
-    "reservoirs_per_photon": 4,
-    "depth": 1,
-    "leak": 0.34400278487553554,
-    "g_in": 1.8366725031163436,
-    "g_fb": 0.20698924018665077,
-    "encode_window": 9,
-    "window": 19,
-    "feedback": true
+    "reservoirs_per_photon": 8,
+    "depth": 2,
+    "leak": 0.23139333788076735,
+    "g_in": 2.647758205109911,
+    "g_fb": 0.1515637131722355,
+    "encode_window": 1,
+    "window": 28,
+    "feedback": true,
+    "n_scales": 0
   },
-  "ridge_alpha": 31.622776601683793,
-  "val_nrmse": 0.01655431496485641,
-  "test_nrmse": 0.08556391161351198,
-  "feature_dim": 51723
+  "ridge_alpha": 0.00031622776601683794,
+  "val_nrmse": 0.007189754885486594,
+  "test_nrmse": 0.12689485028970465,
+  "feature_dim": 103436
 }

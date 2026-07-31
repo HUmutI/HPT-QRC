@@ -1,7 +1,7 @@
 {
   "dataset": "mackey_glass_h17",
   "model": "poly",
-  "trials": 150,
+  "trials": 250,
   "params": {
     "window": 23,
     "degree": 3
@@ -11,7 +11,7 @@
     "degree": 3
   },
   "ridge_alpha": 3.162277660168379e-06,
-  "val_nrmse": 0.02740933442964853,
+  "val_nrmse": 0.027409329268562314,
   "test_nrmse": 0.013009493604438144,
   "feature_dim": 2599
 }

@@ -1,7 +1,7 @@
 {
   "dataset": "channel_eq",
   "model": "rff",
-  "trials": 100,
+  "trials": 250,
   "params": {
     "n_features": 1200,
     "gamma": 0.009445388292171501,

@@ -142,6 +142,7 @@ def harvest(record: dict) -> dict | None:
             "platform": record["platform"],
             "job_id": record["job_id"],
             "slice_start": record.get("slice_start", 0),
+            "total_steps": record.get("total_steps"),
             "shots": record["shots"],
             "photons": record["photons"],
             "modes": record["modes"],

@@ -1,17 +1,17 @@
 {
   "dataset": "lorenz63",
   "model": "poly",
-  "trials": 150,
+  "trials": 250,
   "params": {
-    "window": 26,
+    "window": 27,
     "degree": 3
   },
   "raw_params": {
-    "window": 26,
+    "window": 27,
     "degree": 3
   },
   "ridge_alpha": 1e-09,
-  "val_nrmse": 0.2998932623146551,
-  "test_nrmse": 0.6171032620585745,
-  "feature_dim": 3653
+  "val_nrmse": 0.30583589424976504,
+  "test_nrmse": 0.6676603488906964,
+  "feature_dim": 4059
 }

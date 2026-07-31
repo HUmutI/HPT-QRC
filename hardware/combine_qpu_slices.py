@@ -37,6 +37,22 @@ def main() -> None:
         return
 
     records = [json.loads(f.read_text()) for f in files]
+
+    # total_steps sets n_train, which sets the input scaler, which sets the phases. Slices
+    # submitted under different total_steps therefore sample *different* trajectories and
+    # must not be concatenated: doing so produced a "simulation" reference scoring 1.06,
+    # worse than the noiseless bound can be. Keep only the largest consistent group.
+    groups: dict = {}
+    for r in records:
+        groups.setdefault(r.get("total_steps"), []).append(r)
+    if len(groups) > 1:
+        best = max(groups.values(), key=lambda g: sum(len(r["hw_probs"]) for r in g))
+        for key, g in groups.items():
+            if g is not best:
+                print(f"  excluding {len(g)} slice(s) from trajectory total_steps={key}: "
+                      f"{[r['job_id'][:8] for r in g]} -- different input scaler, so "
+                      f"different phases")
+        records = best
     records.sort(key=lambda r: (r.get("slice_start", 0), -len(r["hw_probs"])))
 
     # Slices can overlap when a run was retried: keep, for each starting timestep, the

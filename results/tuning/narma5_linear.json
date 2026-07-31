@@ -1,7 +1,7 @@
 {
   "dataset": "narma5",
   "model": "linear",
-  "trials": 250,
+  "trials": 120,
   "params": {
     "window": 14
   },

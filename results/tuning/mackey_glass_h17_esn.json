@@ -1,23 +1,23 @@
 {
   "dataset": "mackey_glass_h17",
   "model": "esn",
-  "trials": 150,
+  "trials": 250,
   "params": {
     "res_size": 1000,
-    "leak": 0.24318878755855197,
-    "spectral_radius": 0.4999600205855531,
-    "input_scaling": 1.410991973214965,
-    "sparsity": 0.6344362628001992
+    "leak": 0.2713249198565476,
+    "spectral_radius": 0.3589257663931814,
+    "input_scaling": 1.0879198900201361,
+    "sparsity": 0.6004477930325398
   },
   "raw_params": {
     "res_size": 1000,
-    "leak": 0.24318878755855197,
-    "spectral_radius": 0.4999600205855531,
-    "input_scaling": 1.410991973214965,
-    "sparsity": 0.6344362628001992
+    "leak": 0.2713249198565476,
+    "spectral_radius": 0.3589257663931814,
+    "input_scaling": 1.0879198900201361,
+    "sparsity": 0.6004477930325398
   },
-  "ridge_alpha": 3.1622776601683795e-05,
-  "val_nrmse": 0.00039965876758709697,
-  "test_nrmse": 0.0003733100218702904,
+  "ridge_alpha": 3.162277660168379e-07,
+  "val_nrmse": 0.0003210837609868858,
+  "test_nrmse": 0.0002183062012072466,
   "feature_dim": 1001
 }

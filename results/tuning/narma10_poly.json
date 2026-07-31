@@ -1,7 +1,7 @@
 {
   "dataset": "narma10",
   "model": "poly",
-  "trials": 250,
+  "trials": 120,
   "params": {
     "window": 26,
     "degree": 2
