@@ -60,6 +60,14 @@ def _macro(name: str, body: str) -> str:
     return f"\\newcommand{{\\{name}}}{{%\n{body}\n}}\n\n"
 
 
+def _feedback_disabled(dataset: str) -> bool:
+    """True when the tuned configuration for this task already has feedback off."""
+    path = RESULTS / "tuning" / f"{dataset}_photonic.json"
+    if not path.exists():
+        return False
+    return json.loads(path.read_text())["params"].get("feedback") is False
+
+
 def table_benchmarks() -> str:
     path = RESULTS / "benchmarks" / "all_raw.csv"
     if not path.exists():
@@ -91,6 +99,10 @@ def table_benchmarks() -> str:
                 continue
             iqr = sub.quantile(0.75) - sub.quantile(0.25)
             cell = f"{_num(sub.median())} ({_num(iqr)})"
+            # Where the search itself chose feedback=False, the no-feedback ablation is the
+            # same model. Showing identical numbers without saying so looks like a bug.
+            if model == "photonic_no_feedback" and _feedback_disabled(dataset):
+                cell = f"{cell}$^{{\dagger}}$"
             if best.get(dataset) == model:
                 cell = f"\\textbf{{{cell}}}"
             cells.append(cell)

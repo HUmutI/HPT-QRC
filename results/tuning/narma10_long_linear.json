@@ -1,0 +1,15 @@
+{
+  "dataset": "narma10_long",
+  "model": "linear",
+  "trials": 60,
+  "params": {
+    "window": 53
+  },
+  "raw_params": {
+    "window": 53
+  },
+  "ridge_alpha": 1e-09,
+  "val_nrmse": 0.3660322815581171,
+  "test_nrmse": 0.4238733100445835,
+  "feature_dim": 53
+}

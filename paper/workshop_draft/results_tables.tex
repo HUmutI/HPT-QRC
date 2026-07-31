@@ -8,7 +8,7 @@
 Model & NARMA-5 & NARMA-10 & NARMA-20 & Mackey-Glass ($h{=}17$) & Lorenz-63 ($h{=}20$) & S\&P 500 RV \\
 \midrule
 Photonic (recurrent) & 0.0152 (0.0043) & \textbf{0.0951 (0.0168)} & \textbf{0.2409 (0.0456)} & \textbf{0.0005 (0.0005)} & 0.2810 (0.1638) & 0.6993 (0.0015) \\
-Photonic (no feedback) & 0.0152 (0.0043) & 0.2156 (0.0322) & 0.4355 (0.1280) & 0.0005 (0.0005) & 0.2821 (0.1365) & 0.6993 (0.0015) \\
+Photonic (no feedback) & 0.0152 (0.0043)$^{\dagger}$ & 0.2156 (0.0322) & 0.4355 (0.1280) & 0.0005 (0.0005)$^{\dagger}$ & 0.2821 (0.1365) & 0.6993 (0.0015)$^{\dagger}$ \\
 Echo state network & \textbf{0.0109 (0.0023)} & 0.2794 (0.1108) & 0.4132 (0.1119) & 0.0005 (0.0002) & 0.3396 (0.7024) & \textbf{0.6823 (0.0014)} \\
 Random Fourier features & 0.0164 (0.0023) & 0.1759 (0.0538) & 0.4347 (0.0821) & 0.0014 (0.0016) & \textbf{0.2110 (0.5884)} & 0.7274 (0.0135) \\
 Polynomial window & 0.0158 (0.0033) & 0.1763 (0.0460) & 0.4741 (0.1844) & 0.0204 (0.0146) & 3.3614 (2.6976) & 0.7045 (0.0000) \\
@@ -18,15 +18,15 @@ Linear window (control) & 0.3801 (0.0450) & 0.4446 (0.0904) & 0.4495 (0.0969) & 
 }
 
 \newcommand{\PaperTableDM}{%
-\begin{tabular}{lrrrrrr}
+\begin{tabular}{lrrrrrrrr}
 \toprule
-Baseline vs photonic & NARMA-5 & NARMA-10 & NARMA-20 & Mackey-Glass ($h{=}17$) & Lorenz-63 ($h{=}20$) & S\&P 500 RV \\
+Baseline vs photonic & NARMA-5 & NARMA-10 & NARMA-20 & Mackey-Glass ($h{=}17$) & Lorenz-63 ($h{=}20$) & S\&P 500 RV & Santa Fe laser & Channel eq. \\
 \midrule
-Photonic (no feedback) & 1.0000 & 0.0002 & 0.0000 & 1.0000 & 0.4788 & 1.0000 \\
-Echo state network & 0.0572 & 0.0000 & 0.0000 & 0.4062 & 0.0248 & 0.4451 \\
-Random Fourier features & 0.3226 & 0.0002 & 0.0000 & 0.0004 & 0.9599 & 0.2880 \\
-Polynomial window & 0.1876 & 0.0001 & 0.0000 & 0.0002 & 0.0034 & 0.7888 \\
-Linear window (control) & 0.0000 & 0.0000 & 0.0000 & 0.0000 & 0.0000 & 0.8776 \\
+Photonic (no feedback) & 1.0000 & 0.0002 & 0.0000 & 1.0000 & 0.4788 & 1.0000 & 1.0000 & 1.0000 \\
+Echo state network & 0.0572 & 0.0000 & 0.0000 & 0.4062 & 0.0248 & 0.4451 & 0.9035 & 0.0293 \\
+Random Fourier features & 0.3226 & 0.0002 & 0.0000 & 0.0004 & 0.9599 & 0.2880 & 0.1349 & 0.0000 \\
+Polynomial window & 0.1876 & 0.0001 & 0.0000 & 0.0002 & 0.0034 & 0.7888 & 0.0103 & 0.0000 \\
+Linear window (control) & 0.0000 & 0.0000 & 0.0000 & 0.0000 & 0.0000 & 0.8776 & 0.0000 & 0.0000 \\
 \bottomrule
 \end{tabular}
 }

@@ -1,0 +1,23 @@
+{
+  "dataset": "narma10_long",
+  "model": "esn",
+  "trials": 60,
+  "params": {
+    "res_size": 500,
+    "leak": 0.9975322679124508,
+    "spectral_radius": 0.6199204629232434,
+    "input_scaling": 0.01886442534538894,
+    "sparsity": 0.808693128009681
+  },
+  "raw_params": {
+    "res_size": 500,
+    "leak": 0.9975322679124508,
+    "spectral_radius": 0.6199204629232434,
+    "input_scaling": 0.01886442534538894,
+    "sparsity": 0.808693128009681
+  },
+  "ridge_alpha": 1e-09,
+  "val_nrmse": 0.11471950597231455,
+  "test_nrmse": 0.2898728052718683,
+  "feature_dim": 501
+}
