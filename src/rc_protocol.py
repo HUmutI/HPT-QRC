@@ -106,16 +106,43 @@ class _RidgePath:
 
     Results are identical to ``Ridge(alpha=...)`` with ``fit_intercept=True`` up to
     floating-point error, which ``tests/test_protocol_and_model.py`` checks.
+
+    Wide blocks take the dual route. Substituting ``V = X^T U S^{-1}`` into the expression
+    above gives
+
+        w(alpha) = X^T U diag(1 / (s^2 + alpha)) U^T (y - ybar)
+
+    which needs only ``U`` and ``s``, both obtainable from the ``n x n`` Gram matrix. That
+    matters once the feature count runs ahead of the row count: a tuned photonic ensemble
+    with three extra integration timescales reaches 361 939 features, where the economy SVD
+    still materialises a ``2400 x 361939`` ``V^T`` -- 7 GB that is discarded immediately --
+    and runs largely single-threaded. The Gram product is the same flop count as a BLAS
+    GEMM, and the eigendecomposition that follows is on a matrix the size of the training
+    block. Same solutions, an order of magnitude less wall time and memory.
     """
 
     def __init__(self, x: np.ndarray, y: np.ndarray):
         self.x_mean = x.mean(axis=0)
         self.y_mean = float(y.mean())
         centred = x - self.x_mean
-        self.u, self.s, self.vt = np.linalg.svd(centred, full_matrices=False)
-        self.uty = self.u.T @ (y - self.y_mean)
+        n_rows, n_features = centred.shape
+        self._centred = centred if n_features > n_rows else None
+
+        if self._centred is None:
+            u, self.s, self.vt = np.linalg.svd(centred, full_matrices=False)
+        else:
+            gram = centred @ centred.T
+            evals, u = np.linalg.eigh(gram)
+            # eigh may return small negative eigenvalues for a Gram matrix that is
+            # positive-semidefinite in exact arithmetic; clipping keeps the square root real.
+            self.s = np.sqrt(np.clip(evals, 0.0, None))
+            self.vt = None
+        self._u = u
+        self.uty = u.T @ (y - self.y_mean)
 
     def coefficients(self, alpha: float) -> np.ndarray:
+        if self.vt is None:
+            return self._centred.T @ (self._u @ (self.uty / (self.s**2 + alpha)))
         scale = self.s / (self.s**2 + alpha)
         return self.vt.T @ (scale * self.uty)
 
