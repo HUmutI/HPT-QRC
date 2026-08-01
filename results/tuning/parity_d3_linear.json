@@ -1,15 +1,15 @@
 {
   "dataset": "parity_d3",
   "model": "linear",
-  "trials": 150,
+  "trials": 100,
   "params": {
-    "window": 30
+    "window": 20
   },
   "raw_params": {
-    "window": 30
+    "window": 20
   },
-  "ridge_alpha": 1000.0,
-  "val_nrmse": 0.9970249418951765,
-  "test_nrmse": 0.9987966825679211,
-  "feature_dim": 30
+  "ridge_alpha": 3.1622776601683795,
+  "val_nrmse": 0.9940408389497184,
+  "test_nrmse": 0.9966785887499346,
+  "feature_dim": 20
 }

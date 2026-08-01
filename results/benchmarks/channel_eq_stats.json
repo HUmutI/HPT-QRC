@@ -5,38 +5,38 @@
       "p_value": 1.0
     },
     "esn": {
-      "stat": 2.1788313074946912,
-      "p_value": 0.029344202273010156
+      "stat": 0.7119585109248963,
+      "p_value": 0.47649046806995177
     },
     "rff": {
-      "stat": 11.721389532771095,
+      "stat": 13.781689525436615,
       "p_value": 0.0
     },
     "poly": {
-      "stat": 13.999278208443352,
+      "stat": 16.407991228469328,
       "p_value": 0.0
     },
     "classical_control": {
-      "stat": 14.888641908888072,
+      "stat": 16.579472317624653,
       "p_value": 0.0
     }
   },
   "mcs": [
     {
       "model": "photonic",
-      "p_value": 0.1794,
+      "p_value": 0.4936,
       "in_mcs": true,
       "elimination_order": -1
     },
     {
       "model": "photonic_no_feedback",
-      "p_value": 0.1794,
+      "p_value": 0.4936,
       "in_mcs": true,
       "elimination_order": -1
     },
     {
       "model": "esn",
-      "p_value": 0.1794,
+      "p_value": 0.4936,
       "in_mcs": true,
       "elimination_order": -1
     },

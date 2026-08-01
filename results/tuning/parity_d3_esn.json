@@ -1,7 +1,7 @@
 {
   "dataset": "parity_d3",
   "model": "esn",
-  "trials": 150,
+  "trials": 100,
   "params": {
     "res_size": 1000,
     "leak": 0.9902924724265011,

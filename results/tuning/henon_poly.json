@@ -1,17 +1,17 @@
 {
   "dataset": "henon",
   "model": "poly",
-  "trials": 150,
+  "trials": 100,
   "params": {
-    "window": 8,
+    "window": 7,
     "degree": 3
   },
   "raw_params": {
-    "window": 8,
+    "window": 7,
     "degree": 3
   },
-  "ridge_alpha": 10.0,
-  "val_nrmse": 0.8517223435077076,
-  "test_nrmse": 0.8667542873750714,
-  "feature_dim": 164
+  "ridge_alpha": 1e-09,
+  "val_nrmse": 0.8423174590112711,
+  "test_nrmse": 0.8729149962329729,
+  "feature_dim": 119
 }

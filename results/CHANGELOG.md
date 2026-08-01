@@ -10,7 +10,9 @@ models of very different feature counts.
 What changed:
 
 - **Recurrence.** The model has a state that persists across timesteps
-  (`src/temporal_qrc.py`). Removing it doubles the error on both NARMA tasks.
+  (`src/temporal_qrc.py`). How much that is worth is measured per task below, and on most
+  tasks it is worth little — the claim that it doubles the error on both NARMA tasks is
+  withdrawn.
 - **Standard protocol.** NARMA is driven by its exogenous input, as in the literature. The
   previous autoregressive variant is kept as `narma10_autoregressive` and clearly labelled.
 - **NRMSE** (RMSE ÷ std) as the headline metric, so numbers can be placed against published
@@ -74,6 +76,26 @@ treatment via rolling-origin validation.
 Sequence stated for the record: the weakness was demonstrated on NARMA-20 *before* Santa Fe was
 re-run, but the decision to add rolling-origin validation came *after* seeing Santa Fe's test
 number degrade. Both sets of numbers are reported.
+
+### Note on the abandoned re-searches (2026-08-01)
+
+`santa_fe`, `henon` and `parity_d3` are reported under their original 100-trial single-split
+searches. Their re-searches under the expanded space degraded test while improving validation
+(table above), and the rolling-origin replacement was stopped before completing: the photonic
+search kept sampling ~4e5-feature configurations, which on Santa Fe's 4000-step series is a
+12 GB feature matrix, and the process spent five hours at 7 % CPU thrashing rather than
+computing. Rather than report a configuration chosen by a procedure documented here as
+inadequate, or a half-finished one, those three revert to the last complete and internally
+consistent search. `experiments/tune_temporal.py --max-dim` now prunes oversized trials before
+building the matrix, so a future re-run is affordable.
+
+`sp500_rv` is the exception: its rolling-origin re-tune completed for all five models at 120
+trials × 3 windows, and is reported. It moved the photonic model from 0.6993 to 0.6894 on the
+tuned seed and the ESN from 0.6823 to 0.7515 — the ESN's single-split configuration was the
+more overfit of the two. Across five seeds the photonic median is 0.6993 and the ESN's 0.7482.
+
+Trial budgets therefore differ *between* datasets (100–300). Within each dataset every model
+gets the identical budget, which is the comparison that has to be fair.
 
 ### Retracted (earlier)
 

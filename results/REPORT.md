@@ -5,19 +5,16 @@ interpretation and caveats.
 
 NRMSE, mean ± std over seeds. Lower is better.
 
-| Model | santa_fe | channel_eq | parity_d3 | henon |
-|---|---|---|---|---|
-| Photonic (recurrent) | 0.0601 ± 0.0012 | 0.0849 ± 0.0041 | 5.91e-15 ± 5.39e-16 | 2.08e-05 ± 1.62e-05 |
-| Photonic (no feedback) | 0.0601 ± 0.0012 | 0.0849 ± 0.0041 | 5.91e-15 ± 5.39e-16 | 2.08e-05 ± 1.62e-05 |
-| Echo state network | 0.0618 ± 0.0052 | 0.1020 ± 0.0033 | 5.63e-04 ± 4.92e-05 | 0.0089 ± 0.0016 |
-| Random Fourier features | 0.0644 ± 0.0038 | 0.1502 ± 0.0055 | 2.92e-14 ± 2.45e-15 | 8.80e-05 ± 2.34e-05 |
-| Polynomial window | 0.0946 ± 0.00e+00 | 0.1535 ± 0.0044 | 4.70e-13 ± 1.86e-14 | 0.8428 ± 0.0225 |
-| Linear window (control) | 0.4452 ± 0.00e+00 | 0.1729 ± 0.0050 | 1.0015 ± 0.0043 | 0.9838 ± 0.0128 |
+| Model | sp500_rv |
+|---|---|
+| Photonic (recurrent) | 0.7038 ± 0.0157 |
+| Photonic (no feedback) | 0.6984 ± 0.0071 |
+| Echo state network | 0.7388 ± 0.0276 |
+| Random Fourier features | 0.7055 ± 0.0029 |
+| Polynomial window | 0.6974 ± 0.00e+00 |
+| Linear window (control) | 0.6957 ± 0.00e+00 |
 
-- **santa_fe** — Diebold-Mariano vs photonic: Photonic (no feedback) p=1.0000, Echo state network p=0.9035, Random Fourier features p=0.1349, Polynomial window p=0.0103, Linear window (control) p=0.0000
-- **channel_eq** — Diebold-Mariano vs photonic: Photonic (no feedback) p=1.0000, Echo state network p=0.0293, Random Fourier features p=0.0000, Polynomial window p=0.0000, Linear window (control) p=0.0000
-- **parity_d3** — Diebold-Mariano vs photonic: Photonic (no feedback) p=1.0000, Echo state network p=0.0000, Random Fourier features p=0.0000, Polynomial window p=0.0000, Linear window (control) p=0.0000
-- **henon** — Diebold-Mariano vs photonic: Photonic (no feedback) p=1.0000, Echo state network p=0.0005, Random Fourier features p=0.0161, Polynomial window p=0.0000, Linear window (control) p=0.0000
+- **sp500_rv** — Diebold-Mariano vs photonic: Photonic (no feedback) p=0.4097, Echo state network p=0.0213, Random Fourier features p=0.0391, Polynomial window p=0.7685, Linear window (control) p=0.7675
 
 ## Matched capacity (NARMA-10)
 

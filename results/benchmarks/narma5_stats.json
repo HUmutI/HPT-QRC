@@ -1,54 +1,54 @@
 {
   "dm_vs_photonic": {
     "photonic_no_feedback": {
-      "stat": 0.0,
-      "p_value": 1.0
+      "stat": 5.424593002493507,
+      "p_value": 5.8086740306606544e-08
     },
     "esn": {
-      "stat": -1.9017198557006434,
-      "p_value": 0.057207788637457124
+      "stat": 4.358978754397825,
+      "p_value": 1.3067079642326007e-05
     },
     "rff": {
-      "stat": 0.9890778275481796,
-      "p_value": 0.3226250648703055
+      "stat": 5.105891501582729,
+      "p_value": 3.292385690745192e-07
     },
     "poly": {
-      "stat": 1.3175717370989957,
-      "p_value": 0.18764705195394726
+      "stat": 3.690122018555036,
+      "p_value": 0.00022414651206559277
     },
     "classical_control": {
-      "stat": 7.046259854893928,
-      "p_value": 1.837863194964484e-12
+      "stat": 7.047282766086502,
+      "p_value": 1.8245405186689823e-12
     }
   },
   "mcs": [
     {
       "model": "photonic",
-      "p_value": 0.3148,
+      "p_value": 0.102,
       "in_mcs": true,
       "elimination_order": -1
     },
     {
       "model": "photonic_no_feedback",
-      "p_value": 0.3148,
+      "p_value": 0.102,
       "in_mcs": true,
       "elimination_order": -1
     },
     {
       "model": "esn",
-      "p_value": 0.3148,
+      "p_value": 0.102,
       "in_mcs": true,
       "elimination_order": -1
     },
     {
       "model": "rff",
-      "p_value": 0.3148,
+      "p_value": 0.102,
       "in_mcs": true,
       "elimination_order": -1
     },
     {
       "model": "poly",
-      "p_value": 0.3148,
+      "p_value": 0.102,
       "in_mcs": true,
       "elimination_order": -1
     },

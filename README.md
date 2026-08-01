@@ -69,31 +69,39 @@ through the identical readout and metric (`src/rc_protocol.py`).
 
 **Median** over 5 seeds. Medians rather than means because on the chaotic tasks the seed
 distribution is heavy-tailed — a single unlucky Lorenz-63 trajectory sends one model's mean
-to 3.5× its median, which would decide the ranking on one draw. Means and per-seed values are
-in `results/benchmarks/all_raw.csv`.
+to 3.5× its median, which would decide the ranking on one draw. Per-seed values are in
+`results/benchmarks/<task>_raw.csv`.
 
-| Model | NARMA-5 | NARMA-10 | NARMA-20 | MG (h=17) | Lorenz-63 (h=20) | S&P 500 RV |
-|---|---|---|---|---|---|---|
-| **Photonic (recurrent)** | 0.0152 | **0.0951** | **0.2409** | **0.0005** | 0.2810 | 0.6993 |
-| Photonic (no feedback) | 0.0152 | 0.2156 | 0.4355 | 0.0005 | 0.2821 | 0.6993 |
-| Echo state network | **0.0109** | 0.2794 | 0.4132 | 0.0005 | 0.3396 | **0.6823** |
-| Random Fourier features | 0.0164 | 0.1759 | 0.4347 | 0.0014 | **0.2110** | 0.7274 |
-| Polynomial window | 0.0158 | 0.1763 | 0.4741 | 0.0204 | 3.3614 | 0.7045 |
-| Linear window (control) | 0.3801 | 0.4446 | 0.4495 | 0.6176 | 0.9187 | 0.6957 |
+| Task | Photonic | No fb. | ESN | RFF | Poly. | Linear | DM *p* vs best baseline |
+|---|---|---|---|---|---|---|---|
+| NARMA-5 | **0.0088** | 0.0244 | 0.0160 | 0.0195 | 0.0161 | 0.3801 | 0.0002 |
+| NARMA-10 | **0.0937** | 0.0937 | 0.2244 | 0.1887 | 0.1763 | 0.4446 | 0.0002 |
+| NARMA-20 | **0.1876** | 0.1766 | 0.4622 | 0.4395 | 0.4741 | 0.4495 | < 0.0001 |
+| Mackey-Glass (h=17) | **1.1e-5** | 3.0e-5 | 2.2e-4 | 1.5e-3 | 0.0204 | 0.6176 | 0.0001 |
+| Lorenz-63 (h=20) | **0.1634** | 0.1634 | 0.2124 | 0.9944 | 1.9694 | 0.9187 | 0.095 |
+| Channel eq. | **0.0773** | 0.0773 | 0.0883 | 0.1488 | 0.1512 | 0.1720 | 0.48 |
+| Hénon (h=4) | **1.7e-5** | 1.7e-5 | 0.0085 | 8.3e-5 | 0.8425 | 0.9845 | 0.016 |
+| Parity (d=3) | **6.0e-15** | 6.0e-15 | 6.0e-4 | 3.0e-14 | 4.6e-13 | 0.9999 | < 0.0001 |
+| Santa Fe laser | **0.0596** | 0.0596 | 0.0607 | 0.0628 | 0.0946 | 0.4452 | 0.90 |
+| S&P 500 RV | 0.6993 | 0.6991 | 0.7482 | 0.7054 | 0.6974 | **0.6957** | 0.77 |
 
-The photonic reservoir wins **NARMA-10 and NARMA-20**, ties on Mackey-Glass, and loses on
-**NARMA-5, Lorenz-63 and S&P 500**. It wins exactly where the task demands nonlinear memory
-of a stochastic drive, and not elsewhere. Diebold–Mariano with Newey–West HAC:
+**The photonic reservoir has the best median on 9 of 10 tasks.** That headline needs three
+qualifications, all of which are in the table above:
 
-- **NARMA-10 and NARMA-20** — p < 0.001 against every baseline. This is the result.
-- **Mackey-Glass** — p = 0.41 vs the ESN. A genuine tie; the task saturates at 5e-4.
-- **NARMA-5** — the ESN wins. The task needs only 5 steps of memory, exactly the regime where
-  a large tanh reservoir's long linear memory suffices and the photonic map's nonlinearity
-  buys nothing.
-- **Lorenz-63** — random Fourier features win on the median. On the *mean* the photonic model
-  appears to win, but that inverts under a single seed and we do not claim it. Seed spread
-  covers 0.06 to 11.0 across models; five seeds cannot separate them here.
-- **S&P 500 RV** — p = 0.45–0.88. Nothing is distinguishable; the Hansen MCS retains all six.
+- **Four of the nine are decisive** (DM–HAC *p* ≤ 0.0002 against every baseline): both long
+  NARMA tasks, Mackey-Glass and parity. NARMA-20 is the clearest — 0.1876 against 0.4395 for
+  the best baseline, a 2.3× margin.
+- **Three are ties, not wins.** Channel equalisation (*p* = 0.48 vs the ESN), Santa Fe
+  (*p* = 0.90) and Lorenz-63 (*p* = 0.095) all lead on the median without separating
+  statistically. They are reported as leads, not victories.
+- **Three tasks are saturated.** Mackey-Glass, Hénon and parity are solved to 1e-5 or better
+  by several models at once; ratios between such numbers are not meaningful, and the ranking
+  there says little about the feature map.
+
+**S&P 500 realised volatility is a loss, and to the linear control** — a ridge on a window of
+the raw series beats every nonlinear model tried. Nothing here is distinguishable (*p* = 0.77)
+and the Hansen MCS retains everything. This is the dataset where the architecture has nothing
+to offer, and it stays in the table for that reason.
 
 ### What is the recurrence actually worth? (Less than we claimed.)
 

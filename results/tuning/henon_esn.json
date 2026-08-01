@@ -1,23 +1,23 @@
 {
   "dataset": "henon",
   "model": "esn",
-  "trials": 150,
+  "trials": 100,
   "params": {
     "res_size": 1000,
-    "leak": 0.8774268335439097,
-    "spectral_radius": 0.1922608905738503,
-    "input_scaling": 2.992423678622719,
-    "sparsity": 0.6031128895832473
+    "leak": 0.8630252087873284,
+    "spectral_radius": 0.29569206363003736,
+    "input_scaling": 2.654279674686702,
+    "sparsity": 0.021387252382232408
   },
   "raw_params": {
     "res_size": 1000,
-    "leak": 0.8774268335439097,
-    "spectral_radius": 0.1922608905738503,
-    "input_scaling": 2.992423678622719,
-    "sparsity": 0.6031128895832473
+    "leak": 0.8630252087873284,
+    "spectral_radius": 0.29569206363003736,
+    "input_scaling": 2.654279674686702,
+    "sparsity": 0.021387252382232408
   },
   "ridge_alpha": 1e-09,
-  "val_nrmse": 0.0053243838511258385,
-  "test_nrmse": 0.006377412730909327,
+  "val_nrmse": 0.008187888658879957,
+  "test_nrmse": 0.011640206388254613,
   "feature_dim": 1001
 }
