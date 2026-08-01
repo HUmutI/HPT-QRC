@@ -34,6 +34,16 @@ LABEL = {
     "poly": "Polynomial window",
     "classical_control": "Linear window (control)",
 }
+# Column headers for the tables that put models across the page; the full names in LABEL
+# are too wide for ten-task tables and were part of what pushed them off the text block.
+SHORT_LABEL = {
+    "photonic": "Photonic",
+    "photonic_no_feedback": "No fb.",
+    "esn": "ESN",
+    "rff": "RFF",
+    "poly": "Poly.",
+    "classical_control": "Linear",
+}
 DATASET_LABEL = {
     "narma5": "NARMA-5",
     "narma10": "NARMA-10",
@@ -68,11 +78,31 @@ def _feedback_disabled(dataset: str) -> bool:
     return json.loads(path.read_text())["params"].get("feedback") is False
 
 
+def _all_raw() -> pd.DataFrame | None:
+    """Every benchmarked seed on disk, not just the most recent run.
+
+    ``run_benchmarks.py`` writes ``all_raw.csv`` covering the datasets *that invocation*
+    was given, so running it on a subset silently shrinks the paper's main table -- it had
+    been reduced to four of the ten tasks, dropping every NARMA and Lorenz-63. The
+    per-dataset ``*_raw.csv`` files are the durable record, so build the union from those.
+    """
+    paths = sorted((RESULTS / "benchmarks").glob("*_raw.csv"))
+    paths = [p for p in paths if p.name != "all_raw.csv"]
+    if not paths:
+        return None
+    frames = []
+    for path in paths:
+        frame = pd.read_csv(path)
+        if "dataset" not in frame.columns:
+            frame["dataset"] = path.name[: -len("_raw.csv")]
+        frames.append(frame)
+    return pd.concat(frames, ignore_index=True)
+
+
 def table_benchmarks() -> str:
-    path = RESULTS / "benchmarks" / "all_raw.csv"
-    if not path.exists():
+    frame = _all_raw()
+    if frame is None:
         return ""
-    frame = pd.read_csv(path)
     datasets = [d for d in DATASET_LABEL if d in set(frame.dataset)]
     models = [m for m in LABEL if m in set(frame.model)]
 
@@ -84,21 +114,32 @@ def table_benchmarks() -> str:
         for d in datasets
     }
 
+    # Datasets down the page, models across it. With ten tasks the other orientation ran
+    # 446pt past the text block -- an \hbox overflow wide enough to print off the paper.
     lines = [
-        "\\begin{tabular}{l" + "r" * len(datasets) + "}",
+        "\\footnotesize",
+        "\\begin{tabular}{l" + "r" * len(models) + "}",
         "\\toprule",
-        "Model & " + " & ".join(DATASET_LABEL[d] for d in datasets) + " \\\\",
+        "Task & " + " & ".join(SHORT_LABEL[m] for m in models) + " \\\\",
         "\\midrule",
     ]
-    for model in models:
+    for dataset in datasets:
         cells = []
-        for dataset in datasets:
+        for model in models:
             sub = frame[(frame.dataset == dataset) & (frame.model == model)]["nrmse"]
             if not len(sub):
                 cells.append("---")
                 continue
             iqr = sub.quantile(0.75) - sub.quantile(0.25)
-            cell = f"{_num(sub.median())} ({_num(iqr)})"
+            # Below 1e-4 the task is solved and the spread across seeds is floating-point
+            # noise, not a property of the model. Printing two significant figures of it
+            # implies a precision that is not there, and the scientific-notation pair is
+            # also what pushed this table past the text block.
+            cell = (
+                _num(sub.median())
+                if sub.median() < 1e-4
+                else f"{_num(sub.median())} ({_num(iqr)})"
+            )
             # Where the search itself chose feedback=False, the no-feedback ablation is the
             # same model. Showing identical numbers without saying so looks like a bug.
             if model == "photonic_no_feedback" and _feedback_disabled(dataset):
@@ -106,7 +147,7 @@ def table_benchmarks() -> str:
             if best.get(dataset) == model:
                 cell = f"\\textbf{{{cell}}}"
             cells.append(cell)
-        lines.append(f"{LABEL[model]} & " + " & ".join(cells) + " \\\\")
+        lines.append(f"{DATASET_LABEL[dataset]} & " + " & ".join(cells) + " \\\\")
     lines += ["\\bottomrule", "\\end{tabular}"]
     return _macro("PaperTableBenchmarks", "\n".join(lines))
 
@@ -127,17 +168,17 @@ def table_dm() -> str:
     models = [m for m in LABEL if m in set(frame.model)]
 
     lines = [
-        "\\begin{tabular}{l" + "r" * len(datasets) + "}",
+        "\\begin{tabular}{l" + "r" * len(models) + "}",
         "\\toprule",
-        "Baseline vs photonic & " + " & ".join(DATASET_LABEL[d] for d in datasets) + " \\\\",
+        "Task & " + " & ".join(SHORT_LABEL[m] for m in models) + " \\\\",
         "\\midrule",
     ]
-    for model in models:
+    for dataset in datasets:
         cells = []
-        for dataset in datasets:
+        for model in models:
             sub = frame[(frame.dataset == dataset) & (frame.model == model)]
             cells.append(f"{sub['p'].iloc[0]:.4f}" if len(sub) else "---")
-        lines.append(f"{LABEL[model]} & " + " & ".join(cells) + " \\\\")
+        lines.append(f"{DATASET_LABEL[dataset]} & " + " & ".join(cells) + " \\\\")
     lines += ["\\bottomrule", "\\end{tabular}"]
     return _macro("PaperTableDM", "\n".join(lines))
 
