@@ -295,9 +295,13 @@ def fig_feedback() -> None:
             ax.plot([positive.index.min() * 0.55], [ablation], marker="s", markersize=6,
                     color=color, markeredgecolor="white", markeredgewidth=1)
 
-    ax.axvspan(0.3, 3.0, color="#f2dede", alpha=0.45, zorder=0)
-    ax.annotate("echo state property lost", (0.32, 0.94), xycoords=("data", "axes fraction"),
-                fontsize=8, color="#9c3b34", va="top")
+    # Shaded from 0.6, where every task has reached NRMSE ~1 -- i.e. is predicting no better
+    # than the target's mean. The onset is task-dependent (Mackey-Glass is already two orders
+    # of magnitude off by 0.3, NARMA-10 is not), so shading from 0.3 would assert a shared
+    # threshold that the curves do not show.
+    ax.axvspan(0.6, 3.0, color="#f2dede", alpha=0.45, zorder=0)
+    ax.annotate("no fading memory\n(NRMSE $\\approx$ 1 on every task)", (0.62, 0.60),
+                xycoords=("data", "axes fraction"), fontsize=8, color="#9c3b34", va="top")
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel("Feedback gain $g_{fb}$  (squares at left: no feedback)", color=TEXT,
@@ -305,7 +309,8 @@ def fig_feedback() -> None:
     ax.set_ylabel("Test NRMSE", color=TEXT, fontsize=10)
     ax.set_title("What the recurrence is worth, task by task", color=TEXT, fontsize=11,
                  loc="left", pad=12)
-    ax.legend(frameon=False, fontsize=8, labelcolor=MUTED)
+    # Lower left is where Mackey-Glass sits; a legend there covers its ablation marker.
+    ax.legend(frameon=False, fontsize=8, loc="upper left", labelcolor=MUTED)
     fig.tight_layout()
     out = FIGS / "feedback_strength.png"
     fig.savefig(out, dpi=200, facecolor="white")
