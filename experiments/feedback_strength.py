@@ -94,9 +94,18 @@ def main() -> None:
 
     if not rows:
         return
+    # One file per dataset, plus a merged view. Writing a single CSV per invocation means a
+    # run on one dataset silently deletes every other dataset's rows -- the same failure that
+    # had reduced the paper's main benchmark table to four of ten tasks.
     frame = pd.DataFrame(rows)
+    for dataset, sub in frame.groupby("dataset"):
+        sub.to_csv(RESULTS / f"feedback_{dataset}.csv", index=False)
+    merged = pd.concat(
+        [pd.read_csv(p) for p in sorted(RESULTS.glob("feedback_*.csv"))],
+        ignore_index=True,
+    )
     out = RESULTS / "feedback_strength.csv"
-    frame.to_csv(out, index=False)
+    merged.to_csv(out, index=False)
 
     for dataset, sub in frame.groupby("dataset"):
         med = sub.groupby("g_fb").nrmse.median()

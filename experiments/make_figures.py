@@ -262,10 +262,61 @@ def fig_rate() -> None:
     print(f"wrote {out}")
 
 
+def fig_feedback() -> None:
+    """NRMSE against feedback gain, which is what the binary ablation could not show.
+
+    Two things are visible here that a flag comparison hides: the contribution of the
+    recurrence is strongly task-dependent, and every task shares a cliff at roughly the same
+    gain, where the state stops contracting and the reservoir loses its fading memory.
+    """
+    path = ROOT / "results" / "feedback" / "feedback_strength.csv"
+    if not path.exists():
+        print("  (no feedback sweep yet)")
+        return
+    frame = pd.read_csv(path)
+
+    fig, ax = plt.subplots(figsize=(5.6, 4.0))
+    _style(ax)
+    colors = {"narma5": "#eb6834", "narma10": "#1baf7a", "narma20": "#3b6ea5",
+              "mackey_glass_h17": "#9a6fb0"}
+    labels = {"narma5": "NARMA-5", "narma10": "NARMA-10", "narma20": "NARMA-20",
+              "mackey_glass_h17": "Mackey-Glass"}
+    for dataset, sub in frame.groupby("dataset"):
+        med = sub.groupby("g_fb").nrmse.median().sort_index()
+        # The ablation sits at gain 0, which a log axis cannot show. Plot it as a separate
+        # marker on the left edge rather than dropping it or faking a small positive value.
+        ablation = med.get(0.0)
+        positive = med[med.index > 0]
+        color = colors.get(dataset, MUTED)
+        ax.plot(positive.index, positive.values, color=color, linewidth=2, marker="o",
+                markersize=5, markeredgecolor="white", markeredgewidth=1,
+                label=labels.get(dataset, dataset))
+        if ablation is not None:
+            ax.plot([positive.index.min() * 0.55], [ablation], marker="s", markersize=6,
+                    color=color, markeredgecolor="white", markeredgewidth=1)
+
+    ax.axvspan(0.3, 3.0, color="#f2dede", alpha=0.45, zorder=0)
+    ax.annotate("echo state property lost", (0.32, 0.94), xycoords=("data", "axes fraction"),
+                fontsize=8, color="#9c3b34", va="top")
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel("Feedback gain $g_{fb}$  (squares at left: no feedback)", color=TEXT,
+                  fontsize=10)
+    ax.set_ylabel("Test NRMSE", color=TEXT, fontsize=10)
+    ax.set_title("What the recurrence is worth, task by task", color=TEXT, fontsize=11,
+                 loc="left", pad=12)
+    ax.legend(frameon=False, fontsize=8, labelcolor=MUTED)
+    fig.tight_layout()
+    out = FIGS / "feedback_strength.png"
+    fig.savefig(out, dpi=200, facecolor="white")
+    plt.close(fig)
+    print(f"wrote {out}")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--which", nargs="+",
-                    default=["capacity", "noise", "benchmark", "rate"])
+                    default=["capacity", "noise", "benchmark", "rate", "feedback"])
     ap.add_argument("--dataset", default="narma10")
     args = ap.parse_args()
 
@@ -278,6 +329,8 @@ def main() -> None:
         fig_benchmark()
     if "rate" in args.which:
         fig_rate()
+    if "feedback" in args.which:
+        fig_feedback()
 
 
 if __name__ == "__main__":
