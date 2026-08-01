@@ -24,11 +24,58 @@ What changed:
 - **Noise study** at measured Ascella/Belenos operating points via Perceval's `NoiseModel`
   with threshold detectors (`results/noise/`).
 
-Headline (5 seeds, NRMSE): photonic 0.0912 on NARMA-10 and 0.2262 on NARMA-20, both with
-DM-HAC p < 0.001 against every baseline; a tie with the ESN on Mackey-Glass (p = 0.41); and
-third of six on S&P 500 RV where nothing is statistically distinguishable.
+### 2026-08-01 — deeper search, hardware, and two claims withdrawn
 
-### Retracted
+**Hardware.** 126 timesteps measured on `qpu:belenos` at 2 photons in 10 modes, stitched from
+six trajectory-consistent slices. Device features correlate 0.805–0.844 with simulation
+across a 5× range of shot counts, against 0.18–0.48 for the earlier three-photon probe — the
+two-photon redesign is confirmed by measurement. The accuracy row (hardware 0.8360,
+simulation 0.5487, classical 0.4971) is **not** an accuracy result: 66 training rows against
+65 features, and coincidences six to eight times below what the noise study says is needed.
+
+**Search.** Multi-timescale integration and a multi-estimate objective. NARMA-20 went from a
+regressed 0.4735 to 0.1771 at 300 trials × 3 realisations, its best figure to date.
+
+#### Retracted: "recurrence is what carries the result"
+
+Withdrawn. It rested on a binary ablation, and the current searches choose `feedback=False`
+outright on 8 of 11 datasets — so on those the ablation and the model are the same object and
+the gap is zero by construction. Where feedback is kept, the gain sits at the floor of its
+range (0.010–0.016 against a ceiling of 3.0).
+
+The gain sweep (`experiments/feedback_strength.py`, 5 seeds) measures what the flag could
+not: **3.46× on NARMA-5, 3.06× on Mackey-Glass (both at the saturation floor), 1.07× on
+NARMA-10, 1.00× on NARMA-20** — where the best gain is zero and the no-feedback ablation is
+marginally better than the tuned model (0.1766 vs 0.1876, p = 0.19). The feature map, not the
+recurrence, does most of the work on most tasks. What the sweep does establish is a failure
+boundary: past `g_fb ≈ 0.6` every task sits at NRMSE ≈ 1, the echo state property breaking.
+
+#### Re-tuning made three of four datasets worse on test
+
+Recorded because it is a methodological finding, not a footnote. Re-running the searches under
+the expanded space at higher trial counts:
+
+| dataset | before (trials) | after, single split (300) | val moved |
+|---|---|---|---|
+| santa_fe | 0.0601 (100) | 0.0705 | 0.0318 → 0.0294 |
+| sp500_rv | 0.6993 (150) | 0.7192 | 0.7709 → 0.7819 |
+| henon | 2e-5 (100) | 1e-4 | both at the floor |
+| **narma20** | 0.2232 (250) | **0.1771** | 0.1631 → 0.2157 |
+
+The only one that improved is the only one whose objective averaged over several data
+realisations, and its validation score got *worse* while test improved — the signature of a
+search that has stopped fitting its selection split. The other three improved validation while
+degrading test.
+
+So the expanded search space is not harmful; single-split selection is, and more trials make
+it worse. `--val-blocks` gives recorded series that cannot be resampled the same multi-estimate
+treatment via rolling-origin validation.
+
+Sequence stated for the record: the weakness was demonstrated on NARMA-20 *before* Santa Fe was
+re-run, but the decision to add rolling-origin validation came *after* seeing Santa Fe's test
+number degrade. Both sets of numbers are reported.
+
+### Retracted (earlier)
 
 - The "50× linear memory capacity vs ESN" claim. Measured linear memory capacity is ~11 for
   the photonic reservoir against 27–30 for an ESN — it has *less* linear memory, and wins
