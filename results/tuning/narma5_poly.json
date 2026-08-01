@@ -1,17 +1,17 @@
 {
   "dataset": "narma5",
   "model": "poly",
-  "trials": 250,
+  "trials": 120,
   "params": {
-    "window": 17,
+    "window": 16,
     "degree": 2
   },
   "raw_params": {
-    "window": 17,
+    "window": 16,
     "degree": 2
   },
   "ridge_alpha": 1e-09,
-  "val_nrmse": 0.015174751884293737,
-  "test_nrmse": 0.014772118490013532,
-  "feature_dim": 170
+  "val_nrmse": 0.01521520066100354,
+  "test_nrmse": 0.015110447174687909,
+  "feature_dim": 152
 }

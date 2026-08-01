@@ -1,19 +1,19 @@
 {
   "dataset": "lorenz63",
   "model": "rff",
-  "trials": 250,
+  "trials": 120,
   "params": {
     "n_features": 1200,
-    "gamma": 36.23713871191916,
+    "gamma": 15.231871732739387,
     "window": 3
   },
   "raw_params": {
     "n_features": 1200,
-    "gamma": 36.23713871191916,
+    "gamma": 15.231871732739387,
     "window": 3
   },
-  "ridge_alpha": 0.01,
-  "val_nrmse": 0.06604273109355678,
-  "test_nrmse": 0.11662887554136116,
+  "ridge_alpha": 0.03162277660168379,
+  "val_nrmse": 0.11344389359747722,
+  "test_nrmse": 0.12813092630641104,
   "feature_dim": 1200
 }

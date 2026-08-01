@@ -1,23 +1,23 @@
 {
   "dataset": "lorenz63",
   "model": "esn",
-  "trials": 250,
+  "trials": 120,
   "params": {
     "res_size": 1000,
-    "leak": 0.4873681548630404,
-    "spectral_radius": 1.480762297857468,
-    "input_scaling": 2.629140986366104,
-    "sparsity": 0.4182590762860141
+    "leak": 0.5823461696534669,
+    "spectral_radius": 1.2434533583597025,
+    "input_scaling": 2.99883790108813,
+    "sparsity": 0.5455862052518415
   },
   "raw_params": {
     "res_size": 1000,
-    "leak": 0.4873681548630404,
-    "spectral_radius": 1.480762297857468,
-    "input_scaling": 2.629140986366104,
-    "sparsity": 0.4182590762860141
+    "leak": 0.5823461696534669,
+    "spectral_radius": 1.2434533583597025,
+    "input_scaling": 2.99883790108813,
+    "sparsity": 0.5455862052518415
   },
   "ridge_alpha": 3.162277660168379e-06,
-  "val_nrmse": 0.03024263478375371,
-  "test_nrmse": 0.13585835119302883,
+  "val_nrmse": 0.044161512129880405,
+  "test_nrmse": 0.11621171050844631,
   "feature_dim": 1001
 }

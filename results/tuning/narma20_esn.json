@@ -1,7 +1,7 @@
 {
   "dataset": "narma20",
   "model": "esn",
-  "trials": 120,
+  "trials": 300,
   "params": {
     "res_size": 200,
     "leak": 0.9946462138749144,

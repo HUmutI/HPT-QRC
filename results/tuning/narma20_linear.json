@@ -1,7 +1,7 @@
 {
   "dataset": "narma20",
   "model": "linear",
-  "trials": 120,
+  "trials": 300,
   "params": {
     "window": 59
   },
