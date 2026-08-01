@@ -1,15 +1,15 @@
 {
   "dataset": "santa_fe",
   "model": "linear",
-  "trials": 100,
+  "trials": 120,
   "params": {
-    "window": 43
+    "window": 40
   },
   "raw_params": {
-    "window": 43
+    "window": 40
   },
   "ridge_alpha": 10.0,
-  "val_nrmse": 0.3547787937946827,
-  "test_nrmse": 0.44516939898514135,
-  "feature_dim": 43
+  "val_nrmse": 0.35479489501748207,
+  "test_nrmse": 0.4451924370619181,
+  "feature_dim": 40
 }

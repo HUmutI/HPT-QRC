@@ -1,19 +1,19 @@
 {
   "dataset": "sp500_rv",
   "model": "rff",
-  "trials": 150,
+  "trials": 120,
   "params": {
-    "n_features": 300,
-    "gamma": 0.03354373550784761,
+    "n_features": 600,
+    "gamma": 0.007935126491526728,
     "window": 9
   },
   "raw_params": {
-    "n_features": 300,
-    "gamma": 0.03354373550784761,
+    "n_features": 600,
+    "gamma": 0.007935126491526728,
     "window": 9
   },
   "ridge_alpha": 316.22776601683796,
-  "val_nrmse": 0.7745626712515399,
-  "test_nrmse": 0.7274497082715566,
-  "feature_dim": 300
+  "val_nrmse": 0.7796436075290274,
+  "test_nrmse": 0.7096176655906573,
+  "feature_dim": 600
 }

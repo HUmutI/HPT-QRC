@@ -44,7 +44,7 @@ def _val_score(features: np.ndarray, y: np.ndarray, split: Split) -> float:
     return val
 
 
-def _photonic_features(trial, u, split):
+def _photonic_features(trial, u, split, max_dim: int | None = None):
     params = {
         "n_modes": trial.suggest_categorical("n_modes", [8, 10, 12, 16, 20, 24]),
         "photon_list": tuple(
@@ -70,6 +70,23 @@ def _photonic_features(trial, u, split):
             float(np.clip(params["leak"] * ratio ** (k + 1), 1e-4, 1.0))
             for k in range(n_scales)
         )
+    # Prune configurations whose feature matrix is too large to be worth evaluating, before
+    # building it. Cost scales with C(m, n) * reservoirs * timescales, and the top of the
+    # search space reaches ~4e5 features; on a 4000-step series that is a 12 GB matrix, and
+    # the run stops being compute-bound and starts thrashing -- one Santa Fe search spent
+    # five CPU-hours at 7% CPU. The cap is a compute budget, not a modelling choice: it is
+    # applied identically to every model family's size knob via each builder, and matches the
+    # 30k ceiling `experiments/matched_capacity.py` already sweeps to.
+    if max_dim is not None:
+        import optuna
+        from math import comb
+
+        per_set = sum(comb(params["n_modes"], n) for n in params["photon_list"])
+        scales = 1 + len(params.get("extra_leaks", ()))
+        projected = per_set * params["reservoirs_per_photon"] * scales + params["window"]
+        if projected > max_dim:
+            raise optuna.TrialPruned()
+
     model = TemporalPhotonicQRC(washout=split.washout, seed=42, **params)
     return model.build_features(u, n_train=split.n_train), params
 
@@ -117,7 +134,8 @@ BUILDERS = {
 
 
 def tune(dataset: str, model: str, trials: int, seed: int = 0,
-         objective_seeds: int = 1, val_blocks: int = 1) -> dict:
+         objective_seeds: int = 1, val_blocks: int = 1,
+         max_dim: int | None = None) -> dict:
     import optuna
 
     optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -160,7 +178,8 @@ def tune(dataset: str, model: str, trials: int, seed: int = 0,
         scores = []
         for uu, yy, sp in realisations:
             try:
-                features, _ = builder(trial, uu, sp)
+                features, _ = (builder(trial, uu, sp, max_dim) if model == "photonic"
+                               else builder(trial, uu, sp))
             except (ValueError, np.linalg.LinAlgError) as exc:
                 raise optuna.TrialPruned() from exc
             scores.append(_val_score(features, yy, sp))
@@ -174,7 +193,9 @@ def tune(dataset: str, model: str, trials: int, seed: int = 0,
 
     # Re-evaluate the winner once on test, after the search is over.
     best_trial = study.best_trial
-    features, params = builder(optuna.trial.FixedTrial(best_trial.params), u, split)
+    fixed = optuna.trial.FixedTrial(best_trial.params)
+    features, params = (builder(fixed, u, split, max_dim) if model == "photonic"
+                        else builder(fixed, u, split))
     pred, alpha, val = fit_readout(features, y, split)
     test = nrmse(y[split.test_slice], pred)
 
@@ -200,6 +221,9 @@ def main() -> None:
     ap.add_argument("--objective-seeds", type=int, default=1,
                     help="average the search objective over this many data realisations; "
                          "reduces validation overfitting at high trial counts")
+    ap.add_argument("--max-dim", type=int, default=None,
+                    help="prune photonic trials projected to exceed this feature "
+                         "count; a compute budget, not a modelling choice")
     ap.add_argument("--val-blocks", type=int, default=1,
                     help="for recorded series that cannot be resampled: average the "
                          "objective over this many rolling-origin validation windows")
@@ -209,7 +233,7 @@ def main() -> None:
     models = sorted(BUILDERS) if args.model == "all" else [args.model]
     for name in models:
         out = tune(args.dataset, name, args.trials, args.seed, args.objective_seeds,
-                   args.val_blocks)
+                   args.val_blocks, args.max_dim)
         path = RESULTS / f"{args.dataset}_{name}.json"
         path.write_text(json.dumps(out, indent=2))
         print(

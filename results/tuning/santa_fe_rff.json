@@ -1,19 +1,19 @@
 {
   "dataset": "santa_fe",
   "model": "rff",
-  "trials": 100,
+  "trials": 300,
   "params": {
     "n_features": 1200,
-    "gamma": 0.05346043277610962,
+    "gamma": 0.0555884147525059,
     "window": 8
   },
   "raw_params": {
     "n_features": 1200,
-    "gamma": 0.05346043277610962,
+    "gamma": 0.0555884147525059,
     "window": 8
   },
   "ridge_alpha": 0.0031622776601683794,
-  "val_nrmse": 0.031534887318451686,
-  "test_nrmse": 0.07117943210664121,
+  "val_nrmse": 0.03150510721154535,
+  "test_nrmse": 0.07138067796030338,
   "feature_dim": 1200
 }

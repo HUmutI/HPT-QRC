@@ -1,15 +1,15 @@
 {
   "dataset": "sp500_rv",
   "model": "linear",
-  "trials": 150,
+  "trials": 120,
   "params": {
-    "window": 12
+    "window": 9
   },
   "raw_params": {
-    "window": 12
+    "window": 9
   },
   "ridge_alpha": 1e-09,
-  "val_nrmse": 0.801238849885841,
-  "test_nrmse": 0.6858938185140605,
-  "feature_dim": 12
+  "val_nrmse": 0.80941549387812,
+  "test_nrmse": 0.6833205856175887,
+  "feature_dim": 9
 }

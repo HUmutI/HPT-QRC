@@ -1,7 +1,7 @@
 {
   "dataset": "santa_fe",
   "model": "poly",
-  "trials": 100,
+  "trials": 300,
   "params": {
     "window": 15,
     "degree": 3

@@ -1,7 +1,7 @@
 {
   "dataset": "parity_d3",
   "model": "poly",
-  "trials": 100,
+  "trials": 150,
   "params": {
     "window": 6,
     "degree": 3
