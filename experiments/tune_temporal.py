@@ -117,17 +117,21 @@ BUILDERS = {
 
 
 def tune(dataset: str, model: str, trials: int, seed: int = 0,
-         objective_seeds: int = 1) -> dict:
+         objective_seeds: int = 1, val_blocks: int = 1) -> dict:
     import optuna
 
     optuna.logging.set_verbosity(optuna.logging.WARNING)
     u, y, split = load_task(dataset)
     builder = BUILDERS[model]
 
-    # Selecting on a single validation split overfits it once the trial count is high: at
-    # 250 trials NARMA-20 improved validation from 0.191 to 0.163 while test degraded from
-    # 0.180 to 0.223. Averaging the objective over several data realisations is a better
-    # estimator of generalisation and still never touches the test slice.
+    # Selecting on a single validation split overfits it once the trial count is high. Two
+    # measurements of the same failure: NARMA-20 at 250 trials improved validation from
+    # 0.191 to 0.163 while test degraded from 0.180 to 0.223; Santa Fe going from 100 to 300
+    # trials improved validation from 0.0318 to 0.0294 while test degraded from 0.0601 to
+    # 0.0705. More search against one split buys a better fit to that split.
+    #
+    # The fix is to average the objective over several estimates. Which estimates are
+    # available depends on the data: a generator can be resampled, a recorded series cannot.
     realisations = []
     if objective_seeds > 1 and dataset not in {"sp500_rv", "vix", "santa_fe"}:
         for k in range(objective_seeds):
@@ -135,6 +139,20 @@ def tune(dataset: str, model: str, trials: int, seed: int = 0,
                 realisations.append(load_task(dataset, seed=1000 + k))
             except TypeError:
                 break
+
+    # Recorded series get rolling-origin validation instead: the validation window walks
+    # backwards through the training region, each fold training only on rows that precede
+    # it. No future information leaks, the test slice is never touched, and a configuration
+    # has to work at several points in the series rather than at one.
+    if not realisations and val_blocks > 1:
+        for k in range(val_blocks):
+            n_train = split.n_train - k * split.n_val
+            if split.washout + split.n_val >= n_train:
+                break
+            realisations.append(
+                (u, y, Split(split.n_total, split.washout, n_train, split.n_val))
+            )
+
     if not realisations:
         realisations = [(u, y, split)]
 
@@ -182,12 +200,16 @@ def main() -> None:
     ap.add_argument("--objective-seeds", type=int, default=1,
                     help="average the search objective over this many data realisations; "
                          "reduces validation overfitting at high trial counts")
+    ap.add_argument("--val-blocks", type=int, default=1,
+                    help="for recorded series that cannot be resampled: average the "
+                         "objective over this many rolling-origin validation windows")
     args = ap.parse_args()
 
     RESULTS.mkdir(parents=True, exist_ok=True)
     models = sorted(BUILDERS) if args.model == "all" else [args.model]
     for name in models:
-        out = tune(args.dataset, name, args.trials, args.seed, args.objective_seeds)
+        out = tune(args.dataset, name, args.trials, args.seed, args.objective_seeds,
+                   args.val_blocks)
         path = RESULTS / f"{args.dataset}_{name}.json"
         path.write_text(json.dumps(out, indent=2))
         print(

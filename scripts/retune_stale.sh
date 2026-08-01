@@ -29,3 +29,18 @@ done
 
 echo "=== re-benchmark the four under their new configs ==="
 $PY -W ignore experiments/run_benchmarks.py --datasets santa_fe sp500_rv henon parity_d3 --seeds 5
+
+# --- rolling-origin pass for the two recorded series -------------------------------------
+# santa_fe and sp500_rv cannot be resampled, so their searches ran against a single
+# validation split and overfit it: santa_fe going 100 -> 300 trials improved validation from
+# 0.0318 to 0.0294 while test degraded from 0.0601 to 0.0705. Re-run both with the objective
+# averaged over three rolling-origin windows, which is the same "average over several
+# estimates" principle the synthetic tasks already get from resampling.
+for ds in santa_fe sp500_rv; do
+  echo "=== retune $ds (3 rolling-origin validation windows) ==="
+  $PY -W ignore experiments/tune_temporal.py --dataset "$ds" --model all --trials 300 \
+      --val-blocks 3
+done
+
+echo "=== final re-benchmark of the recorded series ==="
+$PY -W ignore experiments/run_benchmarks.py --datasets santa_fe sp500_rv --seeds 5
