@@ -17,7 +17,9 @@
 > reconstruction was independently proposed by Amanov & Azamov (arXiv:2603.10707);
 > a transverse-field Ising QRC for realised-volatility forecasting is in Li, Mukhopadhyay,
 > Bayat & Habibnia (arXiv:2505.13933). This work differs by (i) a recurrent formulation with
-> state feedback rather than a static or windowed map, (ii) benchmarking under the standard
+> state feedback rather than a static or windowed map, together with a measurement of what
+> that recurrence is actually worth per task — on most of them, little, and we say so,
+> (ii) benchmarking under the standard
 > input-driven protocol so numbers are comparable to the reservoir-computing literature,
 > (iii) matched-capacity baselines, and (iv) a noise study at measured device parameters.
 
@@ -93,8 +95,40 @@ of a stochastic drive, and not elsewhere. Diebold–Mariano with Newey–West HA
   covers 0.06 to 11.0 across models; five seeds cannot separate them here.
 - **S&P 500 RV** — p = 0.45–0.88. Nothing is distinguishable; the Hansen MCS retains all six.
 
-**Recurrence is what carries the result.** Removing the feedback and changing nothing else
-doubles the error on both NARMA tasks (p < 0.001).
+### What is the recurrence actually worth? (Less than we claimed.)
+
+An earlier version of this README said recurrence carried the result, on the strength of a
+binary ablation: the tuned model against the same model with `feedback=False`. That claim
+does not survive the current tuned configurations, for a reason worth stating plainly — **the
+search now chooses `feedback=False` outright on 8 of 11 datasets**, so on those the
+"ablation" and the model are the same object and the reported gap is zero by construction.
+Where the search does keep feedback, it drives the gain to the floor of its range: 0.010 on
+NARMA-20, 0.013 on Mackey-Glass, 0.016 on NARMA-5, against an upper bound of 3.0.
+
+A boolean cannot tell "recurrence matters" apart from "the search wanted it nearly off".
+Sweeping the gain can (`experiments/feedback_strength.py`, 5 seeds, everything else held at
+the tuned configuration):
+
+| Task | No feedback | Best gain | NRMSE there | Recurrence buys |
+|---|---|---|---|---|
+| NARMA-5 | 0.02439 | 0.05 | **0.00705** | **3.46×** |
+| Mackey-Glass | 3.0e-5 | 0.005 | 1.0e-5 | 3.06× (both at the floor) |
+| NARMA-10 | 0.09369 | 0.02 | 0.08739 | 1.07× |
+| NARMA-20 | 0.16663 | **0** | 0.16663 | 1.00× |
+
+![Feedback gain sweep](results/figures/feedback_strength.png)
+
+So recurrence is decisive on NARMA-5, marginal on NARMA-10, and worth nothing on NARMA-20 —
+where the best gain is zero and the no-feedback ablation is in fact slightly *better* than the
+tuned model (0.1766 vs 0.1876, p = 0.19). The honest statement is that **the feature map, not
+the recurrence, is doing most of the work on most tasks.**
+
+What the sweep does establish is a failure boundary. Past `g_fb ≈ 0.6` every task collapses to
+NRMSE ≈ 1 — no better than predicting the target's mean — and stays there. That is the echo
+state property breaking: above a critical feedback strength the state stops contracting and
+the reservoir no longer has a fading memory of its input. The onset is task-dependent
+(Mackey-Glass is two orders of magnitude off its floor by 0.3 while NARMA-10 is untouched),
+but the endpoint is the same on all four.
 
 ### Is it the optics, or just more features?
 
@@ -147,10 +181,9 @@ This is a prediction the architecture makes and the data confirms, rather than a
 hyperparameter found by search.
 
 **Caveat on the feedback ablation.** In this small hardware-viable configuration the feedback
-contributes only 5–11 % and slightly *hurts* on NARMA-5. The 2× effect in the benchmark table
-is measured at the accuracy-tuned configuration (16 modes, photons {2,3}, depth 3, 8
-reservoirs). Feedback's contribution grows with model capacity; both numbers are real and
-both are reported.
+contributes only 5–11 %. See §2 for the gain sweep at the accuracy-tuned configurations: the
+contribution is strongly task-dependent (3.46× on NARMA-5, 1.00× on NARMA-20) and a binary
+ablation misreports it in both directions.
 
 ### Echo state property
 
@@ -544,6 +577,13 @@ re-spends shots.
   at any photon number on current hardware.
 - No claim on S&P 500 realised volatility, where it does not win and no model is
   statistically distinguishable from any other.
-- No hardware claim until a QPU leaves maintenance and the run in section 4 completes.
+- **No hardware accuracy claim.** 126 timesteps were measured on `qpu:belenos` (§7) and the
+  device reproduces the simulated feature map at correlation 0.82, but the run is
+  shot-starved and has 66 training rows against 65 features. What is reportable is the
+  feature-level agreement and a shot-limited prediction confirmed on silicon — not a win.
+- **No claim that recurrence is what makes this work.** §2 measures it per task: 3.46× on
+  NARMA-5, 1.00× on NARMA-20, and the search turns feedback off outright on 8 of 11 datasets.
+  An earlier version of this README did claim it, on the strength of a binary ablation that
+  could not distinguish "recurrence matters" from "the search set the gain to nearly zero".
 - The matched-capacity comparison is the honest version of the accuracy table; the headline
   configuration uses more features than the baselines and that is stated wherever it appears.
