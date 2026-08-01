@@ -1,8 +1,23 @@
 # Workshop draft
 
-`main.tex` was rewritten against the current results on 2026-07-29. It compiles clean (11
-pages, no undefined references) and every table and figure is generated, not typed. See
-`results/CHANGELOG.md` for what the previous version claimed and why it was retracted.
+`main.tex` compiles clean at **14 pages**, no undefined references, every table and figure
+generated rather than typed. Last regenerated against results on **2026-08-01**. See
+`results/CHANGELOG.md` for what earlier versions claimed and why those claims were retracted.
+
+**Not yet written for submission.** SaTQuML wants ~9 pages; this is 14, and it is a full
+technical report rather than a workshop paper. Cutting it is the remaining work.
+
+**Two claims are retracted and must not reappear in any draft:**
+
+- *"Recurrence carries the result."* The search disables feedback on 8 of 11 datasets, and
+  the gain sweep measures 1.00× on NARMA-20. Use `\PaperTableBenchmarks`'s dagger marks and
+  `results/figures/feedback_strength.png` instead — the honest version is a stronger section.
+- *Any hardware accuracy claim.* 126 timesteps were measured on `qpu:belenos`, but with 66
+  training rows against 65 features. What is reportable is feature-level agreement with
+  simulation at correlation 0.82, and a shot-limited prediction confirmed on silicon.
+
+Also do not frame this as quantum advantage: `experiments/quantumness.py` finds no detectable
+contribution from two-photon interference, and that null result is part of the paper.
 
 ## Tables are generated, not typed
 

@@ -142,6 +142,41 @@ validation from 0.191 to 0.163 while test degraded from 0.180 to 0.223. The obje
 averages over several data realisations, which is a better generalisation estimator and still
 never touches the test slice.
 
+## What the recurrence is worth
+
+The binary ablation that supported "recurrence carries the result" turned out to be
+uninformative in exactly the cases where it mattered. The search chooses `feedback=False`
+outright on 8 of 11 datasets, so there the ablation and the model are the same object and the
+gap is zero by construction; where it keeps feedback it drives the gain to the floor of its
+range, 0.010-0.016 against a ceiling of 3.0. A boolean cannot separate "recurrence matters"
+from "the search wanted it nearly off".
+
+Sweeping the gain (`experiments/feedback_strength.py`, 5 seeds, everything else held at the
+tuned configuration) gives 3.46x on NARMA-5, 3.06x on Mackey-Glass -- both at the saturation
+floor -- 1.07x on NARMA-10, and 1.00x on NARMA-20, where the best gain is zero. So the claim
+is withdrawn: the feature map, not the recurrence, does most of the work on most tasks.
+
+The sweep is worth more than the claim it replaces. Past `g_fb` around 0.6 every task sits at
+NRMSE 1, no better than predicting the target's mean, and stays there. That is the echo state
+property failing -- above a critical feedback strength the state stops contracting and the
+reservoir loses its fading memory. The onset is task-dependent, the endpoint is not.
+
+## Searching harder made things worse
+
+Re-running the searches under the expanded space at higher trial counts degraded test on
+three of four datasets while improving validation on all of them. The exception was NARMA-20,
+the only one whose objective averaged over several data realisations -- and its validation
+score got *worse* while test improved, which is what a search that has stopped fitting its
+selection split looks like.
+
+So the expanded space is not the problem; single-split selection is, and more trials make it
+worse. Recorded series cannot be resampled, so they get rolling-origin validation windows
+instead (`--val-blocks`). Two further practical notes: the top of the photonic search space
+reaches ~4e5 features, which on a 4000-step series is a 12 GB matrix and put one search at
+7% CPU for five hours, so `--max-dim` now prunes those before the matrix is built; and
+`santa_fe`, `henon` and `parity_d3` are reported under their original searches because their
+replacements were either worse or unfinished.
+
 ## Open items
 
 - **Hardware accuracy is shot-starved, not wrong.** 126 timesteps collected on `qpu:belenos`
@@ -168,7 +203,7 @@ never touches the test slice.
 
 Defensible claims: a recurrent linear-optical reservoir beats *equally tuned* classical
 feature maps on most of the eight tasks at matched feature dimension, with DM-HAC p-values to
-back it; recurrence accounts for roughly half the error; accuracy is essentially unaffected
+back it; accuracy is essentially unaffected
 by device imperfections at measured Ascella/Belenos levels while being strongly limited by
 coincidence count, which gives both a design rule and a feasibility threshold; the
 shot-limited prediction was then confirmed on Belenos, with hardware features correlating

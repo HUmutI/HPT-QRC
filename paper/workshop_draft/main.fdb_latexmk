@@ -1,13 +1,13 @@
 # Fdb version 4
-["bibtex main"] 1785560520.8621 "main.aux" "main.bbl" "main" 1785615264.97766 0
+["bibtex main"] 1785619263.29497 "main.aux" "main.bbl" "main" 1785619309.14195 0
   "./refs.bib" 1778600791.54393 4887 4f4cd022ff6ee024737e786fa4d38bc3 ""
   "/usr/local/texlive/2026/texmf-dist/bibtex/bst/natbib/plainnat.bst" 1233624470 26816 ffe5423d2019860bad9f54bc402fac15 ""
-  "main.aux" 1785615264.69941 11971 1c8cbe772deb0a23e91a4bbac196d21f "pdflatex"
+  "main.aux" 1785619308.87499 12092 d9baededad6d178e9c32ca26e1e48c53 "pdflatex"
   (generated)
   "main.bbl"
   "main.blg"
   (rewritten before read)
-["pdflatex"] 1785615263.78806 "main.tex" "main.pdf" "main" 1785615264.9778 0
+["pdflatex"] 1785619308.01693 "main.tex" "main.pdf" "main" 1785619309.14209 0
   "../../results/figures/capacity_narma10.png" 1785615166.75668 128891 67d0bdd919ed4efeb6b66468f140fe67 ""
   "../../results/figures/coincidence_rate.png" 1785615167.01073 90626 c125d5ecb50d6049ea673860469847a0 ""
   "../../results/figures/noise_narma10.png" 1785615166.87862 135618 62d5c5ed58ffb38a2145a53a3fd2383c ""
@@ -84,6 +84,7 @@
   "/usr/local/texlive/2026/texmf-dist/fonts/type1/public/lm/lmri10.pfb" 1255129361 112593 fda2373ba4420af33949610de4c28fe8 ""
   "/usr/local/texlive/2026/texmf-dist/fonts/type1/public/lm/lmsy10.pfb" 1254269338 27863 09ce3735688ffde955e72da27c95b61a ""
   "/usr/local/texlive/2026/texmf-dist/fonts/type1/public/lm/lmsy6.pfb" 1254269338 28109 6d61305ed3d0eb794ebe36f15cf44aa0 ""
+  "/usr/local/texlive/2026/texmf-dist/fonts/type1/public/lm/lmsy7.pfb" 1254269338 27941 d1f5d03f61a46c3fcc3a2ba904ddda52 ""
   "/usr/local/texlive/2026/texmf-dist/fonts/type1/public/lm/lmsy8.pfb" 1254269338 27802 5c876bb2c4040caaf035d60bd74a86bd ""
   "/usr/local/texlive/2026/texmf-dist/fonts/type1/public/lm/lmsy9.pfb" 1254269338 27835 16c2fa83351d4ef8cf5aebfab8a44bc1 ""
   "/usr/local/texlive/2026/texmf-dist/fonts/type1/public/lm/lmtt10.pfb" 1255129361 113227 1010e11451afc2822c95dae77c390042 ""
@@ -169,10 +170,10 @@
   "/usr/local/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1778597970 5573038 b99aad5e4898a9034e953632f940512b ""
   "/usr/local/texlive/2026/texmf-var/web2c/pdftex/pdflatex.fmt" 1774209607 3636776 dc5fa9b6b1453b9d196cd42edf876004 ""
   "/usr/local/texlive/2026/texmf.cnf" 1774209515 577 648cd9f92f9c0eac486f4c71c85cfbbe ""
-  "main.aux" 1785615264.69941 11971 1c8cbe772deb0a23e91a4bbac196d21f "pdflatex"
-  "main.bbl" 1785560520.94755 4740 de596d87fea42ff933ac75b986c768b5 "bibtex main"
-  "main.out" 1785615264.7001 3754 d048ad6ea17aee3ac2854ead661a03a2 "pdflatex"
-  "main.tex" 1785363736.9431 35458 89035d557e9d2cb7cea02f80b688e785 ""
+  "main.aux" 1785619308.87499 12092 d9baededad6d178e9c32ca26e1e48c53 "pdflatex"
+  "main.bbl" 1785619263.39468 4740 de596d87fea42ff933ac75b986c768b5 "bibtex main"
+  "main.out" 1785619308.87585 3754 d048ad6ea17aee3ac2854ead661a03a2 "pdflatex"
+  "main.tex" 1785619296.12602 36898 0b7ce4901bad49555571438a7fb22c78 ""
   "results_tables.tex" 1785615166.09761 6207 d247edca0e10de9e96a6a1d9ffd5e8ed ""
   (generated)
   "main.aux"

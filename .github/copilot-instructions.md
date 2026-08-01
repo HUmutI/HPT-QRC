@@ -42,6 +42,12 @@ against classical feature maps. Simulation only unless a file says otherwise.
   finding. If a swept curve gets worse as capacity grows, suspect the sweep, not the model.
 - **Search objective averages over data realisations.** A single validation split is
   overfit past ~150 trials (NARMA-20: val 0.191→0.163 while test went 0.180→0.223).
+  Recorded series that cannot be resampled use `--val-blocks` (rolling-origin windows)
+  instead. If a re-tune improves validation and degrades test, that is the failure — do not
+  ship the configuration.
+- **`--max-dim` when searching.** The photonic space tops out near 4e5 features; on a
+  4000-step series that is a 12 GB matrix and the process thrashes at 7 % CPU rather than
+  computing. 30 000 is the working ceiling.
 
 ## Claims not to make
 
@@ -57,6 +63,11 @@ ceiling. What the hardware supports is feature-level agreement with simulation (
 `perm(|U|²)` and `|perm(U)|²` at fixed everything else and in the infinite-shot limit; the
 difference is not measurable. The feature map's combinatorial structure carries the
 performance. Do not write the paper as if two-photon interference does the work.
+
+**Recurrence is not the mechanism either.** Retracted 2026-08-01. The search chooses
+`feedback=False` on 8 of 11 datasets, so the on/off ablation compares a model to itself
+there. `experiments/feedback_strength.py` sweeps the gain instead: 3.46× on NARMA-5, 1.00×
+on NARMA-20. Do not reintroduce "removing feedback doubles the error".
 
 Retracted earlier claims — do not reintroduce them: the "50× memory capacity vs ESN"
 figure (measured memory capacity is ~11 vs the ESN's 27–30, i.e. the reservoir has *less*

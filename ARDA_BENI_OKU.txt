@@ -1,3 +1,8 @@
+GUNCEL DEGIL -- v1 hackathon duzeni icin yazildi (2026-05-30).
+Model, protokol, benchmarkler ve sonuclarin hepsi o zamandan beri degisti.
+README.md ile baslayin; nelerin geri cekildigi icin results/CHANGELOG.md.
+Sadece orijinal hackathon teslimi okunabilir kalsin diye tutuluyor.
+
 DOSYA REHBERİ — EPFL_ANTI
 ============================
 

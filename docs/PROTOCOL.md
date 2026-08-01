@@ -210,3 +210,62 @@ Deviations from v1.0 that remain, and are not fixed:
   `walk_forward_folds_*.json`) do not exist.** Seeds are fixed and datasets are generated
   deterministically from them, so runs are reproducible, but the manifest files were never
   produced.
+
+---
+
+**DEVIATION 2026-08-01 — protocol v2.1.** Changes to the *search* procedure and to two
+claims, all made after v2.0 results were in hand and all documented here rather than folded
+in silently.
+
+9. **The search objective averages over several estimates, not one validation split.**
+   Selecting on a single split overfits it once the trial count is high, measured twice:
+   NARMA-20 at 250 trials improved validation 0.191 → 0.163 while test degraded 0.180 →
+   0.223; Santa Fe from 100 to 300 trials improved validation 0.0318 → 0.0294 while test
+   degraded 0.0601 → 0.0705. Synthetic tasks now average the objective over fresh data
+   realisations (`--objective-seeds`); recorded series, which cannot be resampled, use
+   rolling-origin validation windows (`--val-blocks`). The test slice is untouched by both.
+
+   *Sequence, stated because it matters:* the weakness was demonstrated on NARMA-20 before
+   Santa Fe was re-run, but the decision to add rolling-origin validation came **after**
+   seeing Santa Fe's test number degrade. Both sets of numbers are in `results/CHANGELOG.md`.
+
+10. **Trial budgets differ between datasets** (100–300), and `--max-dim` prunes photonic
+    trials projected above 30 000 features. Both are compute budgets, not modelling choices:
+    the top of the search space reaches ~4×10⁵ features, which on a 4000-step series is a
+    12 GB feature matrix, and one Santa Fe search spent five hours at 7 % CPU thrashing.
+    Within every dataset all five models receive the identical budget, which is the
+    comparison §1's equal-compute rule exists to protect.
+
+11. **Multi-timescale integration added** to the photonic search space (`n_scales`,
+    `scale_ratio`): the measured probabilities are integrated at several leak rates at once.
+    This is post-processing of an already-collected sequence and costs no extra shots.
+
+12. **The architecture ablation in §7 is replaced by a gain sweep.** The locked ablation was
+    feedback on/off at otherwise identical configuration. That comparison turned out to be
+    uninformative in exactly the cases it mattered: the search chooses `feedback=False`
+    outright on 8 of 11 datasets, so the ablation and the model are the same object there and
+    the measured gap is zero by construction. Where feedback is kept, the gain sits at the
+    floor of its range (0.010–0.016 against a ceiling of 3.0).
+    `experiments/feedback_strength.py` sweeps the gain instead. The on/off ablation is still
+    reported in every benchmark table, marked with a dagger where the tuned configuration
+    already had feedback off.
+
+13. **Retracted: "recurrence is what carries the result."** The sweep measures 3.46× on
+    NARMA-5, 3.06× on Mackey-Glass (both at the saturation floor), 1.07× on NARMA-10 and
+    1.00× on NARMA-20 — where the best gain is zero and the no-feedback ablation scores
+    marginally better than the tuned model. What the sweep does establish is a failure
+    boundary: past `g_fb ≈ 0.6` every task sits at NRMSE ≈ 1, the echo state property
+    breaking.
+
+14. **Hardware executed** (§ not in the pre-registration, which assumed simulation only).
+    126 timesteps on `qpu:belenos`, 2 photons in 10 modes. Reported as feature-level
+    agreement with simulation (correlation 0.805–0.844), **not** as an accuracy result: the
+    stitched run has 66 training rows against 65 features.
+
+15. **Three datasets report searches that predate this deviation.** `santa_fe`, `henon` and
+    `parity_d3` are reported under their original 100-trial single-split searches. Their
+    re-searches degraded test while improving validation, and the rolling-origin replacement
+    was stopped before completing. Reporting a configuration selected by a procedure this
+    document calls inadequate, or a half-finished one, would be worse than reporting the last
+    complete and internally consistent search. `sp500_rv` is the exception — its
+    rolling-origin re-tune completed for all five models and is reported.

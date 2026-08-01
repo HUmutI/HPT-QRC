@@ -1,1 +1,5 @@
+# RETRACTED -- v1 artifact (2026-05-30), produced under the autoregressive protocol
+# and against an echo state network with no input-scaling parameter. Not quoted in the
+# paper or README. Kept for provenance; see results/CHANGELOG.md.
+
 RC (decay extends beyond window)

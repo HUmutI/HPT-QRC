@@ -1,3 +1,7 @@
+# RETRACTED -- v1 artifact (2026-05-30), produced under the autoregressive protocol
+# and against an echo state network with no input-scaling parameter. Not quoted in the
+# paper or README. Kept for provenance; see results/CHANGELOG.md.
+
 /Users/umut/miniconda3/envs/quandela/lib/python3.11/site-packages/statsmodels/base/model.py:607: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
   warnings.warn("Maximum Likelihood optimization failed to "
 /Users/umut/miniconda3/envs/quandela/lib/python3.11/site-packages/statsmodels/base/model.py:607: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
@@ -116,5 +120,3 @@ Loading S&P 500...
       RCX 0.123343 7.031048
 HPT-QRC-X 0.014762 1.268848
 ------------------------------------------------------------
-
-

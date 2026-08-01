@@ -1,3 +1,8 @@
+OUTDATED -- written for the v1 hackathon layout (2026-05-30).
+The model, protocol, benchmarks and results have all been replaced since.
+Start from README.md; see results/CHANGELOG.md for what was retracted and why.
+Kept only so the original hackathon submission remains readable.
+
 FOLDER GUIDE — EPFL_ANTI
 =========================
 

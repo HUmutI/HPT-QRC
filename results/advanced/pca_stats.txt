@@ -1,2 +1,6 @@
+# RETRACTED -- v1 artifact (2026-05-30), produced under the autoregressive protocol
+# and against an echo state network with no input-scaling parameter. Not quoted in the
+# paper or README. Kept for provenance; see results/CHANGELOG.md.
+
 HPT-QRC Condition Number: 2.55e+08
 Classical ESN Condition Number: 1.05e+08

@@ -60,14 +60,14 @@ Diebold--Mariano $p < 0.001$ against every baseline. Because the tuned configura
 more features than the baselines, we sweep every model family across a common feature
 dimension: at $\approx 1400$ features the photonic map attains $0.109$ against $0.188$ for
 random Fourier features and $0.268$ for an echo state network, and the latter saturates
-beyond $2000$ units while the photonic map does not. Removing the feedback, with all else
-fixed, doubles the error on both NARMA tasks. It ties a tuned echo state network on
-Mackey--Glass; loses to one on NARMA-5 --- a task needing only five steps of memory, where
-long linear memory suffices and the photonic map's nonlinearity buys nothing; loses to random
-Fourier features on Lorenz-63, where per-seed errors span two orders of magnitude and five
-seeds cannot separate the candidates; and ranks third of six on S\&P~500 realised volatility
-with no model statistically distinguishable from any other. Every outcome is reported
-unmodified.
+beyond $2000$ units while the photonic map does not. Sweeping the feedback gain rather than
+toggling it shows the recurrence is worth $3.46\times$ on NARMA-5 but $1.00\times$ on
+NARMA-20, so the feature map rather than the state feedback accounts for most of the
+performance; past a critical gain every task loses its fading memory altogether. The model
+leads on the median for nine of ten tasks, but three of those leads do not separate
+statistically and three tasks are saturated below $10^{-5}$ by several models at once. On
+S\&P~500 realised volatility it loses to a linear ridge on the raw series, with no model
+distinguishable from any other. Every outcome is reported unmodified.
 Simulating the Ascella and Belenos operating points read from Quandela's cloud API with
 threshold detectors, we find accuracy essentially unchanged by photon distinguishability
 (flat for Hong--Ou--Mandel visibility from $0.50$ to $1.00$) and by multi-photon emission
@@ -279,24 +279,44 @@ task separates models.
   \label{tab:dm}
 \end{table}
 
-The photonic reservoir wins NARMA-10 and NARMA-20 with $p < 0.001$ against every baseline. On
-Mackey--Glass it ties the echo state network ($p = 0.41$); the task saturates, with three
-models at $5\!\cdot\!10^{-4}$. It wins where the task demands nonlinear memory of a stochastic
-drive, and not elsewhere.
+The photonic reservoir attains the best median on nine of the ten tasks. That headline
+requires three qualifications, all of which are visible in Tables~\ref{tab:benchmarks}
+and~\ref{tab:dm}.
 
-Three results run against it, and are worth stating explicitly. On \textbf{NARMA-5} the echo
-state network wins. This is the expected place to lose: the task requires only five steps of
-memory, precisely the regime where a large tanh reservoir's long linear memory is sufficient
-and the photonic map's extra nonlinearity buys nothing --- the mirror image of
-Section~\ref{sec:ipc}. On \textbf{Lorenz-63} random Fourier features win on the median; the
-photonic model has the better \emph{mean}, but that ordering inverts under a single seed and
-we do not claim it. Across models the per-seed NRMSE spans $0.06$ to $11.0$ on this task, and
-five seeds cannot separate the candidates. On \textbf{S\&P~500 realised volatility} it ranks
-third of six and no model is distinguishable from any other ($p = 0.45$--$0.88$); we draw no
-conclusion from the financial task.
+\textbf{Four of the nine are decisive}, with Diebold--Mariano $p \leq 0.0002$ against every
+baseline: both long NARMA tasks, Mackey--Glass and temporal parity. NARMA-20 is the clearest,
+at $0.1876$ against $0.4395$ for the strongest baseline --- a factor of $2.3$.
 
-Removing feedback while changing nothing else roughly doubles the error on both NARMA tasks
-($p < 0.001$), which is the ablation the architecture rests on.
+\textbf{Three are leads rather than wins.} Channel equalisation ($p = 0.48$ against the echo
+state network), Santa~Fe ($p = 0.90$) and Lorenz-63 ($p = 0.095$) all rank first on the median
+without separating statistically. On Lorenz-63 the per-seed NRMSE spans $0.06$ to $11.0$ across
+models; five seeds cannot resolve that. We report these as leads and claim nothing further.
+
+\textbf{Three tasks are saturated.} Mackey--Glass, Hénon and parity are solved to $10^{-5}$ or
+better by several models simultaneously. Ratios between such numbers are not informative, and
+the ordering there says little about the feature map.
+
+One result runs against the model and is worth stating plainly. On \textbf{S\&P~500 realised
+volatility} it loses, and not to another nonlinear model: a ridge on a window of the raw series
+attains $0.6957$ against the photonic $0.6993$. Nothing on this task is distinguishable from
+anything else ($p = 0.77$) and the Model Confidence Set retains every candidate. We draw no
+conclusion from the financial task, and retain it precisely because it is the dataset where the
+architecture offers nothing.
+
+\paragraph{What the recurrence contributes.} A binary feedback ablation cannot answer this.
+The search selects \texttt{feedback=False} outright on eight of eleven datasets, so there the
+ablation and the model are the same object and the measured gap is zero by construction; where
+feedback is retained the search drives the gain to the floor of its range ($0.010$--$0.016$
+against a ceiling of $3.0$). Sweeping the gain instead, with everything else held at the tuned
+configuration, gives $3.46\times$ on NARMA-5, $3.06\times$ on Mackey--Glass (both at the
+saturation floor), $1.07\times$ on NARMA-10 and $1.00\times$ on NARMA-20 --- where the best
+gain is zero and the ablated model scores marginally better than the tuned one ($0.1766$ against
+$0.1876$, $p = 0.19$). We therefore do not claim that recurrence carries the result.
+
+What the sweep does establish is a failure boundary. Above $g_{fb} \approx 0.6$ every task sits
+at NRMSE $\approx 1$ --- no better than predicting the target's mean --- and remains there: the
+echo state property fails, and the state ceases to contract. The onset is task-dependent; the
+endpoint is not.
 
 The Model Confidence Set retains almost every model on every task. With 200--600 test points
 it has little power here, and we report it for completeness rather than as a discriminating
