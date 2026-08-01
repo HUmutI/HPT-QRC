@@ -1,8 +1,15 @@
 # Hardware — Quandela QPU execution
 
-**Status: one real QPU job is queued.** `qpu:belenos`, job
-`38587a22-d3a8-4d61-b28e-54611ec5e492`, 120 timesteps at 20 000 shots, 2 photons in 10 modes.
-Harvest with `python hardware/fetch_qpu_run.py`.
+**Status: collection complete.** Eight jobs submitted to `qpu:belenos`, all 2 photons in 10
+modes; 126 timesteps survive as one consistent phase trajectory in
+`hardware/results/qpu_combined.json`. Hardware features correlate **0.805–0.844** with
+simulation across three shot counts (4×10³ to 2×10⁴) — the two-photon design is validated by
+measurement, against 0.18–0.48 for the earlier three-photon probe.
+
+The accuracy result is shot-starved, not wrong: the combined run has 66 training rows against
+65 features, and coincidence counts sit six to eight times below what simulation says is
+needed. Report the feature-level agreement; do not claim a hardware accuracy win. See
+`PLAN.md` §4–5.
 
 **Do not trust the platform status field.** Both QPUs report `status: maintenance` while the API
 accepts submissions and queues them. Attempting a submission is the only reliable test. Jobs
@@ -44,8 +51,9 @@ The conventions in section 5 were verified against those exact versions.
 | Zero-cost gate | `python hardware/compare_sim_local.py` | free |
 | Local rehearsal | `python hardware/run_reservoir_hw.py --local --steps 600` | free |
 | Cloud rehearsal | `python hardware/run_reservoir_hw.py --platform sim:slos --steps 100` | simulator |
-| QPU submit | `python hardware/submit_qpu_run.py --platform qpu:belenos --steps 120 --shots 20000` | one job |
+| QPU submit | `python hardware/submit_qpu_run.py --platform qpu:belenos --steps 144 --slice-start 0 --slice-len 20 --shots 4000 --max-shots-per-call 2000000` | one job |
 | QPU harvest | `python hardware/fetch_qpu_run.py` | free |
+| Stitch slices | `python hardware/combine_qpu_slices.py` | free |
 
 Submit and harvest are separate because the queue runs to hours and a laptop will not stay
 awake for it. Size the run from the *measured* coincidence rate, not the published
@@ -112,8 +120,27 @@ Established against perceval 1.1.0 / merlin 0.3.1, checked by `compare_sim_local
   completed 4 % of its iterations. `sample_batch(chunk_size=...)` splits the batch into
   independently-cached jobs, and a job returning fewer iterations than requested now raises
   instead of caching a truncated result.
-- **`max_shots_per_call` must be large.** It defaulted to `10 × shots`, which starves the
-  post-selection that follows. Use ~1e7.
+- **`max_shots_per_call` must be large, but not larger than your credits.** It defaulted to
+  `10 × shots`, which starves the post-selection that follows. But asking for more than the
+  credit balance covers makes the API *silently reduce* the request and return **HTTP 400** —
+  the same status it returns when rejecting a job outright. Retrying on that 400 orphaned
+  eight jobs before we understood it. Request under the granted ceiling (~2e6 here) and the
+  adjustment never happens; `attach_job_id.py` recovers records created before it was
+  understood, and `submit_qpu_run.py` now writes its record *before* submitting.
+- **A cancelled job still holds data.** The five-minute cap kills a job mid-run, but the
+  iterations it finished are returned. `fetch_qpu_run.py` harvests them; three of the eight
+  usable jobs are in `canceled` state.
+- **Wall time is 13–18 s per timestep regardless of shot count.** Every job hits the cap, so
+  timesteps returned measures it: 18–20 at 2×10⁴ shots, 22–23 at 5×10³, 17–20 at 4×10³ — a 5×
+  shot cut bought nothing. The chip is limited by thermo-optic phase-shifter settling between
+  configurations, not by collecting photons. So a five-minute job yields ~20 timesteps
+  whatever you request, and **timesteps, not shots, are the scarce resource** — the reverse
+  of the simulation regime. Size slices accordingly.
+- **Slices must share one phase trajectory.** `total_steps` sets `n_train`, which sets the
+  input scaler, which sets the encoding phases. Stitching slices submitted under different
+  `total_steps` samples *different* trajectories; doing so once produced a "simulation"
+  reference scoring 1.06, worse than the noiseless bound permits. `combine_qpu_slices.py`
+  groups by trajectory and keeps the largest consistent group.
 - **Use two photons.** n-fold coincidence rate falls as `transmittance^n`. On Ascella that is
   4.8e4/s at n=2 against 1.2e3/s at n=3. The earlier three-photon probe returned ~48 counts
   from 1000 requested shots across 56 Fock bins, and its features correlated only 0.18–0.48

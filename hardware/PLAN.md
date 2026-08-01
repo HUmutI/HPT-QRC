@@ -31,9 +31,10 @@ is fewer photons, not more shots.
 
 ## 3. The constraint we did not anticipate
 
-Per-timestep wall time is **~14 s regardless of shot count** — 13.7 s at 2×10⁴ shots, 14.4 s at
-5×10³, 15.2 s at 2×10⁴. The chip is limited by thermo-optic phase-shifter settling between
-circuit configurations, not by collecting photons.
+Every job hit the five-minute cap, so the timesteps returned measure per-timestep cost directly:
+18–20 at 2×10⁴ shots, 22–23 at 5×10³, 17–20 at 4×10³. A 5× cut in shots bought **no** extra
+timesteps — 13–18 s per timestep throughout. The chip is limited by thermo-optic phase-shifter
+settling between circuit configurations, not by collecting photons.
 
 This inverts the tradeoff that holds in simulation. There, shots are the expensive axis and you
 buy timesteps by lowering them. On hardware, shots are nearly free in wall-clock terms and

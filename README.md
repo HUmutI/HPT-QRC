@@ -459,12 +459,23 @@ Two jobs happened to cover the same timesteps under different submissions and ag
 
 ### An unexpected constraint: reconfiguration, not photon collection
 
-Per-timestep wall time is **~14 s regardless of shot count** — 13.7 s at 2×10⁴ shots, 14.4 s at
-5×10³, 15.2 s at 2×10⁴. The chip is limited by thermo-optic phase-shifter settling between
-circuit settings, not by collecting photons. A reservoir needing one configuration per timestep
-is therefore latency-bound by reconfiguration, which caps any five-minute job at ~20 timesteps
-whatever the shot budget. This inverts the shots-versus-timesteps tradeoff that holds in
-simulation, where shots are the expensive axis.
+Every job hits the five-minute cap, so the timesteps it returns measure the per-timestep cost
+directly. Across a 5× range of shot budgets, that number does not move:
+
+| Shots per step | Jobs | Timesteps returned in 300 s | Implied s/timestep |
+|---|---|---|---|
+| 2×10⁴ | 2 | 18, 20 | 15.0, 16.7 |
+| 5×10³ | 4 | 22, 22, 22, 23 | 13.0–13.6 |
+| 4×10³ | 2 | 17, 20 | 15.0, 17.6 |
+
+Requesting five times fewer photons per timestep bought no extra timesteps. The chip is limited
+by thermo-optic phase-shifter settling between circuit configurations, not by collecting
+photons. A reservoir needing one configuration per timestep is therefore latency-bound by
+reconfiguration, and any five-minute job returns ~20 timesteps whatever the shot budget.
+
+This inverts the tradeoff that holds in simulation. There, shots are the expensive axis and you
+buy timesteps by lowering them; on hardware shots are nearly free in wall-clock terms and
+**timesteps are the scarce resource**.
 
 ### Operational notes for anyone repeating this
 
