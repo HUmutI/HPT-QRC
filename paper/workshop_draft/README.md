@@ -1,3 +1,5 @@
+**Read [`../../docs/FOR_THE_PAPER.md`](../../docs/FOR_THE_PAPER.md) first.** It is the claim-by-claim guide with sources.
+
 # Workshop draft
 
 `main.tex` compiles clean at **14 pages**, no undefined references, every table and figure

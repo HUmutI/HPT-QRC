@@ -5,13 +5,16 @@
   <p><i>Standard reservoir-computing benchmarks, matched-capacity baselines, and robustness at measured Quandela hardware noise levels.</i></p>
 </div>
 
-> **Scope.** Accuracy results are produced by exact classical simulation of linear-optical
-> Fock probabilities. Noise results are produced by Perceval's `NoiseModel` at the operating
-> points measured on Quandela's Ascella and Belenos processors. Neither is a hardware
-> measurement. **A real QPU run is complete** — 126 timesteps on `qpu:belenos`, 2 photons in
-> 10 modes, reported in Section 7. It validates the device's feature map (correlation 0.822
-> with simulation) but is shot-limited and does not constitute a hardware accuracy result;
-> Section 7 says exactly what it does and does not establish.
+> **Scope.** Accuracy results (§2) come from exact classical simulation of linear-optical Fock
+> probabilities. Noise results (§3) come from Perceval's `NoiseModel` at operating points
+> measured on Quandela's Ascella and Belenos processors.
+>
+> **A real QPU run is complete** (§7): 126 timesteps on `qpu:belenos`, 2 photons in 10 modes.
+> It establishes that the device reproduces the simulated feature map — correlation 0.822 —
+> and confirms on silicon a shot-limitation the noise study predicted. It is **not** a
+> hardware accuracy result: 66 training rows against 65 features, and coincidence counts six
+> to eight times below what §3 says is needed. Section 7 states exactly what it does and does
+> not establish.
 
 > **Concurrent and independent work.** A closely related architecture for swaption-surface
 > reconstruction was independently proposed by Amanov & Azamov (arXiv:2603.10707);
@@ -24,6 +27,11 @@
 > (iii) matched-capacity baselines, and (iv) a noise study at measured device parameters.
 
 ---
+
+> **Writing the paper?** Start at [`docs/FOR_THE_PAPER.md`](docs/FOR_THE_PAPER.md) — every
+> claim with its evidence and p-value, where each number lives, and the list of claims
+> that were measured and found false. Two of those were in this README until they were
+> checked.
 
 ## 1. What changed, and why
 
